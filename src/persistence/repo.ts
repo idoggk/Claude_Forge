@@ -30,6 +30,8 @@ import type { Evidence, Experiment } from '@/domain/experiments/model';
 import { newId } from '@/lib/ids';
 import { LearningGoalSchema, MAX_ACTIVE_GOALS, type LearningGoal } from '@/domain/goals/model';
 import { PlaybookSchema, type Playbook, type PlaybookContent } from '@/domain/playbook/model';
+import { createEvidenceLink, playbookContentFingerprint, stepFingerprint } from '@/domain/playbook/evidence';
+import { TransferTaskSchema, completionProblems, type TransferTask } from '@/domain/transfer/model';
 import { ActivityRunSchema, type ActivityRun } from './schemas';
 
 /* ---------------------------------- profile & prefs ---------------------------------- */
@@ -479,7 +481,13 @@ export async function savePlaybook(pb: Playbook, revisionLabel?: string): Promis
     if (revisionLabel && prev) {
       revisions = [...prev.revisions, { id: newId('rev'), savedAt: now, label: revisionLabel.slice(0, 120), snapshot: contentOfPlaybook(prev) }].slice(-MAX_REVISIONS);
     }
-    const next = PlaybookSchema.parse({ ...pb, revisions, updatedAt: now });
+    // The content version rises only when the playbook's CONTENT changes (not when evidence or reviews change), so
+    // evidence can say which version it was linked at.
+    const pv = prev?.contentVersion ?? pb.contentVersion ?? 1;
+    const contentVersion = prev && playbookContentFingerprint(prev) !== playbookContentFingerprint(pb) ? pv + 1 : pv;
+    // A step marked verified records the wording it was verified against; later edits invalidate it.
+    const steps = pb.steps.map((st) => (st.status === 'verified' && !st.verifiedFingerprint ? { ...st, verifiedFingerprint: stepFingerprint(st) } : st.status !== 'verified' && st.verifiedFingerprint ? { ...st, verifiedFingerprint: null } : st));
+    const next = PlaybookSchema.parse({ ...pb, steps, contentVersion, revisions, updatedAt: now });
     await db.playbooks.put(next);
     return next;
   });
@@ -487,6 +495,54 @@ export async function savePlaybook(pb: Playbook, revisionLabel?: string): Promis
 
 export async function deletePlaybook(id: string): Promise<void> {
   await getDb().playbooks.delete(id);
+}
+
+
+/**
+ * Link an AI Lab experiment to a playbook step (used when an experiment is created FROM a step). The link starts
+ * unreviewed: it proves nothing until the learner writes criteria and a judgement. Reads and writes only Dexie tables.
+ */
+export async function linkExperimentToStep(playbookId: string, stepId: string, experimentId: string): Promise<EvidenceLinkResult> {
+  const db = getDb();
+  return db.transaction('rw', [db.playbooks, db.experiments], async () => {
+    const pb = await db.playbooks.get(playbookId);
+    const step = pb?.steps.find((x) => x.id === stepId);
+    const exp = await db.experiments.get(experimentId);
+    if (!pb || !step || !exp) return { ok: false as const, reason: !pb ? 'The playbook no longer exists.' : !step ? 'The step no longer exists.' : 'The experiment no longer exists.' };
+    if (pb.evidenceLinks.some((l) => l.stepId === stepId && l.experimentId === experimentId)) return { ok: false as const, reason: 'That experiment is already linked to this step.' };
+    const link = createEvidenceLink({ id: newId('evl'), playbook: pb, step, experiment: exp, now: nowIso() });
+    const next = PlaybookSchema.parse({ ...pb, evidenceLinks: [...pb.evidenceLinks, link], updatedAt: nowIso() });
+    await db.playbooks.put(next);
+    return { ok: true as const, link };
+  });
+}
+export type EvidenceLinkResult = { ok: true; link: import('@/domain/playbook/model').EvidenceLink } | { ok: false; reason: string };
+
+/* ------------------------------------------- transfer tasks ------------------------------------------- */
+
+export async function saveTransferTask(t: TransferTask): Promise<TransferTask> {
+  const now = nowIso();
+  const next = TransferTaskSchema.parse({ ...t, updatedAt: now });
+  await getDb().transferTasks.put(next);
+  return next;
+}
+
+export async function deleteTransferTask(id: string): Promise<void> {
+  await getDb().transferTasks.delete(id);
+}
+
+/** Mark complete only when observations, evidence and a reflection exist. Returns the problems when it cannot. */
+export async function completeTransferTask(id: string): Promise<{ ok: true } | { ok: false; problems: string[] }> {
+  const db = getDb();
+  return db.transaction('rw', db.transferTasks, async () => {
+    const t = await db.transferTasks.get(id);
+    if (!t) return { ok: false as const, problems: ['The task no longer exists.'] };
+    const problems = completionProblems(t);
+    if (problems.length) return { ok: false as const, problems };
+    const now = nowIso();
+    await db.transferTasks.put({ ...t, status: 'completed', completedAt: now, updatedAt: now });
+    return { ok: true as const };
+  });
 }
 
 /* ------------------------------------- activity runs ------------------------------------- */

@@ -130,8 +130,8 @@ describe('persistence: a diagnostic can never award mastery', () => {
     const db = new ForgeDB(name);
     setDbForTesting(db);
     await db.open();
-    expect(DB_VERSION).toBe(5);
-    expect(db.verno).toBe(5);
+    expect(DB_VERSION).toBe(6);
+    expect(db.verno).toBe(6);
     expect(await db.reviews.get('L01-skill-or-tool')).toMatchObject({ box: 2, lapses: 1, cycle: 3 });
     expect(await db.diagnostics.count()).toBe(0);
   });

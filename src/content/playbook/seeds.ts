@@ -23,6 +23,7 @@ const step = (id: string, title: string, instruction: string, verification: stri
   status: 'planned',
   verifiedNote: '',
   verifiedAt: null,
+  verifiedFingerprint: null,
   ...extra,
 });
 
