@@ -1,0 +1,11 @@
+{
+  "name": "Claude Forge",
+  "short_name": "Forge",
+  "description": "Learn, test and measure Claude Code Skills. Works offline; your data stays on your device.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e1319",
+  "theme_color": "#0e1319",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

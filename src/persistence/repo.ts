@@ -1,0 +1,426 @@
+import { getDb } from './db';
+import type { Lesson, Item } from '@/domain/curriculum/types';
+import { LESSONS } from '@/content/lessons';
+import { gradeAttempt, type AttemptGrade } from '@/domain/assessment/grade';
+import { evaluateExternal } from '@/domain/assessment/external';
+import { predictedPctFor, calibrationVerdict } from '@/domain/assessment/calibration';
+import { applyEvaluations, evaluateCompetencies } from '@/domain/mastery/competency';
+import { applyReviewOutcome, classifyReview, initialReview } from '@/domain/mastery/review';
+import { planReview, type PlannedItem } from '@/domain/mastery/reviewPlan';
+import { lessonStatus } from '@/domain/mastery/recommend';
+import { nowIso, todayKey } from '@/lib/clock';
+import type {
+  Annotation,
+  ArsenalRecord,
+  ArsenalStatus,
+  Attempt,
+  CompetencyRecord,
+  FieldEvidence,
+  LessonProgress,
+  Preferences,
+  Profile,
+  ReviewRecord,
+} from './schemas';
+import { DiagnosticRecordSchema, FieldEvidenceSchema, type DiagnosticRecord } from './schemas';
+import { DIAGNOSTIC } from '@/content/diagnostic';
+import { gradeDiagnostic } from '@/domain/mastery/diagnostic';
+import type { SkillDraft, SkillContent, Revision } from '@/domain/skills/model';
+import { contentOf } from '@/domain/skills/model';
+import type { Evidence, Experiment } from '@/domain/experiments/model';
+import { newId } from '@/lib/ids';
+
+/* ---------------------------------- profile & prefs ---------------------------------- */
+
+export async function getProfile(): Promise<Profile | undefined> {
+  return getDb().profile.get('me');
+}
+
+export async function saveProfile(patch: Partial<Omit<Profile, 'id' | 'createdAt'>>): Promise<Profile> {
+  const db = getDb();
+  const existing = await db.profile.get('me');
+  const next: Profile = {
+    id: 'me',
+    displayName: '',
+    interests: [],
+    dailyMinutes: 20,
+    onboardedAt: null,
+    createdAt: nowIso(),
+    ...existing,
+    ...patch,
+  };
+  await db.profile.put(next);
+  return next;
+}
+
+export async function getPreferences(): Promise<Preferences> {
+  return (await getDb().preferences.get('prefs')) ?? { id: 'prefs', theme: 'dark', motion: 'system' };
+}
+
+export async function savePreferences(patch: Partial<Omit<Preferences, 'id'>>): Promise<Preferences> {
+  const next = { ...(await getPreferences()), ...patch };
+  await getDb().preferences.put(next);
+  return next;
+}
+
+/* ---------------------------------- lesson progress ---------------------------------- */
+
+export async function touchLesson(lesson: Lesson, patch: Partial<Pick<LessonProgress, 'stage' | 'appliedNote'>> & { segmentSeen?: string } = {}): Promise<LessonProgress> {
+  const db = getDb();
+  return db.transaction('rw', db.lessonProgress, async () => {
+    const now = nowIso();
+    const existing = await db.lessonProgress.get(lesson.id);
+    // Progress made on an older lesson version is kept in attempts; the progress row restarts on a new version.
+    const base: LessonProgress =
+      existing && existing.lessonVersion === lesson.version
+        ? existing
+        : { lessonId: lesson.id, lessonVersion: lesson.version, stage: 'learn', segmentsSeen: [], startedAt: now, updatedAt: now, completedAt: null, appliedNote: '' };
+    const seen = patch.segmentSeen && !base.segmentsSeen.includes(patch.segmentSeen) ? [...base.segmentsSeen, patch.segmentSeen] : base.segmentsSeen;
+    const next: LessonProgress = { ...base, segmentsSeen: seen, stage: patch.stage ?? base.stage, appliedNote: patch.appliedNote ?? base.appliedNote, updatedAt: now };
+    await db.lessonProgress.put(next);
+    return next;
+  });
+}
+
+/* ------------------------------------ attempts ------------------------------------ */
+
+export interface SubmitInput {
+  /** Created when the exercise screen opens; resubmitting the same ID can never create a second attempt. */
+  attemptId: string;
+  lesson: Lesson;
+  stage: 'practice' | 'assessment';
+  startedAt: string;
+  answers: Record<string, unknown>;
+  hintsUsed: number;
+  confidence: number | null;
+}
+
+export interface SubmitResult {
+  attempt: Attempt;
+  grade: AttemptGrade | null;
+  created: boolean;
+  levelsBefore: Record<string, number>;
+  levelsAfter: Record<string, number>;
+  calibration: { gap: number; verdict: ReturnType<typeof calibrationVerdict>['verdict'] } | null;
+}
+
+const PRACTICE_MARK = 0.7;
+
+export async function loadExternalInputs() {
+  const db = getDb();
+  const [skills, experiments, evidence] = await Promise.all([db.customSkills.toArray(), db.experiments.toArray(), db.evidence.toArray()]);
+  return { skills, experiments, evidence };
+}
+
+async function recomputeCompetenciesTx(reason: string): Promise<{ before: Record<string, number>; after: Record<string, number> }> {
+  const db = getDb();
+  const [attempts, field, progress, existing] = await Promise.all([db.attempts.toArray(), db.fieldEvidence.toArray(), db.lessonProgress.toArray(), db.competencies.toArray()]);
+  const evals = evaluateCompetencies(attempts, LESSONS, field, progress);
+  const records = applyEvaluations(existing, evals, nowIso(), reason);
+  await db.competencies.bulkPut(records);
+  return {
+    before: Object.fromEntries(existing.map((r) => [r.competencyId, r.level])),
+    after: Object.fromEntries(records.map((r) => [r.competencyId, r.level])),
+  };
+}
+
+export async function recomputeCompetencies(reason: string): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', db.attempts, db.fieldEvidence, db.lessonProgress, db.competencies, async () => {
+    await recomputeCompetenciesTx(reason);
+  });
+}
+
+export async function submitAttempt(input: SubmitInput): Promise<SubmitResult> {
+  const db = getDb();
+  return db.transaction('rw', [db.attempts, db.lessonProgress, db.competencies, db.reviews, db.customSkills, db.experiments, db.evidence, db.fieldEvidence], async () => {
+    const dupe = await db.attempts.get(input.attemptId);
+    if (dupe) {
+      const cur = Object.fromEntries((await db.competencies.toArray()).map((r) => [r.competencyId, r.level]));
+      return { attempt: dupe, grade: null, created: false, levelsBefore: cur, levelsAfter: cur, calibration: null };
+    }
+    const { lesson, stage } = input;
+    const items: Item[] = stage === 'practice' ? lesson.activity.items : lesson.assessment.items;
+    const passMark = stage === 'practice' ? PRACTICE_MARK : lesson.assessment.passMark;
+    const external = evaluateExternal(await db.customSkills.toArray(), await db.experiments.toArray(), await db.evidence.toArray());
+    const grade = gradeAttempt(items, input.answers, { passMark, external });
+    const prior = await db.attempts.where('[lessonId+stage]').equals([lesson.id, stage]).filter((a) => a.lessonVersion === lesson.version).count();
+    const attemptNumber = prior + 1;
+    const hints = stage === 'assessment' ? 0 : Math.max(0, Math.floor(input.hintsUsed));
+    const predictedPct = input.confidence !== null ? predictedPctFor(input.confidence) : null;
+    const attempt: Attempt = {
+      id: input.attemptId,
+      lessonId: lesson.id,
+      lessonVersion: lesson.version,
+      stage,
+      startedAt: input.startedAt,
+      submittedAt: nowIso(),
+      attemptNumber,
+      answers: input.answers,
+      results: grade.results.map((r) => ({ itemId: r.itemId, kind: r.kind, concept: r.concept, critical: r.critical, correct: r.correct, score: r.score, points: r.points, selfAssessed: r.selfAssessed, answered: r.answered, feedback: r.feedback })),
+      score: grade.score,
+      passed: grade.passed,
+      criticalFailed: grade.criticalFailed,
+      hintsUsed: hints,
+      confidence: input.confidence,
+      predictedPct,
+      independent: hints === 0,
+      unseen: stage === 'assessment' && attemptNumber === 1,
+      conceptResults: grade.conceptResults,
+    };
+    await db.attempts.add(attempt);
+    await touchLessonInTx(lesson, stage === 'assessment' ? { stage: 'apply' } : { stage: 'assess' });
+    const levels = await recomputeCompetenciesTx(`${stage === 'assessment' ? 'Assessment' : 'Practice'} on ${lesson.title}`);
+    if (stage === 'assessment' && !(await db.reviews.get(lesson.id))) await db.reviews.put(initialReview(lesson.id, todayKey(), nowIso()));
+    if (stage === 'assessment' && grade.passed) {
+      const p = await db.lessonProgress.get(lesson.id);
+      if (p && !p.completedAt) await db.lessonProgress.put({ ...p, completedAt: nowIso() });
+    }
+    const calibration = predictedPct !== null && stage !== 'practice' ? calibrationVerdict(predictedPct, grade.score * 100) : null;
+    return { attempt, grade, created: true, levelsBefore: levels.before, levelsAfter: levels.after, calibration };
+  });
+}
+
+async function touchLessonInTx(lesson: Lesson, patch: { stage: LessonProgress['stage'] }) {
+  const db = getDb();
+  const now = nowIso();
+  const existing = await db.lessonProgress.get(lesson.id);
+  const base: LessonProgress =
+    existing && existing.lessonVersion === lesson.version
+      ? existing
+      : { lessonId: lesson.id, lessonVersion: lesson.version, stage: 'learn', segmentsSeen: [], startedAt: now, updatedAt: now, completedAt: null, appliedNote: '' };
+  const order = ['learn', 'practice', 'assess', 'apply'] as const;
+  const stage = order.indexOf(patch.stage) > order.indexOf(base.stage) ? patch.stage : base.stage;
+  await db.lessonProgress.put({ ...base, stage, updatedAt: now });
+}
+
+export interface ReviewSession {
+  lessonId: string;
+  items: Item[];
+  cycle: number;
+  /** Why each item was chosen (mistake-focused, interleaved, difficulty, rotation). */
+  plan: PlannedItem[];
+}
+
+async function planFor(lesson: Lesson, rec: ReviewRecord): Promise<PlannedItem[]> {
+  const db = getDb();
+  const [attempts, progress] = await Promise.all([db.attempts.toArray(), db.lessonProgress.toArray()]);
+  const passedLessonIds = LESSONS.filter((l) => lessonStatus(l, attempts, progress) === 'passed').map((l) => l.id);
+  return planReview({ lesson, lessons: LESSONS, box: rec.box, cycle: rec.cycle, attempts, passedLessonIds });
+}
+
+export async function startReview(lessonId: string): Promise<ReviewSession | null> {
+  const lesson = LESSONS.find((l) => l.id === lessonId);
+  const rec = await getDb().reviews.get(lessonId);
+  if (!lesson || !rec) return null;
+  const plan = await planFor(lesson, rec);
+  return { lessonId, cycle: rec.cycle, items: plan.map((p) => p.item), plan };
+}
+
+export interface ReviewResult {
+  attempt: Attempt;
+  outcome: 'pass' | 'partial' | 'fail';
+  review: ReviewRecord;
+  created: boolean;
+}
+
+export async function submitReview(input: { attemptId: string; lessonId: string; startedAt: string; answers: Record<string, unknown>; hintsUsed: number; confidence: number | null; /** The exact items shown (from startReview). Omit to re-derive them from the current state. */ itemIds?: string[] }): Promise<ReviewResult | null> {
+  const db = getDb();
+  const lesson = LESSONS.find((l) => l.id === input.lessonId);
+  if (!lesson) return null;
+  return db.transaction('rw', [db.attempts, db.lessonProgress, db.competencies, db.reviews, db.fieldEvidence], async () => {
+    const dupe = await db.attempts.get(input.attemptId);
+    const rec = await db.reviews.get(lesson.id);
+    if (!rec) return null;
+    if (dupe) return { attempt: dupe, outcome: rec.lastOutcome ?? 'partial', review: rec, created: false };
+    const items = input.itemIds ? resolveReviewItems(input.itemIds) : (await planFor(lesson, rec)).map((p) => p.item);
+    if (items.length === 0) return null;
+    const grade = gradeAttempt(items, input.answers, { passMark: 0.8 });
+    const predictedPct = input.confidence !== null ? predictedPctFor(input.confidence) : null;
+    const verdict = predictedPct !== null ? calibrationVerdict(predictedPct, grade.score * 100).verdict : 'calibrated';
+    const prior = await db.attempts.where('[lessonId+stage]').equals([lesson.id, 'review']).filter((a) => a.lessonVersion === lesson.version).count();
+    const hints = Math.max(0, Math.floor(input.hintsUsed));
+    const attempt: Attempt = {
+      id: input.attemptId,
+      lessonId: lesson.id,
+      lessonVersion: lesson.version,
+      stage: 'review',
+      startedAt: input.startedAt,
+      submittedAt: nowIso(),
+      attemptNumber: prior + 1,
+      answers: input.answers,
+      results: grade.results.map((r) => ({ itemId: r.itemId, kind: r.kind, concept: r.concept, critical: r.critical, correct: r.correct, score: r.score, points: r.points, selfAssessed: r.selfAssessed, answered: r.answered, feedback: r.feedback })),
+      score: grade.score,
+      passed: grade.passed,
+      criticalFailed: grade.criticalFailed,
+      hintsUsed: hints,
+      confidence: input.confidence,
+      predictedPct,
+      independent: hints === 0,
+      unseen: true,
+      conceptResults: grade.conceptResults,
+    };
+    await db.attempts.add(attempt);
+    const outcome = classifyReview({ score: grade.score, hintsUsed: hints, overconfidentMiss: verdict === 'overconfident' && grade.score < 0.8 });
+    const review = applyReviewOutcome(rec, outcome, todayKey(), nowIso(), `score ${Math.round(grade.score * 100)}%${hints ? `, ${hints} hint(s)` : ''}${verdict === 'overconfident' ? ', overconfident' : ''}`);
+    await db.reviews.put(review);
+    await recomputeCompetenciesTx(`Review of ${lesson.title}`);
+    return { attempt, outcome, review, created: true };
+  });
+}
+
+/** Resolve the items a review session showed. Only items from some lesson's separate review pool are accepted. */
+function resolveReviewItems(ids: string[]): Item[] {
+  const pool = new Map(LESSONS.flatMap((l) => l.reviewItems).map((i) => [i.id, i] as const));
+  const seen = new Set<string>();
+  const out: Item[] = [];
+  for (const id of ids.slice(0, 8)) {
+    const it = pool.get(id);
+    if (it && !seen.has(id)) { seen.add(id); out.push(it); }
+  }
+  return out;
+}
+
+/* ------------------------------------------- diagnostic ------------------------------------------- */
+
+/**
+ * Save a placement diagnostic. Deliberately touches NOTHING except the `diagnostics` store: it cannot create an
+ * attempt, a review, or a competency change, so a diagnostic can never award mastery.
+ */
+export async function submitDiagnostic(input: { id: string; answers: Record<string, unknown> }): Promise<{ record: DiagnosticRecord; created: boolean }> {
+  const db = getDb();
+  const existing = await db.diagnostics.get(input.id);
+  if (existing) return { record: existing, created: false };
+  const out = gradeDiagnostic(input.answers);
+  const record = DiagnosticRecordSchema.parse({ id: input.id, diagnosticId: DIAGNOSTIC.id, diagnosticVersion: DIAGNOSTIC.version, takenAt: nowIso(), answers: input.answers, ...out });
+  await db.diagnostics.add(record);
+  return { record, created: true };
+}
+
+/* -------------------------------------- field evidence -------------------------------------- */
+
+export async function addFieldEvidence(input: Omit<FieldEvidence, 'id' | 'createdAt' | 'selfReported'>): Promise<FieldEvidence> {
+  const rec = FieldEvidenceSchema.parse({ ...input, id: newId('field'), createdAt: nowIso(), selfReported: true });
+  const db = getDb();
+  await db.transaction('rw', [db.fieldEvidence, db.attempts, db.lessonProgress, db.competencies], async () => {
+    await db.fieldEvidence.add(rec);
+    await recomputeCompetenciesTx(`Field evidence: ${rec.title}`);
+  });
+  return rec;
+}
+
+export async function deleteFieldEvidence(id: string): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', [db.fieldEvidence, db.attempts, db.lessonProgress, db.competencies], async () => {
+    await db.fieldEvidence.delete(id);
+    await recomputeCompetenciesTx('Field evidence removed');
+  });
+}
+
+/* ------------------------------------ arsenal & notes ------------------------------------ */
+
+export async function setArsenalStatus(entryId: string, status: ArsenalStatus): Promise<ArsenalRecord> {
+  const db = getDb();
+  return db.transaction('rw', db.arsenal, async () => {
+    const now = nowIso();
+    const prev = await db.arsenal.get(entryId);
+    const rec: ArsenalRecord = prev
+      ? { ...prev, status, updatedAt: now, history: [...prev.history, { at: now, from: prev.status, to: status }].slice(-50) }
+      : {
+          entryId, status, inspected: false, approved: false, declaredInstalled: false, observedUsefulness: null, rejectionReason: '', securityConcerns: '', nextPractice: '',
+          experimentIds: [], lastEvaluatedAt: null, addedAt: now, updatedAt: now, history: [{ at: now, from: null, to: status }],
+        };
+    await db.arsenal.put(rec);
+    return rec;
+  });
+}
+
+export async function patchArsenal(entryId: string, patch: Partial<Omit<ArsenalRecord, 'entryId' | 'addedAt' | 'history'>>): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', db.arsenal, async () => {
+    const prev = await db.arsenal.get(entryId);
+    if (!prev) throw new Error('Add the item to your Arsenal first.');
+    await db.arsenal.put({ ...prev, ...patch, updatedAt: nowIso() });
+  });
+}
+
+export async function removeFromArsenal(entryId: string): Promise<void> {
+  await getDb().arsenal.delete(entryId);
+}
+
+export async function saveAnnotation(entryId: string, patch: Partial<Omit<Annotation, 'entryId' | 'updatedAt'>>): Promise<Annotation> {
+  const db = getDb();
+  return db.transaction('rw', db.annotations, async () => {
+    const prev = await db.annotations.get(entryId);
+    const next: Annotation = { entryId, notes: '', personalRelevance: null, candidate: null, ...prev, ...patch, updatedAt: nowIso() };
+    await db.annotations.put(next);
+    return next;
+  });
+}
+
+export async function deleteAnnotation(entryId: string): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', [db.annotations, db.arsenal], async () => {
+    await db.annotations.delete(entryId);
+    await db.arsenal.delete(entryId);
+  });
+}
+
+/* ------------------------------------ custom skills ------------------------------------ */
+
+export async function saveSkill(draft: SkillDraft): Promise<SkillDraft> {
+  const next = { ...draft, updatedAt: nowIso() };
+  await getDb().customSkills.put(next);
+  return next;
+}
+
+export async function deleteSkill(id: string): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', [db.customSkills, db.arsenal], async () => {
+    await db.customSkills.delete(id);
+    await db.arsenal.delete(`custom:${id}`);
+  });
+}
+
+export function snapshotRevision(draft: SkillDraft, label: string): Revision {
+  return { id: newId('rev'), savedAt: nowIso(), label: label.slice(0, 120) || 'Snapshot', snapshot: contentOf(draft) };
+}
+
+export function restoreRevision(draft: SkillDraft, rev: Revision): SkillDraft {
+  const c: SkillContent = rev.snapshot;
+  return { ...draft, ...c, updatedAt: nowIso() };
+}
+
+/* ------------------------------------- experiments ------------------------------------- */
+
+export async function saveExperiment(exp: Experiment): Promise<Experiment> {
+  const next = { ...exp, updatedAt: nowIso() };
+  await getDb().experiments.put(next);
+  return next;
+}
+
+export async function deleteExperiment(id: string): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', [db.experiments, db.evidence], async () => {
+    await db.experiments.delete(id);
+    await db.evidence.where('experimentId').equals(id).delete();
+  });
+}
+
+export async function addEvidence(ev: Evidence): Promise<void> {
+  await getDb().evidence.put(ev);
+}
+
+export async function deleteEvidence(id: string): Promise<void> {
+  await getDb().evidence.delete(id);
+}
+
+/* ------------------------------------------ reset ------------------------------------------ */
+
+export async function resetEverything(): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', db.tables, async () => {
+    for (const t of db.tables) await t.clear();
+  });
+}
+
+export type { CompetencyRecord };
