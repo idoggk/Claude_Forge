@@ -30,7 +30,7 @@ export default function BattleLabPage() {
       />
       <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" aria-label="Import an exported experiment JSON file" data-testid="import-experiment-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setImportFile(f); }} />
       {importFile && <ImportExperimentPanel key={`${importFile.name}-${importFile.lastModified}`} file={importFile} onClose={() => setImportFile(null)} />}
-      <div className="mb-5"><Callout tone="info" title="What this lab will and will not do">It will keep conditions, fixtures, prompts and rubrics fixed, show every value with its provenance, keep missing data as <em>unknown</em>, and say when evidence is too thin. It will not call Claude, generate results, or declare a Skill &ldquo;better&rdquo; from one run.</Callout></div>
+      <div className="mb-5"><Callout tone="info" title="What this lab will and will not do">It will keep conditions, fixtures, prompts and rubrics fixed, show every value with its provenance, keep missing data as <em>unknown</em>, and say when evidence is too thin. It will not call Claude, generate results, or declare a Skill &ldquo;better&rdquo; from one run. Failed and abandoned attempts are kept and counted, and anything imported is previewed first and labelled <em>user-imported</em>.</Callout></div>
       {creating && <NewExperimentForm key={tplId ?? 'blank'} templateId={tplId} forStep={forStep} onCancel={() => setCreating(false)} />}
       {!creating && (
         <section aria-labelledby="tpl-h" className="mb-6" data-testid="lab-templates">

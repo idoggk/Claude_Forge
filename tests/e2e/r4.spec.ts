@@ -1,6 +1,7 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { goto, startApp } from './helpers';
+import { expectNoHorizontalOverflow, goto, startApp } from './helpers';
 
 async function openStepEvidence(page: Page, i: number) {
   const box = page.getByTestId(`step-${i}-evidence`);
@@ -281,4 +282,56 @@ test.describe('Round 4: real-world transfer tasks', () => {
     await expect(page.getByTestId('maturity-card')).toContainText('Applied to real work');
     await expect(page.getByTestId('maturity-card')).toContainText('Fixture evaluation is incomplete');
   });
+});
+
+test.describe('Round 4: accessibility and small screens on the new surfaces', () => {
+  for (const width of [375, 1280]) {
+    test(`evidence panel, transfer editor and import preview have no serious axe violations and no horizontal overflow at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 850 });
+      await startApp(page);
+      const audit = async (label: string) => {
+        const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+        const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+        expect(bad.map((v) => `${label}: ${v.id} ${v.nodes.slice(0, 2).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
+        await expectNoHorizontalOverflow(page);
+      };
+      // playbook with a linked, judged experiment
+      await goto(page, '/playbooks');
+      await page.getByTestId('use-seed-release-notes').click();
+      let box = await openStepEvidence(page, 2);
+      await box.getByTestId('new-exp-2').click();
+      await page.getByTestId('exp-hypothesis').fill('With the Skill more runs pass all tests. I would change my mind if ranges overlap.');
+      await page.getByTestId('cond-skill-1').fill('release-notes-checker');
+      await page.getByTestId('cond-diff-1').fill('release-notes-checker Skill enabled; nothing else differs');
+      await page.getByTestId('create-experiment').click();
+      await expect(page).toHaveURL(/#\/battle-lab\/exp_/);
+      await recordRun(page, 'A', '6', '10');
+      await recordRun(page, 'A', '7', '10');
+      await recordRun(page, 'B', '9', '10');
+      await recordRun(page, 'B', '10', '10');
+      await audit('experiment record tab');
+      await page.getByRole('tab', { name: 'Setup' }).click();
+      await audit('experiment setup with playbook links');
+      await page.getByTestId('playbook-links-card').getByRole('link').first().click();
+      box = await openStepEvidence(page, 2);
+      await expect(box).toContainText('This evidence is stale');
+      await audit('playbook with stale evidence open');
+      await box.getByRole('button', { name: /Reassess against the current step/ }).click();
+      await box.getByText(/Is this evidence suitable/).click();
+      await audit('playbook with review form open');
+      await page.getByTestId('save-evaluation').click();
+      await expect(page.getByTestId('evaluation-list')).toBeVisible();
+      await audit('evaluation card');
+      // transfer editor
+      await goto(page, '/transfer');
+      await page.getByTestId('tt-create').click();
+      await expect(page.getByTestId('transfer-editor')).toBeVisible();
+      await audit('transfer editor');
+      // import preview
+      await goto(page, '/battle-lab');
+      await page.getByTestId('import-experiment-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('nope') });
+      await expect(page.getByText('Could not import that file')).toBeVisible();
+      await audit('import error');
+    });
+  }
 });

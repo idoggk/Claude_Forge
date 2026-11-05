@@ -55,6 +55,7 @@ export default function PlaybooksPage() {
           toast('Playbook imported');
         }}
       />
+      <div className="mb-5"><Callout tone="info" title="New: evidence from the AI Lab, and what it does not prove">Open a playbook and use a step&rsquo;s <strong>Evidence from the AI Lab</strong> panel to create or link an experiment. Linking proves nothing: you write acceptance criteria first, then your judgement and its limits. Evidence goes stale when the step or experiment changes. A playbook&rsquo;s maturity is computed from that evidence, &ldquo;evaluated on fixtures&rdquo; is not &ldquo;works on real work&rdquo;, and none of it changes your competency levels. To record real use, start a <Link className="underline" to="/transfer">real-world task</Link>.</Callout></div>
       {importMsg && <div className="mb-4"><Callout tone={importMsg.tone} title={importMsg.tone === 'bad' ? 'Could not import' : 'Imported'} role={importMsg.tone === 'bad' ? 'alert' : 'status'}>{importMsg.text}</Callout></div>}
 
       <section aria-labelledby="mine-h" className="mb-8">

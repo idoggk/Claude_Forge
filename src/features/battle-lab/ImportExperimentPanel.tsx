@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge, Button, Callout, Card, useToast } from '@/components/ui';
-import { IMPORT_LABEL_MEANING, previewExperimentImport, type ExperimentImportResult, type ImportLabel } from '@/domain/experiments/importer';
+import { IMPORT_LABEL_MEANING, MAX_IMPORT_BYTES, previewExperimentImport, type ExperimentImportResult, type ImportLabel } from '@/domain/experiments/importer';
 import { addEvidence, saveExperiment } from '@/persistence/repo';
 import { newId } from '@/lib/ids';
 import { nowIso } from '@/lib/clock';
@@ -18,7 +18,9 @@ export function ImportExperimentPanel({ file, onClose }: { file: File; onClose: 
   const [busy, setBusy] = useState(false);
   if (!started) {
     setStarted(true);
-    void file.text().then((t) => setResult(previewExperimentImport(t, newId, nowIso())));
+    // Check the size BEFORE reading the whole file into memory.
+    if (file.size > MAX_IMPORT_BYTES) setResult({ ok: false, error: `That file is larger than ${MAX_IMPORT_BYTES / 1024 / 1024} MB.` });
+    else void file.text().then((t) => setResult(previewExperimentImport(t, newId, nowIso())));
   }
   if (!result) return <Card><p role="status" className="text-sm text-muted">Reading the file as data…</p></Card>;
   if (!result.ok) return <div className="mb-4"><Callout tone="bad" role="alert" title="Could not import that file">{result.error}<div className="mt-2"><Button size="sm" onClick={onClose}>Close</Button></div></Callout></div>;
