@@ -49,7 +49,22 @@ tests/unit  tests/e2e  docs/  .github/workflows/{ci,deploy,source-check}.yml
 
 ## 4. Verification
 
-VERIFY_RESULT
+`npm run verify` exited **0** on commit `0f200ee` in one clean run (2026-11-05, Linux, Chromium only): **ESLint clean · `tsc --noEmit` clean · Vitest 485 passed (35 files) · production build OK · Playwright 100 passed (about 10 min)**. GitHub Actions `verify` on the same commit: see the PR (#2) for the run; a run on the earlier commit `346e0c2` failed with the same six tests the full local run had failed (details below), which `0f200ee` fixes.
+
+How the full browser suite earned its keep: the first complete Round 4 run (94 passed, 6 failed) found, on CI and locally, two **real defects** and four stale expectations:
+- *Real:* the "required before" recommendation bonus grew with the number of dependent lessons, so after Lesson 1 the Mission Control recommended Context Engineering (L12, a prerequisite of many new lessons) instead of "Inside SKILL.md". Capped at three dependents; a unit test now fails without the cap.
+- *Real:* the playbook editor briefly flipped back to the previously stored copy after a save, which could mangle text typed during that moment. It now follows the stored copy only when that copy is newer than the draft (same fix in the transfer editor).
+- *Stale expectations:* catalog size 30 → 38 (two tests), the new `sd` figure in the comparison text, and a `getByText('Saved')` selector that now also matched the evidence panel's "no summaries saved yet".
+- One of my own new tests read a playbook id from the URL before the editor had opened; fixed by waiting for the editor.
+
+What the Round 4 tests prove, beyond Rounds 1-3:
+- *Lessons L19-L24*: every option explains itself, a perfect answer to every non-external item is graded correct and a blank/wrong one is not, assessments differ from practice and review items, sources are verified pages, the external check for L23 accepts only a real, repeated, baselined experiment, the retrieval fixture is deterministic and rejects stale/contradictory/irrelevant passages, the recommender names a lesson with a reason, and the foundation diagnostic stays at 17 questions.
+- *Playbook evidence* (26 unit tests + 3 browser flows): fingerprints change with meaning, not with notes; a link proves nothing until criteria, a judgement with a note, limitations and suitable evidence exist; stale links are ignored, cannot be judged, and reassessing keeps the old judgement in history; the synthetic demo never supports a step; maturity cannot reach "evaluated on fixtures" without every gated step supported and "applied to real work" never replaces it; a draft opened before a link was made cannot erase it; evaluation summaries are frozen and versioned; imports carry no evidence; a real v5 database with an R3-shaped playbook migrates to v6 with its verifications intact; none of this creates competency evidence.
+- *AI Lab* (15 unit tests + 3 browser flows): failed and abandoned attempts are counted, validity notes appear for mixed versions/contexts, no p-values appear, "all tests pass" is never a measurement and contradictions are flagged, hostile text is inert and fast to analyse, exported records import only as new experiments with user-imported provenance, older records import with safe defaults.
+- *Transfer tasks* (9 unit tests + 2 browser flows): a plan is never complete, guidance is placeholder-only, Markdown export has every section, completion creates no competency evidence, older backups import.
+- *Sources* (11 unit tests): only curated public https URLs are fetched, responses are read with a cap, changes are reported not applied, the handed-over file is shape-validated, and the workflow's fetch job holds no write permission.
+- *Accessibility and layout*: axe (serious/critical) on the new routes, lesson stages L19-L24 in both themes, the evidence panel with stale and review states open, the transfer editor and the import error, plus no horizontal overflow at 375 and 1280 px.
+
 
 ## 5. NOT verified / known limitations
 
