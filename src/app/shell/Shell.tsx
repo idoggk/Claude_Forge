@@ -41,6 +41,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/workshop', label: 'Skill Workshop', icon: 'hammer', testId: 'nav-workshop' },
       { to: '/playbooks', label: 'Workflow Playbooks', icon: 'flag', testId: 'nav-playbooks' },
+      { to: '/transfer', label: 'Real-world tasks', icon: 'target', testId: 'nav-transfer' },
     ],
   },
   { heading: 'My System', items: [{ to: '/arsenal', label: 'Arsenal & Growth', icon: 'shield', testId: 'nav-arsenal' }] },

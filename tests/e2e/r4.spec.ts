@@ -210,3 +210,75 @@ test.describe('Round 4: AI Lab quality', () => {
     await expect(page.getByTestId('run-list')).toContainText('(user-imported)');
   });
 });
+
+test.describe('Round 4: real-world transfer tasks', () => {
+  test.beforeEach(async ({ page }) => { await startApp(page); });
+
+  test('a plan is never a result: completion needs criteria, observations, evidence and a reflection, and the record exports as Markdown', async ({ page }) => {
+    await goto(page, '/academy/lesson/L20-few-shot-prompting');
+    await page.getByRole('tab', { name: /Apply/ }).click();
+    await page.getByTestId('lesson-transfer').click();
+    await expect(page).toHaveURL(/#\/transfer\?source=lesson/);
+    await expect(page.getByTestId('tt-source-id')).toHaveValue('L20-few-shot-prompting');
+    await page.getByTestId('tt-title').fill('Few-shot examples for my commit-message prompt');
+    await page.getByTestId('tt-kind').selectOption('prompt-technique');
+    await page.getByTestId('tt-create').click();
+    await expect(page.getByTestId('transfer-editor')).toBeVisible();
+    // placeholders guide but never pre-fill
+    await expect(page.getByTestId('tt-f-problem')).toHaveValue('');
+    await expect(page.getByTestId('tt-f-problem')).toHaveAttribute('placeholder', /recurring task/);
+    // a full plan is still not complete
+    await page.getByTestId('tt-f-target').fill('my-side-project (private)');
+    await page.getByTestId('tt-f-problem').fill('Commit messages come out in five different styles.');
+    await page.getByTestId('tt-f-current').fill('A one-line instruction with no examples.');
+    await page.getByTestId('tt-f-proposed').fill('Add three examples and one deliberately wrong example labelled as such.');
+    await page.getByTestId('tt-f-benefit').fill('Fewer rewrites.');
+    await page.getByTestId('tt-f-criteria').fill('Nine of ten past diffs give the house style with no retry.');
+    await page.getByTestId('tt-save').click();
+    await expect(page.getByText('Unsaved changes')).toHaveCount(0);
+    await expect(page.getByTestId('tt-complete')).toBeDisabled();
+    await expect(page.getByTestId('tt-completion')).toContainText('Observations recorded');
+    // observations + evidence + reflection unlock it
+    await page.getByTestId('tt-f-observations').fill('On ten past diffs, seven matched the style. Two copied the wrong example. One was fine but long.');
+    await page.getByTestId('tt-ev-text').fill('Commit abc1234 contains the updated prompt; results table in my notes.');
+    await page.getByTestId('tt-ev-add').click();
+    await expect(page.getByTestId('tt-complete')).toBeDisabled(); // still no reflection
+    await page.getByTestId('tt-f-reflection').fill('Seven of ten is below my bar. The wrong example leaked into two outputs, so I would drop it or label it harder.');
+    await page.getByTestId('tt-f-next').fill('Re-run with the negative example removed on a different ten diffs.');
+    await page.getByTestId('tt-complete').click();
+    await expect(page.getByTestId('tt-completion')).toContainText('Marked complete');
+    await expect(page.getByTestId('tt-completion')).toContainText('your own declaration');
+    await expect(page.getByTestId('tt-completion')).toContainText('does not change any competency level');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.getByTestId('tt-export').click()]);
+    const md = await readFile((await dl.path())!, 'utf8');
+    for (const h of ['## Problem', '## Current workflow', '## Proposed improved workflow', '## Expected benefit', '## Verification criteria', '## Risks', '## Observations', '## Evidence (author-described)', '## Reflection', '## Next improvement']) expect(md).toContain(h);
+    expect(md).toContain('Claude Forge did not read the target project');
+    // it survives a reload
+    await page.reload();
+    await expect(page.getByTestId('tt-f-title')).toHaveValue('Few-shot examples for my commit-message prompt');
+    await expect(page.getByTestId('tt-completion')).toContainText('Marked complete');
+  });
+
+  test('a playbook-sourced task can record a self-reported real-work result on the playbook, which raises maturity to "Applied to real work" without touching fixture evidence', async ({ page }) => {
+    await goto(page, '/playbooks');
+    await page.getByTestId('use-seed-release-notes').click();
+    const pbUrl = page.url();
+    const pbId = pbUrl.split('/').pop()!;
+    await goto(page, `/transfer?source=playbook&id=${pbId}`);
+    await page.getByTestId('tt-title').fill('Use the release-notes playbook on the next real release');
+    await page.getByTestId('tt-kind').selectOption('automation');
+    await page.getByTestId('tt-create').click();
+    await page.getByTestId('tt-f-criteria').fill('Every PR number appears exactly once in the draft, checked by the script.');
+    await page.getByTestId('tt-f-observations').fill('Ran steps 1 to 4 on the 1.4 release. The coverage script found two missing PR numbers and the retry fixed one.');
+    await page.getByTestId('tt-ev-text').fill('Release 1.4 draft and coverage script output kept in my notes.');
+    await page.getByTestId('tt-ev-add').click();
+    await page.getByTestId('tt-f-reflection').fill('The gate caught a real omission. One PR needed a manual edit, so the retry limit mattered.');
+    await page.getByTestId('tt-complete').click();
+    await expect(page.getByTestId('tt-completion')).toContainText('Marked complete');
+    await page.getByTestId('tt-push-result').click();
+    await expect(page.getByTestId('tt-push-result')).toContainText('Recorded');
+    await goto(page, `/playbooks/${pbId}`);
+    await expect(page.getByTestId('maturity-card')).toContainText('Applied to real work');
+    await expect(page.getByTestId('maturity-card')).toContainText('Fixture evaluation is incomplete');
+  });
+});

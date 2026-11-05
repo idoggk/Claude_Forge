@@ -599,6 +599,21 @@ export async function deleteTransferTask(id: string): Promise<void> {
   await getDb().transferTasks.delete(id);
 }
 
+/**
+ * Add a real-work result to a playbook's observed results (self-reported). This is the only way a transfer task touches a
+ * playbook; it does not change the playbook's content or version, and does not verify any step.
+ */
+export async function recordPlaybookRealWorldResult(playbookId: string, outcome: 'worked' | 'partly' | 'failed' | 'unknown', text: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const db = getDb();
+  return db.transaction('rw', db.playbooks, async () => {
+    const pb = await db.playbooks.get(playbookId);
+    if (!pb) return { ok: false as const, reason: 'The playbook no longer exists.' };
+    const next = PlaybookSchema.parse({ ...pb, observedResults: [...pb.observedResults, { id: newId('obs'), at: nowIso(), outcome, text: text.trim().slice(0, 2000) }].slice(-50), updatedAt: nowIso() });
+    await db.playbooks.put(next);
+    return { ok: true as const };
+  });
+}
+
 /** Mark complete only when observations, evidence and a reflection exist. Returns the problems when it cannot. */
 export async function completeTransferTask(id: string): Promise<{ ok: true } | { ok: false; problems: string[] }> {
   const db = getDb();
