@@ -5,7 +5,8 @@ import { DIFF_LINES, DIFF_TARGETS, SEEDED_ISSUES, DISTRACTOR_ISSUES, GATES, INTE
 export const L09: Lesson = {
   id: 'L09-reviewer-vs-builder',
   version: 1,
-  track: 'E',
+  track: 'agents',
+  alsoIn: ['claude-code'],
   order: 9,
   title: 'Reviewer vs Builder',
   subtitle: 'Judge a multi-agent handoff: what was claimed, what was verified, what must gate the merge',

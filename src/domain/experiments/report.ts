@@ -1,5 +1,5 @@
 import type { Evidence, Experiment } from './model';
-import { CONDITION_KIND_LABELS, METRICS } from './model';
+import { CONDITION_KIND_LABELS, EXPERIMENT_TYPE_LABELS, METRICS } from './model';
 import type { Comparison } from './compare';
 import { compareExperiment } from './compare';
 
@@ -34,6 +34,7 @@ export function buildExperimentReport(exp: Experiment, evidence: Evidence[], com
   L.push('> Produced by Claude Forge from evidence the user recorded manually. Claude Forge did not run Claude and does not verify any value. Unknown values are shown as "unknown" and are never treated as zero.', '');
   L.push('## Question', '', exp.problem || '_not stated_', '', '## Hypothesis (written before the runs)', '', exp.hypothesis || '_not stated_', '');
   L.push('## Setup', '');
+  L.push(`- Compares: ${EXPERIMENT_TYPE_LABELS[exp.experimentType]}${exp.subject ? ` - ${exp.subject}` : ''}`);
   L.push(`- Fixture: ${exp.fixture.label} (id \`${exp.fixture.id}\`, version ${exp.fixture.version || 'unknown'}, hash ${exp.fixture.hash ? '`' + exp.fixture.hash + '`' : 'not recorded'})`);
   L.push(`- Planned runs per condition: ${exp.plannedRuns}`);
   L.push(`- Environment: Claude Code ${exp.environment.claudeCodeVersion || 'version unknown'}, model ${exp.environment.model || 'unknown'}, OS ${exp.environment.os || 'unknown'}${exp.environment.settings ? ', settings: ' + exp.environment.settings : ''}`);
@@ -42,7 +43,7 @@ export function buildExperimentReport(exp: Experiment, evidence: Evidence[], com
   if (exp.successCriteria.length) exp.successCriteria.forEach((c) => L.push(`- ${c}`));
   else L.push('- _none defined in advance_');
   L.push('', '**Prompt used for every condition**', '', '```text', exp.prompt || '(not recorded)', '```', '');
-  L.push('## Conditions', '', '| Label | Kind | Skill | Version | What differs |', '|---|---|---|---|---|');
+  L.push('## Conditions', '', '| Label | Kind | Name | Version | What differs |', '|---|---|---|---|---|');
   for (const c of exp.conditions) L.push(`| ${cell(c.label)} | ${CONDITION_KIND_LABELS[c.kind]} | ${cell(c.skillName) || '-'} | ${cell(c.skillVersion) || '-'} | ${cell(c.difference) || '-'} |`);
   L.push('', '## Evidence sufficiency', '', `**${comparison.sufficiency.headline}**`, '');
   for (const r of comparison.sufficiency.reasons) L.push(`- ${r}`);

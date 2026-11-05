@@ -229,7 +229,7 @@ Original code written for Claude Forge. Not from any production game.
 
 - \`board.ts\` contains a seeded bug. The tests are expected to FAIL on the original files.
 - Run: \`npm install\` then \`npm test\`.
-- Record the pass/fail counts in the Battle Lab, or export a JSON report:
+- Record the pass/fail counts in the AI Lab, or export a JSON report:
   \`npx vitest run --reporter=json --outputFile=report.json\` and upload it.
 - Do not edit \`cases.ts\` or \`board.test.ts\` when solving; that would invalidate the comparison.
 - \`MANIFEST.sha256\` lists each file's SHA-256. The fixture hash shown in Forge is the SHA-256 of MANIFEST.sha256 itself.

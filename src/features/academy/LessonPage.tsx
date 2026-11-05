@@ -12,6 +12,7 @@ import { formatDateKey } from '@/lib/clock';
 import { getDb } from '@/persistence/db';
 import { ExerciseRunner } from './ExerciseRunner';
 import { WIDGETS } from './widgets';
+import { PredictionGate } from './PredictionGate';
 import type { Lesson } from '@/domain/curriculum/types';
 
 type Stage = 'learn' | 'practice' | 'assess' | 'apply';
@@ -81,7 +82,7 @@ export default function LessonPage() {
   return (
     <article>
       <PageHeader
-        eyebrow={`Track ${track.id} · ${track.title}`}
+        eyebrow={`Track ${track.order} · ${track.title}`}
         title={lesson.title}
         subtitle={lesson.subtitle}
         actions={<><Badge>{lesson.effortMinutes} min</Badge><Badge tone="teal">v{lesson.version}</Badge></>}
@@ -123,7 +124,7 @@ export default function LessonPage() {
           {lesson.segments.map((s, i) => (
             <Card key={s.id}>
               <h2 className="mb-2 text-lg font-semibold"><span className="mr-2 text-accent-text">{i + 1}.</span>{s.title}</h2>
-              <Markdown>{s.body}</Markdown>
+              {s.prediction ? <PredictionGate prediction={s.prediction} segmentId={s.id}><Markdown>{s.body}</Markdown></PredictionGate> : <Markdown>{s.body}</Markdown>}
             </Card>
           ))}
           <Card>

@@ -1,5 +1,7 @@
 import type { Plugin } from 'vite';
 import { createHash } from 'node:crypto';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Minimal offline support without a runtime dependency.
@@ -16,7 +18,10 @@ export function forgeServiceWorker(): Plugin {
     apply: 'build',
     generateBundle(_options, bundle) {
       const files = Object.keys(bundle).filter((f) => f !== 'sw.js');
-      const extra = ['./', 'manifest.webmanifest', 'icon.svg'];
+      // Public (non-bundled) artwork is precached too, so illustrations also appear offline.
+      const artDir = join(process.cwd(), 'public', 'assets', 'forge');
+      const art = existsSync(artDir) ? readdirSync(artDir).filter((f) => f.endsWith('.svg')).map((f) => `assets/forge/${f}`) : [];
+      const extra = ['./', 'manifest.webmanifest', 'icon.svg', ...art];
       const urls = Array.from(new Set([...extra, ...files])).sort();
       const hash = createHash('sha256').update(urls.join('|')).digest('hex').slice(0, 12);
       const hashes = files

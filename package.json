@@ -2,7 +2,7 @@
   "name": "claude-forge",
   "private": true,
   "version": "0.1.0",
-  "description": "Claude Forge \u2014 a static, offline-capable academy for mastering Claude Code Skills.",
+  "description": "Claude Forge — a static, offline-capable academy for mastering Claude Code Skills.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -23,6 +23,7 @@
     "react-dom": "^19.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.5",
+    "remark-gfm": "^4.0.1",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },

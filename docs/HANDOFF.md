@@ -1,113 +1,109 @@
-# Claude Forge — handoff summary (state as of 2026-11-05, after Development Round 2)
+# Claude Forge — handoff summary (state as of 2026-11-05, after Development Round 3 + visual assets)
 
 Paste this whole document into a new conversation. It describes what exists, what was verified, what is NOT verified, and what to improve next.
 
 ## 1. What it is
 
-**Claude Forge** is a static, offline-capable learning app ("personal AI engineering academy") that teaches an experienced developer to discover, evaluate, write, test and measure **Claude Code Skills**, using original One More Merge–inspired game-dev exercises (merge-and-shoot Phaser/TypeScript game; the app never assumes access to the real repo).
+**Claude Forge** is a static, offline-capable learning app — a *personal AI Mastery Academy* — that teaches an experienced developer **judgment about AI**: which approach fits a problem (prompt, workflow, Skill, agent, tool/MCP, hook, script, conventional software, a person, or nothing), how to specify tasks, why agents fail, how to integrate tools safely, how to build reliable workflows, how to evaluate claims honestly, and how to discover and assess new tools. It began (Rounds 1–2) as an academy for Claude Code Skills; that remains its deepest hands-on track (Skill Workshop, Skill Improvement Loop, AI Lab).
 
 Learning loop: Discover → Understand → Practice → Experiment → Apply → Measure → Master.
 
 Hard product rules (must be preserved):
-- No backend, account, analytics, paid API or Claude API key. Everything is local (IndexedDB). The app never runs Claude.
-- Never present synthetic data as real telemetry or an AI output. Manual metrics are labelled self-reported / user-imported, never "verified".
-- Unknown stays unknown (never coerced to 0; no invented URLs, install commands, licences, dates, stats, benchmarks).
-- Never execute third-party Skill scripts or user JavaScript. Never install anything. Render third-party text as safe data.
-- Mastery only from evidence (unseen assessments, field evidence), never from clicking "used".
-- Installed ≠ verified. Inspected, approved, installed(declared) are separate facts.
+- No backend, account, analytics, paid API or Claude API key. Everything is local (IndexedDB). The app never runs Claude, never runs a playbook, never installs or executes anything.
+- Never present synthetic or authored data as real telemetry or an AI output. Manual metrics are labelled self-reported / user-imported, never "verified".
+- Unknown stays unknown (never coerced to 0; no invented URLs, install commands, licences, dates, prices, popularity or benchmarks). Star counts appear only "as displayed" with a date and are never used to rank.
+- Third-party and imported content is untrusted data: rendered as text, never executed. Imported playbooks have other people's "verified" claims reset.
+- Mastery only from evidence (unseen assessments, field evidence). Goals, practice runs, the diagnostic and playbooks never raise a competency level.
+- Planned topics are never shown as available.
 
 ## 2. Stack and location
 
-React 19, TypeScript 5.9 (strict), Vite 8, Tailwind 4, React Router 7 (hash routing, `base: './'`), Dexie 4 (IndexedDB), Zod 4, `yaml`, JSZip, react-markdown, Vitest 5 + Testing Library + jsdom + fake-indexeddb, Playwright 1.63 + axe-core. Node ≥ 22.12 required (Vitest 5). No ESLint configured (strict `tsc` is the static gate). A custom ~40-line service-worker build plugin (`scripts/sw-plugin.ts`) replaced `vite-plugin-pwa` (its workbox toolchain caused 6 audit findings).
+React 19, TypeScript 5.9 (strict), Vite 8 (Node ≥ 22.12), Tailwind 4, React Router 7 (hash routing, `base: './'`), Dexie 4 (IndexedDB, schema v5), Zod 4, `yaml`, JSZip, react-markdown + remark-gfm, Vitest 5 + Testing Library + fake-indexeddb, Playwright (Chromium) + axe-core, ESLint 9.
 
-Project: `/home/user/claude-forge` (git-initialised, everything staged, NOT committed, no remote). Source zip was delivered separately. ~12,100 lines in `src`, ~2,800 in `tests`, 132 files.
+Repository: `https://github.com/idoggk/Claude_Forge` (Round 1–2 on `main`; Round 3 on branch `round-3-ai-mastery`, draft PR). Local working copy used for Round 3: `/home/user/claude_forge`.
 
 ```
-src/app          shell, router, providers (data/theme), error boundary
-src/features     academy · mission · onboarding · discovery · workshop · battle-lab · arsenal · growth · settings · search · more
-src/domain       pure tested logic: curriculum types, assessment (grade, calibration, external checks),
-                 mastery (competency, review, recommend), skills (generate/validate/export/trigger/paths/fields),
-                 experiments (model/compare/report/testReport/demo), catalog (schema/search)
-src/content      lessons (l01–l10 + review-extra), catalog/entries.ts
-src/fixtures     merge-cascade, economy, review (handoff), skill-autopsy, index.ts (pack builder)
-src/persistence  db.ts (versioned), schemas.ts (zod), repo.ts (transactions), backup.ts (import/export), useLive.ts
-src/components/ui accessible primitives
-tests/unit  tests/e2e  docs/  .github/workflows/{deploy,ci}.yml
+src/app          shell (grouped nav), router, providers, error boundary
+src/features     academy (+ Opportunity Finder) · mission · onboarding · explore (Capability Map, goals) · playbooks · discovery ·
+                 workshop · battle-lab (= AI Lab) · loop · arsenal · growth (+ mastery profile) · settings · search · more
+src/domain       curriculum (types, 17 competencies, 12 tracks, 13 profile areas) · assessment (grade incl. `fields`, calibration,
+                 external checks) · mastery (competency, review, recommend, profile) · capability · goals · playbook · finder ·
+                 skills · experiments (generalised) · catalog · loop
+src/content      lessons l01–l18 · misconceptions · diagnostic (17 q) · missions · catalog (entries + entries-r3) ·
+                 capability/map · playbook/seeds · lab/templates · finder/scenarios · sources/registry.json
+src/persistence  db.ts (v5), schemas, repo, backup, useLive
+src/components/ui accessible primitives + Illustration
+public/assets/forge  nine decorative SVGs (see docs/ASSETS.md)
+scripts          sw-plugin.ts, check-sources.mjs (optional, read-only)
+tests/unit  tests/e2e  docs/  .github/workflows/{ci,deploy,source-check}.yml
 ```
-Docs: README, docs/PRODUCT.md (learning model + outcome→feature map), docs/ARCHITECTURE.md (data model, security table), docs/CONTENT.md (authoring rules + source-verification log), docs/ROADMAP.md.
 
-## 3. What was built
+## 3. What exists
 
-**Mission Control** — one primary "next mission" with explainable reasons (deterministic scoring: due reviews first, then curriculum order, prerequisites, failed assessments naming missed concepts, unlocking value, user interests, game relevance). Also active track, review queue, competency bars, recent experiments, Arsenal summary, quick links.
+**Navigation** (six areas): Mission Control · Learn (Academy, Improvement Loop) · Explore (Capability Map, Discovery Hub) · Lab (AI Lab) · Build (Skill Workshop, Workflow Playbooks) · My System (Arsenal & Growth). Mobile bottom bar: Mission, Learn, Explore, Lab, More. Global search covers lessons, capabilities, catalog, Skills, playbooks and experiments.
 
-**Academy** — 5 tracks, **10 lessons**: L01 Skill or Tool?; L02 Inside SKILL.md; L03 Trigger Dojo; L04 Skill Autopsy; L05 Your First Custom Skill; L06 Debug a Merge-Chain Failure; L07 Economy Inflation Investigator; L08 The Battle Lab; L09 Reviewer vs Builder; L10 Forge a Production Skill (capstone). Each has problem/why/objectives, ≥3 segments, guided activity (+ interactive widget), independent assessment, failure modes, application + field-evidence prompt, review pool of 5, doc sources. Item types: single, multi, classify, order, numeric (can be computed from fixtures), keyword short-answer, flag-lines, reflect (self-assessed, never scored), external (verified from saved Workshop/Battle Lab data). Every option has a "why". Lesson versions are tracked; old attempts are kept but don't count toward current mastery.
+**Academy — 12 tracks, 18 lessons.** Available vs planned is explicit (44 topics are planned and say so). Lessons 1–10 are the Round 1–2 Skills curriculum (track slugs remapped, content/grading unchanged except wording "Battle Lab" → "AI Lab"). Lessons 11–18 are new (each: problem → prediction-before-explanation → concepts → worked example → guided practice → independent assessment with at least one mandatory-check where safety-critical → application → 8-item review pool → sources):
+11 Choose the Right AI Approach · 12 Context Engineering · 13 Why AI Agents Fail (failure autopsies on fabricated traces) · 14 MCP or Not? · 15 Build a Reliable AI Workflow (verifies a saved Playbook) · 16 AI Evaluation Fundamentals (verifies a real AI Lab experiment) · 17 Efficient AI-Assisted Development · 18 Discover and Evaluate an AI Tool.
+New item kind `fields` (labelled written answers checked for required ideas by keyword groups — deliberately narrow, always paired with a self-assessment `reflect` rubric). New `Segment.prediction`. Diagnostic now 17 questions (one per competency; a hint only). 8 new misconceptions with targeted feedback.
 
-**Mastery rules** — levels 0 Unseen, 1 Recognizes, 2 Guided (≥70% concept score), 3 Independent (≥75% on an unseen hint-free attempt: first assessment attempt on this version or a review-pool item, no missed critical item), 4 Field-proven (L3 + self-reported field evidence). Missed critical item caps at L2 and can be revoked by a later unseen miss. Retakes count as guided. Duplicate submissions are idempotent (attempt ID created on screen open). Confidence (1–5 → ~20/40/60/80/95%) captured before assessments; calibration verdict ±25 points. Spaced review ladder 1/3/7/14 days on local calendar dates; Settings has a visible "clock offset" for testing.
+**Mastery** unchanged in rules (L0–L4; L3 needs an unseen hint-free attempt with no missed critical item; L4 needs self-reported field evidence). **Personal AI Mastery Profile** (Growth page): 13 areas; state follows the weakest competency in the area; areas with no lessons are "planned" with no level; each area gives evidence counts and an explained next step.
 
-**Discovery Hub** — 11 entries (2 official: anthropics/skills, skill-creator plugin; 5 community: obra/superpowers, getsentry/skills, vercel-labs/agent-skills, microsoft/playwright-mcp, modelcontextprotocol/servers; 1 candidate: anthropics/claude-code repo; 3 proposed custom Skills). Search, filters (tier, type, game relevance, security status, freshness, Arsenal), detail pages with all 12 required sections, provenance, quoted install commands with source URL + caveats, user-added local unverified candidates.
+**Recommendations** stay deterministic and explained: due reviews first; then prerequisites, failed attempts, learning goals (+30 per goal, reason shown), practice gaps from the Opportunity Finder (+10), interests, diagnostic hints, game relevance. No AI coach.
 
-**Skill Workshop** — draft editor (basics, Claude-Code-only vs portable fields, instructions, resources, scenarios + Trigger Dojo drill with lexical overlap meter, validate, preview, manual live-test log, export & revision snapshots, per-Skill Arsenal record). Validator: YAML (core schema, alias-bomb safe), name format, description quality heuristics, listing-cap math, unreachable invocation, unknown/portability fields, contradictions, missing/unused references, secrets (export-blocking), suspicious patterns (pipe-to-shell, rm -rf, injection phrases, secrecy, credential paths, hidden Unicode, hidden HTML comments, network allowed-tools). Safe ZIP export (`<name>/SKILL.md` + text resources; strict path validator). Paste-a-SKILL.md advisory scanner. Test-plan Markdown download.
+**AI Capability Map** (`/explore`): 19 capabilities, 10 goal-phrased outcomes ("I want to…"), search, typed relations, each card with the deciding question, use/avoid/risks and links to lessons, catalog entries, playbook templates and AI Lab templates (unit-tested: no dead ends, every reference resolves). **Learning goals** (max 5 active) steer recommendations; "achieved" is the learner's own declaration with a note.
 
-**Battle Lab** — experiment creation (problem, hypothesis, fixture + SHA-256 manifest hash, success criteria, prompt, environment, conditions with explicit differences, planned measures, runs). Run form with test counts (typed or imported vitest/jest JSON as data), checklist fixtures, measured values (blank = unknown), 4-criterion rubric (locked at first run), pasted/uploaded text evidence with provenance. Comparison: per-measure mean/range/n/unknown, direction-aware, overlap/separated/one-sided readings, rubric subtotal over commonly-recorded criteria only, sufficiency levels (none/anecdotal/weak/limited), integrity notes. JSON + Markdown export. Read-only synthetic demo (clearly labelled), clonable without data. Mobile stacks comparison cards.
+**Discovery Hub**: 23 entries (20 source-read, 3 proposed custom Skills) across skills, plugins, MCP servers, agent frameworks, an AI coding tool, models, an automation tool, techniques, workflow patterns, developer integrations; provenance and unknowns shown; `capabilityIds` link to the map. **Source registry** (`content/sources/registry.json`) records every source and four *unreachable* hosts. Optional `scripts/check-sources.mjs` + weekly `source-check.yml` open a *draft PR* of status data only.
 
-**Arsenal & Growth** — statuses interested/evaluating/using/practicing/mastered/rejected/archived; trust flags; usefulness; linked experiments; project relevance; notes; "Mastered" gated on a rating + ≥1 linked experiment. Growth: competency levels with evidence/history/stale-version notes, review queue, calibration history, attempt history, field-evidence form.
+**Workflow Playbooks** (`/playbooks`): create/edit/duplicate/delete, six seeded exemplars (all steps start "planned"; they pass the same reliability checklist Lesson 15 grades), steps with verification gate / failure handling / human-approval flag / status (a step cannot be "verified" without a note saying what verified it), links to Skills and catalog entries, observed results (self-reported), version history (30), Markdown + JSON export, validated import (verification claims reset).
 
-**Settings** — theme (dark default, light), motion, export/import with preview + merge/replace + auto pre-import backup, persistence request, delete-everything (typed confirm), time-travel clock, privacy/limitations/sources.
+**AI Lab** (`/battle-lab`): experiments for Skills, prompts, workflows, agent setups, tool configurations or models (you supply results); six templates; baseline kinds generalised; reports state what is compared. Legacy Skill experiments and the Improvement Loop are unchanged.
 
-**Fixtures** (original, synthetic, labelled): (1) 5×5 merge-3 board with seeded bug (`pickMergeCells` consumes whole group) — value-conservation invariant, 8 hand-derived cases, seeded playthroughs, 4 candidate patches (1 correct); (2) "Shardfall" economy sim (compound vs linear power coupling; affordability/hoard/sink-coverage metrics; gate-bound surplus ≠ inflation); (3) fabricated Builder/Reviewer/Integrator handoff RB-17 with 7 seeded issues, 4 distractors, 12 gates, ordered steps, verdicts. Packs download as ZIPs with MANIFEST.sha256 and no answer keys.
+**AI Opportunity Finder** (`/academy/opportunity-finder`): 12 invented scenarios (conventional software, a person and "do nothing" are each the best answer somewhere), best = 1 / defensible = 0.5, runs stored in `activityRuns` (never levels).
 
-**Platform** — HashRouter, lazy routes, error boundary, skip link + focus management, Ctrl/Cmd+K search, mobile bottom nav + "More", safe-area padding, reduced motion, offline service worker (`ignoreVary` needed), PWA manifest, GitHub Pages + CI workflows (written, not executed).
+**Visual assets**: nine supplied SVGs, decorative only — see `docs/ASSETS.md`.
 
+## 4. Verification
 
-### Round 2 additions (implemented and tested)
+`npm run verify` exited **0** in one clean, final run (2026-11-05): **ESLint clean · `tsc --noEmit` clean · Vitest 398 passed (29 files) · production build OK · Playwright 88 passed (Chromium, ~7.9 min)** · `npm audit`: 0 vulnerabilities.
 
-- **Skill Improvement Loop** (`/loop`, `features/loop`, `domain/loop`, `persistence/loopRepo.ts`, `content/missions`): eight steps (Mission → Baseline → Build → Test → Evaluate → Improve → Held-out → Graduate). Step state is derived from recorded data. v1 and v2 are frozen revision snapshots; held-out truth is hidden until every held-out run is recorded, then the runs are locked. Output: Markdown + JSON Skill Improvement Report and a final Skill ZIP. It reuses Battle Lab experiments (`loopId`, `phase`, `runsLockedAt`; runs gained `caseId`, `verdict`, `gradedTruth`, `skillActivated`).
-- **Four missions**, all with dev + held-out packs, a starter Skill that is valid but deliberately imperfect, a five-item checklist, a transfer prompt, and deterministic ground truth: Economy Balance Reviewer (flagship; Shardfall simulator + published design targets), **Phaser Performance Investigator** (Embergate work-counting cost model - counted units, never FPS), **Deterministic Merge Simulation Reviewer** (a toy seeded merge simulation run under perturbed `Math.random` / `Date.now` / input order; trace hashes compared with a golden hash), **Multi-Agent Integration Auditor** (fabricated Builder/Reviewer/CI/main-state packets judged by a published merge policy, including a false alarm).
-- **Learning**: placement diagnostic (`/academy/diagnostic`, store `diagnostics`, never touches mastery), review pools of 9 items with difficulty tags, deterministic review planner (mistake-/misconception-focused, difficulty by box, rotation, interleaving) with visible reasons, 16 authored misconceptions with corrective questions, per-attempt option shuffling, recommender uses diagnostic gaps / recent misconceptions / offers the loop once L05 + L07 are passed.
-- **Workshop**: version compare (line diff), safe inert ZIP import, trigger tuning (expected vs manually recorded, stale-wording detection, FP/FN only where measured), static quality review with an evidence-only maturity ladder (never ticks field-proven).
-- **Tooling**: ESLint (recommended + react-hooks) in `verify` and CI (with an `overrides` pin for a patched `minimatch`, keeping `npm audit` at 0), CI concurrency + explicit build, optional WebKit smoke project (never run - see limitations).
+What the Round 3 tests prove, beyond Rounds 1–2:
+- *Content integrity*: 18 lessons with stable ids; every option explains itself (≥ 12 chars for new content); a perfect answer to every non-external item is graded correct and a blank/wrong one is not (including the new `fields` kind); each new lesson has a prediction, a worked example, ≥ 4 practice items, an 8-item review pool, sources and an application; the diagnostic covers all 17 competencies once.
+- *Capability Map*: no dead-end cards; every lesson, catalog entry, playbook template, lab template, area, outcome and relation resolves; every available lesson is reachable; no popularity ranking text.
+- *Catalog and sources*: ten entity types present; star counts only "as displayed" with a date; every catalog URL is in the source registry; unreachable hosts are never used by an entry.
+- *Playbooks*: seeds start planned, pass the Lesson 15 checklist, and use real capability ids; "verified" needs a note; import rejects bad/foreign/newer files and resets other people's verification; hostile text stays inert; version history is capped; the Lesson 15 external check reads saved playbooks.
+- *Evaluation honesty*: non-Skill experiments accept baseline/prompt/workflow/model kinds, unknown stays unknown, overlapping ranges are not called a win, Lesson 16's check ignores unknown values.
+- *Learning engine*: goals raise priority with a visible reason and never create evidence; practice runs feed hints only; the Mastery Profile follows the weakest competency and marks areas without lessons as planned.
+- *Persistence*: a real v4 database is upgraded to v5 with every record intact (old experiments become Skill experiments); an R2 backup with none of the new stores imports; R3 data round-trips; an invalid record is reported, never silently dropped; goal limits.
+- *End to end*: grouped navigation, outcome-first exploration and a goal steering Mission Control, prediction gate, a lesson passed through real `fields`/flag-lines UI, the playbook lifecycle (copy, verify-needs-note, version history, Markdown/JSON export, hostile import), a full Opportunity Finder run, AI Lab templates, Discovery filters, axe on the new routes in both themes, no horizontal overflow at 375/1280 px, and the visual-asset checks (decorative alt, no art on dense pages, hidden art not fetched on phones, app usable with images blocked, dark-theme-only backdrop).
 
-## 4. Verification (final run, after Round 2)
+Real bugs found by these tests/reviews and fixed during Round 3: the demo clone leaking its "synthetic" subject into a real experiment; the Opportunity Finder re-picking its scenarios when a run was saved (the summary would have described different scenarios); stale list fields after restoring a playbook version; brittle Academy track chip labels; three lessons missing an explicit worked example; 68 option explanations that were just "Correct." or "No."
 
-`npm run verify` exited 0 in one clean run: **ESLint clean · `tsc --noEmit` clean · Vitest 334 passed (21 files) · production build OK (main chunk ~118 kB gz, Loop page ~15 kB gz, lazy fixtures chunk ~30 kB gz) · Playwright 73 passed (Chromium, ~6.7 min) · `npm audit`: 0 vulnerabilities.**
+## 5. NOT verified / known limitations
 
-What the Round 2 tests prove (beyond the Round 1 suite): per-mission ground-truth margins (verdicts safely away from thresholds), pack CLI output identical to the in-app computation, no answers/causes/held-out material inside any pack, a full loop lifecycle for every registered mission (start → baseline → freeze → test → grade → improve → held-out reveal + lock → graduate → report), migrations v2→v3 and v3→v4 from real older databases, backup round-trips including `loops` and `diagnostics`, hostile-ZIP import cases (traversal, symlink, zip bomb, binary, several Skills, secrets, scripts kept inert), tuning rates only from recorded data with stale/untested rows excluded, the maturity ladder never ticking field-proven, the diagnostic never touching attempts/competencies, review planning (rotation, difficulty by box, mistake/misconception focus, interleaving only from passed lessons), and axe (serious/critical = 0) on the new screens in both themes plus no-horizontal-overflow at 375/390/768/1280.
-
-Real bugs found by Round 2 tests and fixed: a reflection-field save that overwrote text typed in the next field (the Graduate button never enabled); the diagnostic result vanishing because a history-length `key` remounted the runner; the loop auto-jumping away from results you needed to read (now only recording steps auto-advance); a Dexie `Premature commit` from awaiting WebCrypto inside a transaction; the held-out reveal reading a table outside its transaction scope; an unlabeled hidden file input (axe critical); a correct option mistakenly tagged as a misconception; precision reported as 100% with no should-not scenario observed (now unmeasured).
-
-Earlier (Round 1) findings are in git history of this file: onboarding race, assessment results vanishing, service worker `Vary: Origin`, optimistic profile after "delete all", fieldset/select mobile layout.
-
-## 5. NOT verified / known limitations (be honest about these)
-
-- Never tested on a real iPhone, in real Safari/WebKit, or on Windows; only Chromium on Linux (phone-width emulation). **WebKit could not be downloaded in the build environment** (egress blocked), so the optional WebKit smoke project (`PW_WEBKIT=1`, `tests/e2e/smoke-webkit.spec.ts`) has never been run. Windows commands are documented, untried.
-- GitHub Actions workflows have never been executed (CI now also runs lint and an explicit build; the deploy workflow was not changed beyond lint). Action versions (checkout@v4, setup-node@v4, configure-pages@v5, upload-pages-artifact@v3, deploy-pages@v4, upload-artifact@v4) come from memory. Nothing here claims a deployment works.
-- **The Improvement Loop's ground truth is synthetic.** Economy: a simulation + published targets. Performance: a work-counting cost model (counted units, never FPS or frame time). Determinism: a toy simulation under four perturbed environments (shows hashes agree in those environments, not in every environment). Integration: a policy applied to fabricated packets. A graduated loop means "tested on a fixture", never "field-proven".
-- Loop verdicts, checklist ticks, activation and effort are **self-reported**: Forge cannot see Claude's answers. One run per case and condition (small n); the report says so. Nobody has run a loop with real Claude Code yet, so starter Skills may turn out too easy or too hard; case difficulty is untested on real learners.
-- The placement diagnostic has one question per competency: a hint, not a measurement.
-- Review planning rules, difficulty tags (1-3) and the 9-item pools are authored judgement, not tuned on real data. Lesson 6's seeded playthroughs are still not very discriminating.
-- Catalog facts were read 2026-11-05 via an automated fetch-and-summarize tool (not cloning); no individual SKILL.md, script or LICENSE file inspected; commit dates/releases/stars-as-evidence are unknown or merely "as displayed". The catalog is a committed snapshot.
-- `agentskills.io/specification` was unreachable; portable-format limits (name ≤64 lowercase/hyphen, description ≤1024, compatibility ≤500) are not re-verified against the spec.
-- Docs-derived claims (Skills frontmatter, `/skills`, `/reload-skills`, listing cap 1,536, etc.) were accurate as read on 2026-11-05 and may drift.
-- The Trigger Dojo overlap meter and the tuning suggestions are lexical heuristics, not a model of Claude. Live testing is manual.
-- Markdown rendering has no GFM extension, so tables in mission text are not supported (use lists).
-- Workshop ZIP import limits (3 MB archive, 300 entries, 200 KB per file, 1.5 MB total, ratio 100) are conservative guesses. JSZip's declared sizes are trusted for pre-checks (JSZip itself verifies the size after decompression).
-- Progress does not sync between devices; Safari may evict site data if unused — mitigated only by export/persist request.
-- Unused-but-persisted field: `Experiment.skillLinks` (always empty).
+- **Four research hosts were unreachable** (`modelcontextprotocol.io`, `openai.github.io`, `genai.owasp.org`, `ai.google.dev`; DNS failure). Nothing from them is claimed. Gemini/Google and OWASP coverage is a gap. The MCP specification repository page was read, not the rendered docs.
+- Catalog facts were read 2026-11-05 through an automated fetch-and-summarise step; release names and commit dates were not shown on any GitHub page read (unknown). The models entry shows prices only "as displayed" on the overview that day; the Pricing page was not read. The Agent SDK entry covers only the overview page.
+- Lessons 11–18, the Capability Map, playbook seeds, Opportunity Finder scenarios and lab templates are **authored by Forge** from cited sources. Claims about Claude Code behaviour (MCP scopes and approval, hooks, subagents, Plan Mode, worktrees, `/clear`) were taken from the documentation pages as read; they may drift. Nothing was run in Claude Code to test the playbooks.
+- `fields` answers are keyword-checked: they can be gamed by listing the expected words, and they cannot judge writing quality. The paired `reflect` rubric is self-assessed.
+- The Opportunity Finder has 12 scenarios (6 per run): enough to practice, not enough to measure.
+- `source-check.yml` and `scripts/check-sources.mjs` have **not been run** in GitHub Actions / against the network from this repository.
+- **Not verified:** WebKit/Safari, Windows, a real iPhone, GitHub Pages deployment, GitHub Actions workflows (none have ever run). Only Chromium on Linux (including phone-width emulation) was tested.
+- Illustrations were reviewed visually in Chromium at 375/768/1280 px in both themes, and covered by axe + overflow tests; not on real devices.
+- Round 1–2 limitations still apply: the Improvement Loop's ground truth is synthetic and its verdicts are self-reported; the Trigger Dojo overlap meter is lexical; ZIP import limits are conservative guesses; progress does not sync between devices.
 
 ## 6. Conventions for continuing
 
 - Run `npm run verify` (lint → typecheck → vitest → build → playwright) before claiming anything passes. Do not claim unrun tests passed.
-- Changing grading content ⇒ bump that lesson's `version`. Add an assertion whenever a lesson states a numeric/behavioural fixture claim.
-- Every choice option needs a `why` (≥8 chars); assessment items must differ from practice and review items; critical items for safety-critical competencies.
-- Catalog edits: keep unknowns null; update `verifiedAt` + honest `verificationMethod`; run catalog tests. Never auto-promote newly found Skills.
-- Keep the dependency list small; prefer pinned versions via lockfile.
+- Changing grading content ⇒ bump that lesson's `version`. Every choice option needs a `why` (≥ 12 chars for new content; "Correct." alone is not feedback). Assessment items must differ from practice and review items.
+- A `fields` item needs a `reflect` rubric beside it. Fabricated material uses `.example` domains.
+- Catalog edits: keep unknowns null; set `verifiedAt` + an honest `verificationMethod`; every sourced entry's URL must be in `sources/registry.json`; `capabilityIds` must exist on the map. Never auto-promote newly found tools.
+- A new capability card needs a real destination (lesson, entry, playbook or lab template).
+- Never `await` a non-Dexie promise (WebCrypto, fetch) inside a Dexie transaction, and list every touched table in the scope.
+- Keep the dependency list small; prefer pinned versions via the lockfile.
 
-## 7. Candidate next steps (pick and prioritise)
+## 7. Next three priorities
 
-1. **Run a real loop** with real Claude Code and fix what the data shows (starter Skills too easy/hard, ambiguous cases, checklist wording). Then repeat runs per case with a variance display.
-2. Real-device pass: iPhone Safari/WebKit (run the optional smoke project where WebKit installs), touch targets, PWA install; run the workflows on a real repo.
-3. Lessons for the three new missions (performance investigation, determinism, integration auditing) so their prerequisites are taught, not just linked.
-4. Transcript import so verdicts/checklist ticks/activation can be user-imported instead of hand-entered; blinded rubric scoring.
-5. Source-check workflow (scheduled Action, curated repos only, review queue, no auto-promotion); per-Skill inspection records with file hashes.
-6. Link Skills to Battle Lab experiments so the maturity ladder can credit comparisons, not only graduated loops.
-7. Quality: screenshot regression, more component tests, bundle trimming, a "what changed" notice when lesson versions bump.
+1. **Close the research gaps**: run `node scripts/check-sources.mjs` from a network that reaches the four blocked hosts, read them, then add a Gemini/Google entry, an OWASP LLM-risk entry, the MCP documentation, and a prompt-injection lesson for the Safety track. Run `source-check.yml` once and review the draft PR it opens.
+2. **Teach the planned topics that matter most** — structured outputs and tool calling (Track 1), few-shot examples and prompt-injection awareness (Track 2), RAG and evaluation harnesses (Track 12). A topic leaves "planned" only with a lesson that has an independent assessment.
+3. **Connect playbooks and the Lab**: link a playbook to an AI Lab experiment so a step can be marked verified *from* recorded runs; add transcript import so run data can be user-imported rather than typed; then run a real playbook and a real loop with real Claude Code and fix what the evidence shows.
+
+(Earlier candidates still open: blinded rubric scoring, screenshot regression, a "what changed" notice when lesson versions bump, running the optional WebKit smoke project somewhere it can install.)

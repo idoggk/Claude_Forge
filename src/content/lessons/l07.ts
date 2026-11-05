@@ -10,7 +10,7 @@ const row = (rows: typeof buggy, stage: number) => rows.find((r) => r.stage === 
 export const L07: Lesson = {
   id: 'L07-economy-inflation',
   version: 1,
-  track: 'D',
+  track: 'game-dev',
   order: 7,
   title: 'Economy Inflation Investigator',
   subtitle: 'Separate supply, sinks, bottlenecks and pacing in simulation data',

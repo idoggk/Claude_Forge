@@ -1,0 +1,43 @@
+name: Source check (optional)
+
+# Weekly, read-only check that the pages behind Claude Forge's catalog still answer. It only updates
+# src/content/sources/last-check.json on a branch and opens a pull request for a person to review.
+# It never edits the catalog, lessons or registry, and it never runs anything it downloads.
+# NOTE: this workflow has not been run in GitHub Actions from this repository yet.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check sources (report and write status data only)
+        run: node scripts/check-sources.mjs --write | tee source-check.txt
+      - name: Open a pull request if anything changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- src/content/sources/last-check.json; then
+            echo "No status change to review."
+            exit 0
+          fi
+          branch="source-check-$(date +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add src/content/sources/last-check.json
+          git commit -m "chore: update source status data"
+          git push -u origin "$branch"
+          gh pr create --draft --title "Source check $(date +%Y-%m-%d)" --body-file source-check.txt

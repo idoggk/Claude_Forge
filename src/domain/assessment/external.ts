@@ -1,8 +1,9 @@
 import type { SkillDraft } from '@/domain/skills/model';
 import { contentOf } from '@/domain/skills/model';
 import { designChecks, validateSkillContent } from '@/domain/skills/validate';
-import type { Evidence, Experiment } from '@/domain/experiments/model';
+import { isBaselineKind, type Evidence, type Experiment } from '@/domain/experiments/model';
 import { runMetric } from '@/domain/experiments/compare';
+import type { Playbook } from '@/domain/playbook/model';
 import type { ExternalResult, ExternalResults } from './grade';
 
 /**
@@ -46,7 +47,7 @@ function skillChecks(s: SkillDraft, level: 'first' | 'capstone', experiments: Ex
     { label: 'No safety-class findings', ok: safetyWarnings === 0, note: safetyWarnings === 0 ? 'Clean (advisory only).' : `${safetyWarnings} safety finding(s) - review them.` },
     { label: 'At least 2 saved revision snapshots', ok: s.revisions.length >= 2, note: `${s.revisions.length} snapshot(s).` },
     { label: 'At least 1 live test recorded from real Claude Code use', ok: liveRecorded >= 1, note: `${liveRecorded} observation(s) with a result.` },
-    { label: 'Compared in a Battle Lab experiment (a condition names this Skill)', ok: compared, note: compared ? 'Linked experiment found.' : 'Create an experiment with a condition whose Skill name matches.' },
+    { label: 'Compared in an AI Lab experiment (a condition names this Skill)', ok: compared, note: compared ? 'Linked experiment found.' : 'Create an experiment with a condition whose Skill name matches.' },
     ...(designChecks(content).some((f) => f.severity === 'warning') ? [] : []),
   ];
 }
@@ -62,7 +63,7 @@ export function evaluateWorkshopSkill(level: 'first' | 'capstone', skills: Skill
 
 export function evaluateExperiment(experiments: Experiment[], evidence: Evidence[]): ExternalResult {
   const real = experiments.filter((e) => !e.synthetic);
-  if (real.length === 0) return summarize([{ label: 'You have created an experiment (not the demo)', ok: false, note: 'Open the Battle Lab and create one.' }]);
+  if (real.length === 0) return summarize([{ label: 'You have created an experiment (not the demo)', ok: false, note: 'Open the AI Lab and create one.' }]);
   const results = real.map((e) => {
     const perCond = e.conditions.map((c) => e.runs.filter((r) => r.conditionId === c.id));
     const known = (r: (typeof e.runs)[number]) => ['testsPassedRatio', 'successRate', 'seededIssuesFound', 'developerEffortMin', 'runtimeSec', 'tokens'].some((m) => runMetric(r, m as never, null) !== null);
@@ -77,8 +78,49 @@ export function evaluateExperiment(experiments: Experiment[], evidence: Evidence
   return best(results);
 }
 
-export function evaluateExternal(skills: SkillDraft[], experiments: Experiment[], evidence: Evidence[]): ExternalResults {
+/** Lesson 15: a playbook that actually specifies a reliable workflow. */
+export function evaluatePlaybook(playbooks: Playbook[]): ExternalResult {
+  const none = summarize([{ label: 'You have saved a playbook (Build -> Playbooks)', ok: false, note: 'Nothing saved yet.' }]);
+  if (playbooks.length === 0) return none;
+  const results = playbooks.map((p) => {
+    const gated = p.steps.filter((s) => s.verification.trim().length >= 10).length;
+    const handled = p.steps.filter((s) => s.failureHandling.trim().length >= 10).length;
+    return summarize([
+      { label: 'A title and a goal', ok: p.title.trim().length > 0 && p.goal.trim().length >= 15, note: 'State the goal in a sentence.' },
+      { label: 'At least one input and one expected output', ok: p.inputs.some((i) => i.trim()) && p.outputs.some((o) => o.trim()), note: `${p.inputs.length} input(s), ${p.outputs.length} output(s).` },
+      { label: 'At least four steps', ok: p.steps.length >= 4, note: `${p.steps.length} step(s).` },
+      { label: 'Every step has a verification gate', ok: p.steps.length > 0 && gated === p.steps.length, note: `${gated} of ${p.steps.length} step(s) have a gate.` },
+      { label: 'Failure handling on at least two steps', ok: handled >= 2, note: `${handled} step(s) say what to do when they fail.` },
+      { label: 'At least one human approval point', ok: p.steps.some((s) => s.humanApproval), note: 'Mark the step where a person must decide.' },
+      { label: 'Clear completion criteria', ok: p.completionCriteria.trim().length >= 20, note: 'Say how you will know it is finished.' },
+    ]);
+  });
+  return best(results);
+}
+
+/** Lesson 16: an experiment with repeated runs per condition, written-down limits, and known measurements. */
+export function evaluateRepeatedRuns(experiments: Experiment[]): ExternalResult {
+  const real = experiments.filter((e) => !e.synthetic);
+  if (real.length === 0) return summarize([{ label: 'You have created an experiment (not the demo)', ok: false, note: 'Open the AI Lab and create one.' }]);
+  const known = (r: Experiment['runs'][number]) => ['testsPassedRatio', 'successRate', 'seededIssuesFound', 'developerEffortMin', 'runtimeSec', 'tokens', 'reworkRounds', 'interventions'].some((m) => runMetric(r, m as never, null) !== null);
+  return best(
+    real.map((e) => {
+      const per = e.conditions.map((c) => e.runs.filter((r) => r.conditionId === c.id));
+      return summarize([
+        { label: 'A hypothesis written before the runs', ok: e.hypothesis.trim().length >= 15, note: 'Say what you expect and why.' },
+        { label: 'A baseline condition', ok: e.conditions.some((c) => isBaselineKind(c.kind)), note: 'Without a baseline you cannot attribute a difference.' },
+        { label: 'At least two runs per condition', ok: e.conditions.length >= 2 && per.every((r) => r.length >= 2), note: per.map((r) => r.length).join(' / ') + ' run(s).' },
+        { label: 'Every condition has runs with a known measurement', ok: e.conditions.length >= 2 && per.every((r) => r.filter(known).length >= 2), note: 'Unknown values do not count as measurements.' },
+        { label: 'Limitations written down', ok: e.limitations.trim().length >= 20, note: 'Say what this experiment cannot show.' },
+      ]);
+    }),
+  );
+}
+
+export function evaluateExternal(skills: SkillDraft[], experiments: Experiment[], evidence: Evidence[], playbooks: Playbook[] = []): ExternalResults {
   return {
+    'playbook-workflow': evaluatePlaybook(playbooks),
+    'lab-repeated-runs': evaluateRepeatedRuns(experiments),
     'workshop-first-skill': evaluateWorkshopSkill('first', skills, experiments),
     'workshop-capstone-skill': evaluateWorkshopSkill('capstone', skills, experiments),
     'battle-lab-experiment': evaluateExperiment(experiments, evidence),

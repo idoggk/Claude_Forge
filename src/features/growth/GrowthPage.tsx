@@ -6,7 +6,9 @@ import { LEVEL_NAMES, evaluateCompetencies } from '@/domain/mastery/competency';
 import { dueReviews } from '@/domain/mastery/review';
 import { summarizeCalibration, calibrationVerdict } from '@/domain/assessment/calibration';
 import { Badge, Button, Callout, Card, ConfirmButton, EmptyState, LinkButton, PageHeader, ProgressBar, Spinner, TextArea, TextInput, useToast } from '@/components/ui';
-import { useExperiments, useLearning } from '@/app/hooks';
+import { useActivityRuns, useExperiments, useLearning } from '@/app/hooks';
+import { COMPETENCY_AREAS } from '@/domain/curriculum/competencies';
+import { STATE_LABEL, buildMasteryProfile } from '@/domain/mastery/profile';
 import { addFieldEvidence, deleteFieldEvidence } from '@/persistence/repo';
 import { formatDateKey, formatIso, todayKey } from '@/lib/clock';
 import { ArsenalNav } from '@/features/arsenal/ArsenalPage';
@@ -50,7 +52,8 @@ function FieldForm() {
 export default function GrowthPage() {
   const { data: l } = useLearning();
   const { data: experiments } = useExperiments();
-  if (!l || !experiments) return <Spinner label="Loading your growth data" />;
+  const { data: runs } = useActivityRuns();
+  if (!l || !experiments || !runs) return <Spinner label="Loading your growth data" />;
   const today = todayKey();
   const evals = evaluateCompetencies(l.attempts, LESSONS, l.field, l.progress);
   const stored = new Map(l.competencies.map((c) => [c.competencyId, c]));
@@ -58,6 +61,7 @@ export default function GrowthPage() {
   const upcoming = l.reviews.filter((r) => !due.includes(r)).sort((a, b) => a.dueOn.localeCompare(b.dueOn));
   const attempts = [...l.attempts].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   const cal = summarizeCalibration(l.attempts);
+  const profile = buildMasteryProfile({ areas: COMPETENCY_AREAS, lessons: LESSONS, evaluations: evals, attempts: l.attempts, progress: l.progress, reviews: l.reviews, field: l.field, activityRuns: runs, today });
   const concluded = experiments.filter((e) => e.status === 'concluded' && !e.synthetic);
   const lessonTitle = (id: string) => LESSONS.find((x) => x.id === id)?.title ?? id;
 
@@ -65,6 +69,22 @@ export default function GrowthPage() {
     <div>
       <PageHeader eyebrow="Arsenal & Growth" title="Growth" subtitle="What you have actually demonstrated - with the evidence behind every level." />
       <ArsenalNav active="growth" />
+
+      <section aria-labelledby="prof-h" className="mb-8" data-testid="mastery-profile">
+        <h2 id="prof-h" className="mb-1 text-xl font-semibold">Personal AI Mastery Profile</h2>
+        <p className="mb-3 text-sm text-muted">Thirteen areas. Each state comes from your weakest concept in the area, so one strong concept cannot hide a weak one. Areas with no lessons yet are marked planned: nothing is claimed for them. This is a view of evidence you produced, not a score.</p>
+        <ul className="grid gap-3 md:grid-cols-2">
+          {profile.map((a) => (
+            <Card as="li" key={a.area.id} data-testid={`area-${a.area.id}`}>
+              <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{a.area.title}</h3><Badge tone={a.state === 'field-proven' || a.state === 'independent' ? 'ok' : a.state === 'building' ? 'accent' : 'neutral'}>{STATE_LABEL[a.state]}</Badge></div>
+              <p className="text-sm text-muted">{a.area.summary}</p>
+              <p className="mt-1 text-xs text-muted">{a.evidenceLine}</p>
+              {a.competencies.length > 0 && <ul className="mt-2 flex flex-wrap gap-1.5">{a.competencies.map((c) => <li key={c.id}><Badge tone={c.level >= 3 ? 'ok' : c.level >= 1 ? 'accent' : 'neutral'} title={c.blockedReason ?? undefined}>{c.title}: {c.levelName}</Badge></li>)}</ul>}
+              {a.next && <p className="mt-2 text-sm"><span className="font-semibold">Next: </span>{a.next.text} <Link className="text-accent-text underline" to={a.next.to}>Go</Link></p>}
+            </Card>
+          ))}
+        </ul>
+      </section>
 
       <section aria-labelledby="comp-h" className="mb-8">
         <h2 id="comp-h" className="mb-3 text-xl font-semibold">Competency levels</h2>
@@ -124,7 +144,7 @@ export default function GrowthPage() {
 
       <section aria-labelledby="exp-h2" className="mb-8">
         <h2 id="exp-h2" className="mb-3 text-xl font-semibold">Completed experiments</h2>
-        {concluded.length === 0 ? <EmptyState title="No concluded experiments" icon="flask" action={<LinkButton to="/battle-lab" variant="primary">Open the Battle Lab</LinkButton>}>Experiments you mark as concluded appear here with their limitations.</EmptyState> : <ul className="space-y-2">{concluded.map((e) => <Card as="li" key={e.id}><Link className="font-semibold underline" to={`/battle-lab/${e.id}`}>{e.title}</Link><p className="text-sm text-muted">{e.runs.length} runs · {e.conditions.length} conditions</p></Card>)}</ul>}
+        {concluded.length === 0 ? <EmptyState title="No concluded experiments" icon="flask" action={<LinkButton to="/battle-lab" variant="primary">Open the AI Lab</LinkButton>}>Experiments you mark as concluded appear here with their limitations.</EmptyState> : <ul className="space-y-2">{concluded.map((e) => <Card as="li" key={e.id}><Link className="font-semibold underline" to={`/battle-lab/${e.id}`}>{e.title}</Link><p className="text-sm text-muted">{e.runs.length} runs · {e.conditions.length} conditions</p></Card>)}</ul>}
       </section>
 
       <section aria-labelledby="field-h" className="mb-8">

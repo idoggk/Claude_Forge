@@ -44,7 +44,23 @@ Design rules that the tests enforce: a loop is **two real Battle Lab experiments
 
 Hash routing + `base: './'` means the same build works at a domain root, under `/<repo>/` on GitHub Pages, or from any static folder, with no rewrite rules. Feature areas are lazy-loaded.
 
-## Data model (IndexedDB `claude-forge`, schema version 4)
+## Round 3 additions
+
+- **Curriculum taxonomy** (`domain/curriculum/competencies.ts`): 17 competencies, 12 tracks (each topic maps to a lesson or is PLANNED), 13 Personal Mastery Profile areas (an area with no competencies is planned and shows no level). Lesson `track` values were remapped to the twelve slugs; attempts store only `lessonId`, so no stored data changed.
+- **Capability Map** (`domain/capability`, `content/capability/map.ts`): a typed graph (nodes with outcomes, judgment question, use/avoid/risks, lessons, catalog entries, playbook and lab templates, typed relations). Unit tests enforce *no dead-end cards* and that every reference resolves.
+- **Goals** (`domain/goals`): steer the recommender by resolving capabilities to lessons. A goal can be declared achieved by the learner (with a note) and never creates evidence.
+- **Playbooks** (`domain/playbook`): documentation only. Import resets other people's verification claims; export is Markdown or JSON. Version history keeps the previous content on request (max 30).
+- **Opportunity Finder** (`content/finder`, `domain/finder`): practice runs stored in `activityRuns`; they feed the recommender as hints and the profile as practice counts, and never change a competency level.
+- **Generalised AI Lab**: experiments gain `experimentType` and `subject`; condition kinds gain `baseline`, `prompt`, `workflow`, `agent`, `tool-config`, `model`, `other`; `isBaselineKind` replaces `kind === 'no-skill'`. Forge still never runs anything.
+- **Catalog generalised**: ten entity types; `capabilityIds` link entries to the map; star counts only "as displayed" with a date.
+- **Source registry** (`content/sources/registry.json`, `scripts/check-sources.mjs`, `.github/workflows/source-check.yml`): see *Living discovery* below.
+- **Item kinds**: `fields` (several labelled written answers, each checked for required ideas) and Segment `prediction` (prediction before explanation, never graded or stored).
+
+### Living discovery (low-cost)
+
+The registry lists every external page the ecosystem knowledge rests on, with status `read`, `unreachable` or `lead` and the date. `scripts/check-sources.mjs` sends one GET per source (1/s, 15 s timeout), records HTTP status, redirects and a hash of the first 2 MB, and prints what changed. With `--write` it updates `last-check.json` only. The optional weekly workflow runs it, and if the status data changed it opens a **draft pull request** for a person to review. It never edits the catalog, the registry or any lesson, never executes or installs anything it downloads, and a changed hash means *re-read this page*, not *the catalog is wrong*. Not yet run in GitHub Actions.
+
+## Data model (IndexedDB `claude-forge`, schema version 5)
 
 `profile · preferences · lessonProgress · attempts · competencies · reviews · annotations · arsenal · customSkills · experiments · evidence · fieldEvidence (v2) · loops (v3) · diagnostics (v4) · meta`
 
@@ -53,6 +69,8 @@ Hash routing + `base: './'` means the same build works at a domain root, under `
 - **Attempts are append-only** and carry the lesson version, hints used, confidence, per-item results and per-concept results, so competency can be recomputed from history at any time.
 - **Competency records** are a cache of `evaluateCompetencies()` plus a change history; they are recomputed inside the same transaction as the attempt write.
 - **Idempotency.** `submitAttempt` is a single transaction that returns the existing attempt when the ID already exists.
+
+- **v5 (Round 3)** adds `goals`, `playbooks`, `activityRuns` and defaults `experimentType: 'skill'` and `subject: ''` on every existing experiment. Purely additive; covered by a migration test that builds a real v4 database, upgrades it and checks every record, and by an import test with an R2 backup file that has none of the new stores.
 
 ### Backup and import (`persistence/backup.ts`)
 

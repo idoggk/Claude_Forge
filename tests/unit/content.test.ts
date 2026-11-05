@@ -43,6 +43,7 @@ function perfectAnswer(item: Item): unknown {
     case 'order': return item.steps.map((s) => s.id);
     case 'numeric': return typeof item.answer === 'function' ? item.answer() : item.answer;
     case 'keywords': return item.groups.map((g) => g.anyOf[0]).join(' and ');
+    case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, f.groups.map((g) => g.anyOf[0]).join(' ')]));
     case 'flaglines': return item.targets.map((t) => t.line);
     case 'reflect': return Object.fromEntries(item.rubric.map((_, i) => [String(i), true]));
     case 'external': return undefined;
@@ -50,12 +51,14 @@ function perfectAnswer(item: Item): unknown {
 }
 
 describe('curriculum structure', () => {
-  it('has the ten required lessons with stable, unique IDs in the required order', () => {
+  it('has the eighteen lessons with stable, unique IDs in the required order (R1-R2 original ten, then the eight R3 lessons)', () => {
     expect(LESSONS.map((l) => l.id)).toEqual([
       'L01-skill-or-tool', 'L02-inside-skill-md', 'L03-trigger-dojo', 'L04-skill-autopsy', 'L05-first-custom-skill',
       'L06-merge-chain-failure', 'L07-economy-inflation', 'L08-battle-lab', 'L09-reviewer-vs-builder', 'L10-forge-production-skill',
+      'L11-choose-ai-approach', 'L12-context-engineering', 'L13-why-agents-fail', 'L14-mcp-or-not',
+      'L15-reliable-ai-workflow', 'L16-ai-evaluation', 'L17-efficient-ai-development', 'L18-evaluate-an-ai-tool',
     ]);
-    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(10);
+    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(18);
   });
 
   it('every lesson has the required parts with real content (no placeholders)', () => {

@@ -10,9 +10,10 @@ const meanB = testsRow.perCondition.find((c) => c.conditionId === 'demo-b')!.sta
 export const L08: Lesson = {
   id: 'L08-battle-lab',
   version: 1,
-  track: 'C',
+  track: 'safety-eval',
+  alsoIn: ['claude-code'],
   order: 8,
-  title: 'The Battle Lab',
+  title: 'The AI Lab',
   subtitle: 'Compare workflows with controlled, honestly-reported experiments',
   prerequisites: ['L05-first-custom-skill'],
   competencies: ['experiment-design'],
@@ -20,7 +21,7 @@ export const L08: Lesson = {
   gameRelevance: 2,
   interestTags: ['experiments', 'authoring'],
   problem: '"This Skill feels better" is how people end up with a drawer full of Skills that cost context and change nothing. LLM output varies from run to run, so one lucky run proves nothing.',
-  whyItMatters: 'The goal of the whole course is to replace impressions with evidence. The Battle Lab gives you the structure; you supply honest data.',
+  whyItMatters: 'The goal of the whole course is to replace impressions with evidence. The AI Lab gives you the structure; you supply honest data.',
   objectives: [
     'Design a comparison with exactly one stated difference, a fixed fixture, prompt and rubric.',
     'Record evidence with its provenance, and keep missing data as unknown.',
@@ -66,7 +67,7 @@ A single fixture, three runs and self-reported counts can support "directionally
   ],
   activity: {
     title: 'Read a synthetic experiment, then record a real one',
-    intro: 'The demonstration below uses invented data to teach method; no Claude execution occurred. Then create your own experiment in the Battle Lab.',
+    intro: 'The demonstration below uses invented data to teach method; no Claude execution occurred. Then create your own experiment in the AI Lab.',
     widget: 'experiment-demo',
     items: [
       {
@@ -125,7 +126,7 @@ A single fixture, three runs and self-reported counts can support "directionally
         concept: 'experiment-design',
         check: 'battle-lab-experiment',
         points: 3,
-        prompt: 'Record a real experiment in the Battle Lab: a hypothesis, two conditions, at least one run each with at least one measurement, and one evidence item. The checklist verifies your saved data.',
+        prompt: 'Record a real experiment in the AI Lab: a hypothesis, two conditions, at least one run each with at least one measurement, and one evidence item. The checklist verifies your saved data.',
         explanation: 'You may use made-up-free data from real runs, or - while learning the tool - runs you actually perform by hand in Claude Code. Do not enter invented numbers.',
       },
     ],
@@ -211,7 +212,7 @@ A single fixture, three runs and self-reported counts can support "directionally
         concept: 'experiment-design',
         critical: true,
         points: 2,
-        prompt: 'The Battle Lab shows "tests passed 9/10" for a run. Where did that number come from?',
+        prompt: 'The AI Lab shows "tests passed 9/10" for a run. Where did that number come from?',
         options: [
           o('a', 'Claude Forge ran the tests and measured it', 'Forge never runs Claude or your tests.'),
           o('b', 'You typed it (self-reported) or imported it from a report file you uploaded - Forge does not verify either', 'Correct.'),

@@ -45,14 +45,14 @@ describe('gradeDiagnostic', () => {
   it('perfect answers leave no gaps; wrong answers flag every concept and surface misconceptions', () => {
     const good = gradeDiagnostic(perfectAnswers(DIAGNOSTIC.items));
     expect(good.gaps).toEqual([]);
-    expect(good.solid).toHaveLength(10);
+    expect(good.solid).toHaveLength(COMPETENCIES.length);
     const bad = gradeDiagnostic(wrongAnswers(DIAGNOSTIC.items));
-    expect(bad.gaps).toHaveLength(10);
+    expect(bad.gaps).toHaveLength(COMPETENCIES.length);
     expect(bad.solid).toEqual([]);
   });
   it('unanswered questions are gaps, never correct', () => {
     const r = gradeDiagnostic({});
-    expect(r.gaps).toHaveLength(10);
+    expect(r.gaps).toHaveLength(COMPETENCIES.length);
     expect(r.results.every((x) => !x.answered && !x.correct)).toBe(true);
   });
   it('a tagged wrong option is reported as a misconception, deduplicated', () => {
@@ -82,7 +82,7 @@ describe('persistence: a diagnostic can never award mastery', () => {
     await repo.submitDiagnostic({ id, answers: wrongAnswers(DIAGNOSTIC.items) });
     const dup = await repo.submitDiagnostic({ id, answers: perfectAnswers(DIAGNOSTIC.items) });
     expect(dup.created).toBe(false);
-    expect(dup.record.gaps).toHaveLength(10); // the first submission stands
+    expect(dup.record.gaps).toHaveLength(COMPETENCIES.length); // the first submission stands
     await repo.submitDiagnostic({ id: newId('dg'), answers: perfectAnswers(DIAGNOSTIC.items) });
     expect(await getDb().diagnostics.count()).toBe(2);
   });
@@ -114,7 +114,7 @@ describe('persistence: a diagnostic can never award mastery', () => {
     expect(await db2.diagnostics.count()).toBe(1);
   });
 
-  it('upgrades a v3 database to v4 with every existing record intact', async () => {
+  it('upgrades a v3 database to the current version with every existing record intact', async () => {
     const name = `diag-migrate-${Math.random().toString(36).slice(2)}`;
     const old = new Dexie(name);
     old.version(3).stores({
@@ -127,8 +127,8 @@ describe('persistence: a diagnostic can never award mastery', () => {
     const db = new ForgeDB(name);
     setDbForTesting(db);
     await db.open();
-    expect(DB_VERSION).toBe(4);
-    expect(db.verno).toBe(4);
+    expect(DB_VERSION).toBe(5);
+    expect(db.verno).toBe(5);
     expect(await db.reviews.get('L01-skill-or-tool')).toMatchObject({ box: 2, lapses: 1, cycle: 3 });
     expect(await db.diagnostics.count()).toBe(0);
   });

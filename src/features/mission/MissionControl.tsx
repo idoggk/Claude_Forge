@@ -6,7 +6,10 @@ import { lessonStatus, recommend } from '@/domain/mastery/recommend';
 import { dueReviews } from '@/domain/mastery/review';
 import { formatDateKey, todayKey } from '@/lib/clock';
 import { Badge, Card, EmptyState, LinkButton, PageHeader, ProgressBar, Spinner } from '@/components/ui';
-import { useArsenal, useExperiments, useLearning } from '@/app/hooks';
+import { useActivityRuns, useArsenal, useExperiments, useGoals, useLearning, usePlaybooks } from '@/app/hooks';
+import { goalLessons } from '@/content/capability/goals';
+import { practiceGapsFromRuns } from '@/domain/finder/score';
+import { CAPABILITY_BY_ID } from '@/content/capability/map';
 import { useLoops } from '@/features/loop/useLoop';
 import { MISSIONS } from '@/content/missions';
 import { latestHint } from '@/domain/mastery/diagnostic';
@@ -19,8 +22,11 @@ export default function MissionControl() {
   const { data: arsenal } = useArsenal();
   const { data: experiments } = useExperiments();
   const { data: loops } = useLoops();
+  const { data: goals } = useGoals();
+  const { data: runs } = useActivityRuns();
+  const { data: playbooks } = usePlaybooks();
   const { profile } = useData();
-  if (!l || !arsenal || !experiments || !loops) return <Spinner label="Loading Mission Control" />;
+  if (!l || !arsenal || !experiments || !loops || !goals || !runs || !playbooks) return <Spinner label="Loading Mission Control" />;
 
   const today = todayKey();
   const hint = latestHint(l.diagnostics);
@@ -28,6 +34,8 @@ export default function MissionControl() {
     lessons: LESSONS, attempts: l.attempts, progress: l.progress, reviews: l.reviews, profile: profile ?? null, today,
     diagnostic: hint,
     misconceptionHits: misconceptionsHit(l.attempts, LESSONS).slice(0, 6),
+    goalLessons: goalLessons(goals),
+    practiceGaps: practiceGapsFromRuns(runs),
     loop: { prerequisites: MISSIONS[0]!.prerequisites, started: loops.length },
   });
   const p = rec.primary;
@@ -56,7 +64,7 @@ export default function MissionControl() {
         <div className="mt-3 rounded-lg border border-line bg-surface2 p-3 text-sm">
           <p className="font-semibold">Why this, explained</p>
           <ul className="mt-1 list-disc space-y-1 pl-5 text-muted" data-testid="mission-reasons">{p.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
-          <p className="mt-2 text-xs text-muted">A fixed scoring rule chose this - prerequisites, due reviews, failed attempts, your interests and game-development relevance. It is not AI personalization.</p>
+          <p className="mt-2 text-xs text-muted">A fixed scoring rule chose this - due reviews, prerequisites, failed attempts, your goals, interests and game-development relevance. It is not AI personalization.</p>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <LinkButton to={primaryHref} variant="primary" size="lg" icon="arrow" data-testid="primary-action">{primaryLabel}</LinkButton>
@@ -95,7 +103,7 @@ export default function MissionControl() {
           <h2 id="track-h" className="text-lg font-semibold">Active track</h2>
           {track ? (
             <>
-              <p className="mt-1 font-semibold">Track {track.id} · {track.title}</p>
+              <p className="mt-1 font-semibold">Track {track.order} · {track.title}</p>
               <p className="text-sm text-muted">{track.summary}</p>
               <div className="mt-3"><ProgressBar value={trackPassed} max={trackLessons.length} label={`Lessons passed in track ${track.id}`} /></div>
               <p className="mt-1 text-xs text-muted">{trackPassed} of {trackLessons.length} lessons passed</p>
@@ -136,8 +144,8 @@ export default function MissionControl() {
         </Card>
 
         <Card aria-labelledby="exp-h">
-          <div className="flex items-center justify-between gap-2"><h2 id="exp-h" className="text-lg font-semibold">Recent experiments</h2><LinkButton size="sm" to="/battle-lab" icon="flask">Battle Lab</LinkButton></div>
-          {experiments.length === 0 ? <p className="mt-1 text-sm text-muted">None yet. Compare a Skill against no Skill - or open the synthetic demo to see how.</p> : (
+          <div className="flex items-center justify-between gap-2"><h2 id="exp-h" className="text-lg font-semibold">Recent experiments</h2><LinkButton size="sm" to="/battle-lab" icon="flask">AI Lab</LinkButton></div>
+          {experiments.length === 0 ? <p className="mt-1 text-sm text-muted">None yet. Compare a prompt, Skill, workflow, tool or model against a baseline - or open the synthetic demo to see how.</p> : (
             <ul className="mt-2 space-y-1 text-sm">{experiments.slice(0, 3).map((e) => <li key={e.id}><Link className="text-accent-text underline" to={`/battle-lab/${e.id}`}>{e.title}</Link> <Badge>{e.status}</Badge></li>)}</ul>
           )}
         </Card>
@@ -150,10 +158,22 @@ export default function MissionControl() {
         </Card>
       </div>
 
+      <Card className="mt-5" aria-labelledby="goals-h2" data-testid="home-goals">
+        <div className="flex items-center justify-between gap-2"><h2 id="goals-h2" className="text-lg font-semibold">My learning goals</h2><LinkButton size="sm" to="/explore" icon="compass">Capability Map</LinkButton></div>
+        {goals.filter((g) => g.status === 'active').length === 0 ? (
+          <p className="mt-1 text-sm text-muted">No goals yet. Pick a capability on the Capability Map and save it as a goal; Forge will weigh it when recommending your next lesson.</p>
+        ) : (
+          <ul className="mt-2 space-y-1 text-sm">{goals.filter((g) => g.status === 'active').map((g) => <li key={g.id}><span className="font-semibold">{g.title}</span> <span className="text-muted">· {g.capabilityIds.map((id) => CAPABILITY_BY_ID.get(id)?.title ?? id).join(', ')}</span></li>)}</ul>
+        )}
+      </Card>
+
       <div className="mt-5 flex flex-wrap gap-2">
+        <LinkButton to="/explore" icon="compass">Capability Map</LinkButton>
+        <LinkButton to="/academy/opportunity-finder" icon="search">Opportunity Finder</LinkButton>
+        <LinkButton to="/playbooks" icon="flag">{playbooks.length ? `Playbooks (${playbooks.length})` : 'Workflow Playbooks'}</LinkButton>
+        <LinkButton to="/battle-lab" icon="flask">AI Lab</LinkButton>
         <LinkButton to="/workshop" icon="hammer">Skill Workshop</LinkButton>
-        <LinkButton to="/battle-lab" icon="flask">Battle Lab</LinkButton>
-        <LinkButton to="/discovery" icon="compass">Discovery Hub</LinkButton>
+        <LinkButton to="/discovery" icon="search">Discovery Hub</LinkButton>
       </div>
       {!hasAnyProgress && <div className="mt-5"><EmptyState title="Your evidence starts with the first lesson" icon="target">Nothing here is pre-filled or simulated. Everything on this page comes from what you complete. Not sure where to begin? <Link className="text-accent-text underline" to="/academy/diagnostic">Take the five-minute placement diagnostic</Link> - it never changes your levels.</EmptyState></div>}
     </div>

@@ -10,6 +10,8 @@ const t = '2026-01-01T00:00:00.000Z';
 
 export const DEMO_EXPERIMENT: Experiment = {
   id: DEMO_ID,
+  experimentType: 'skill',
+  subject: 'Does a merge-chain debugging Skill help Claude fix the seeded cascade bug? (synthetic demonstration)',
   schemaVersion: 1,
   title: 'DEMO (synthetic): does a debugging Skill help fix the merge-cascade bug?',
   problem: 'Does adding a systematic-debugging Skill change how reliably Claude fixes the seeded merge-cascade bug, compared with the same prompt without a Skill?',

@@ -52,7 +52,7 @@ test.describe('Platform behaviour', () => {
     await page.reload();
     await expect(page.getByRole('heading', { level: 1, name: 'Mission Control' })).toBeVisible();
     await goto(page, '/academy');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Five tracks');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Twelve tracks');
     await context.setOffline(false);
   });
 

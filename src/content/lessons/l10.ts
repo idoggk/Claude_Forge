@@ -4,7 +4,7 @@ import { o, DOCS } from './helpers';
 export const L10: Lesson = {
   id: 'L10-forge-production-skill',
   version: 1,
-  track: 'C',
+  track: 'claude-code',
   order: 10,
   title: 'Forge a Production Skill',
   subtitle: 'Capstone: design, safety, tests, evidence and a decision you can defend',
@@ -16,7 +16,7 @@ export const L10: Lesson = {
   problem: 'A Skill that validates is not a Skill you can trust in a real project. Production means: it triggers when it should, stays quiet when it should not, is safe to share, has been tried for real, and has been compared against doing nothing.',
   whyItMatters: 'This is the proof of the course outcome: you can build a Skill and demonstrate - not feel - that it helps.',
   objectives: [
-    'Meet an explicit production checklist, verified from your saved Workshop and Battle Lab data.',
+    'Meet an explicit production checklist, verified from your saved Workshop and AI Lab data.',
     'Record a live-test observation and an experiment link.',
     'Make an Arsenal decision (keep, revise, reject) you can justify with evidence.',
   ],
@@ -32,7 +32,7 @@ export const L10: Lesson = {
 5. **Revision history**: at least two snapshots, so you can see what changed.
 6. **A live test** you actually ran in Claude Code, recorded honestly.
 7. **An export** you have read.
-8. **A comparison**: a Battle Lab experiment with a condition naming this Skill.`,
+8. **A comparison**: an AI Lab experiment with a condition naming this Skill.`,
     },
     {
       id: 's2',
@@ -54,7 +54,7 @@ Do not mark a Skill **Mastered** in the Arsenal because you installed it. Master
   ],
   activity: {
     title: 'Build to the checklist',
-    intro: 'Open the Workshop, create a Skill, and watch the live checklist. Then run your experiment in the Battle Lab.',
+    intro: 'Open the Workshop, create a Skill, and watch the live checklist. Then run your experiment in the AI Lab.',
     widget: 'capstone-brief',
     items: [
       {
@@ -91,7 +91,7 @@ Do not mark a Skill **Mastered** in the Arsenal because you installed it. Master
         concept: 'production-skills',
         check: 'workshop-capstone-skill',
         points: 4,
-        prompt: 'Verified from your saved Workshop and Battle Lab data against the production checklist.',
+        prompt: 'Verified from your saved Workshop and AI Lab data against the production checklist.',
         explanation: 'Each check reads your saved records.',
       },
     ],

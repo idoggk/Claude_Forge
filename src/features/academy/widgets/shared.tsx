@@ -5,11 +5,11 @@ import { loadExternalInputs } from '@/persistence/repo';
 import { useLive } from '@/persistence/useLive';
 import type { Cell } from '@/fixtures/merge-cascade/board';
 
-/** A live checklist verified from saved Workshop / Battle Lab data. */
+/** A live checklist verified from saved Workshop / AI Lab data. */
 export function LiveChecklist({ check, title }: { check: ExternalCheckId; title: string }) {
   const { data } = useLive(async () => {
     const i = await loadExternalInputs();
-    return evaluateExternal(i.skills, i.experiments, i.evidence)[check];
+    return evaluateExternal(i.skills, i.experiments, i.evidence, i.playbooks)[check];
   }, [check]);
   if (!data) return <Spinner label="Checking your saved work" />;
   return (

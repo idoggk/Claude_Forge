@@ -87,11 +87,34 @@ describe('catalog search and filters', () => {
     const mcp = filterCatalog(CATALOG, { ...EMPTY_FILTERS, types: ['mcp'] }, ctx).map((e) => e.id).sort();
     expect(mcp).toEqual(['mcp-reference-servers', 'playwright-mcp']);
     expect(filterCatalog(CATALOG, { ...EMPTY_FILTERS, tiers: ['custom'] }, ctx).length).toBe(3);
-    expect(filterCatalog(CATALOG, { ...EMPTY_FILTERS, tiers: ['official'] }, ctx).map((e) => e.id).sort()).toEqual(['anthropics-skills', 'skill-creator-plugin']);
+    const official = filterCatalog(CATALOG, { ...EMPTY_FILTERS, tiers: ['official'] }, ctx);
+    expect(official.map((e) => e.id)).toEqual(expect.arrayContaining(['anthropics-skills', 'skill-creator-plugin', 'claude-agent-sdk']));
+    for (const e of official) expect(e.publisherKind, e.id).toBe('anthropic');
     for (const e of filterCatalog(CATALOG, { ...EMPTY_FILTERS, minGameRelevance: 3 }, ctx)) expect(e.relevance.gameDev).toBe(3);
     expect(filterCatalog(CATALOG, { ...EMPTY_FILTERS, securityStatus: ['not-reviewed'] }, ctx).length).toBeGreaterThan(0);
     expect(filterCatalog(CATALOG, { ...EMPTY_FILTERS, freshness: ['fresh'] }, ctx).length).toBe(CATALOG.filter((e) => e.verifiedAt).length);
     expect(filterCatalog(CATALOG, { ...EMPTY_FILTERS, freshness: ['stale'] }, { ...ctx, today: '2027-06-01' }).length).toBe(CATALOG.filter((e) => e.verifiedAt).length);
+  });
+
+  it('covers the wider ecosystem with real entity types, never inventing popularity or prices', () => {
+    const types = new Set(CATALOG.flatMap((e) => e.componentTypes));
+    for (const t of ['skill', 'plugin', 'mcp', 'agent-framework', 'ai-coding-tool', 'model', 'automation-tool', 'technique', 'workflow-pattern', 'developer-integration'] as const) expect(types.has(t), t).toBe(true);
+    for (const e of CATALOG) {
+      // a star count is only ever shown "as displayed" with a date
+      if (e.observedSignals.stars) { expect(e.observedSignals.stars, e.id).toMatch(/as displayed/); expect(e.observedSignals.asOf, e.id).toBeTruthy(); }
+      // every sourced entry says how it was verified
+      if (e.tier !== 'custom') expect(e.verificationMethod.length, e.id).toBeGreaterThan(20);
+    }
+    // the model entry records prices only as "as displayed" on a dated page and points to the live pricing page
+    const model = CATALOG.find((e) => e.id === 'claude-model-family')!;
+    expect(model.limitations.join(' ')).toMatch(/as displayed on the verification date/i);
+    expect(model.missingChecks.join(' ')).toMatch(/Pricing page/);
+  });
+
+  it('every entry lists capability ids that exist on the Capability Map', async () => {
+    const { CAPABILITY_IDS } = await import('@/content/capability/map');
+    for (const e of CATALOG) for (const c of e.capabilityIds) expect(CAPABILITY_IDS.has(c), `${e.id} -> ${c}`).toBe(true);
+    expect(CATALOG.filter((e) => e.tier !== 'custom' || e.capabilityIds.length > 0).every((e) => e.capabilityIds.length > 0)).toBe(true);
   });
 
   it('filters by Arsenal membership', () => {

@@ -2,10 +2,13 @@ import { Link } from 'react-router-dom';
 import { Icon, PageHeader, type IconName } from '@/components/ui';
 
 const ITEMS: { to: string; icon: IconName; title: string; text: string; id: string }[] = [
-  { to: '/discovery', icon: 'compass', title: 'Discovery Hub', text: 'Find Skills, plugins and MCP servers, with trust and risk shown', id: 'more-discovery' },
+  { to: '/loop', icon: 'target', title: 'Improvement Loop', text: 'Improve a Skill with dev cases, then test it on held-out cases', id: 'more-loop' },
+  { to: '/playbooks', icon: 'flag', title: 'Workflow Playbooks', text: 'Design repeatable AI workflows with gates and approvals', id: 'more-playbooks' },
+  { to: '/academy/opportunity-finder', icon: 'search', title: 'AI Opportunity Finder', text: 'Practice judging where AI fits - and where it does not', id: 'more-finder' },
+  { to: '/discovery', icon: 'compass', title: 'Discovery Hub', text: 'Skills, tools, frameworks and techniques, with provenance shown', id: 'more-discovery' },
   { to: '/workshop', icon: 'hammer', title: 'Skill Workshop', text: 'Build, validate, test and export a custom Skill', id: 'more-workshop' },
   { to: '/arsenal', icon: 'shield', title: 'Arsenal', text: 'Your relationship with each Skill: evaluating, using, rejected', id: 'more-arsenal' },
-  { to: '/growth', icon: 'chart', title: 'Growth', text: 'Competency levels, reviews, calibration and field evidence', id: 'more-growth' },
+  { to: '/growth', icon: 'chart', title: 'Growth and mastery profile', text: 'Mastery across 13 areas, reviews, calibration and field evidence', id: 'more-growth' },
   { to: '/search', icon: 'search', title: 'Search', text: 'Lessons, catalog and your own Skills', id: 'more-search' },
   { to: '/settings', icon: 'cog', title: 'Settings & data', text: 'Theme, backup and restore, privacy, about', id: 'more-settings' },
   { to: '/onboarding', icon: 'target', title: 'Profile', text: 'Interests and daily time', id: 'more-profile' },

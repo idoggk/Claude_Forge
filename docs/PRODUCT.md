@@ -77,3 +77,23 @@ A deterministic scoring rule: due reviews first; then curriculum order, prerequi
 - **Better retrieval practice.** Review pools hold nine questions per lesson, tagged by difficulty. Sessions are planned by fixed rules: missed items and items that test a misconception you actually chose come back, difficulty rises with the schedule box, the previous session's questions are skipped, and one question from another lesson you have passed is mixed in. Every question shows why it was chosen.
 - **Misconception feedback.** Sixteen authored misconceptions (why it is tempting, what actually happens, a contrast example, a corrective question). The corrective question is practice only and never counts toward mastery.
 - **Evidence, not vibes, in the Workshop.** Trigger tuning compares what you expected with what you manually recorded in real Claude Code sessions (recall, precision and FP/FN only where measured; stale and untested rows stay out of the maths). The quality review is static and says so; its maturity ladder ticks a rung only when matching evidence exists, and *field-proven* is never ticked.
+
+## Round 3: from Skills academy to AI Mastery Academy
+
+**What it now teaches.** Judgment, not tool names. The twelve tracks (AI fundamentals; prompting and context; Claude Code; agents and orchestration; MCP and tools; automation and workflows; engineering practice; game development; research; ecosystem; safety and evaluation; advanced systems) are shown in full. A topic is *available* only if a lesson exists; the rest are marked planned and show no progress.
+
+**The eight new lessons** each follow problem → concept → worked example → interactive exercise → incorrect-answer feedback → independent assessment → transfer challenge → sources:
+1. Choose the Right AI Approach (decision battles; "do nothing" is a first-class answer)
+2. Context Engineering Masterclass (rewrite a vague task; structured `fields` answers)
+3. Why AI Agents Fail (failure autopsies on fabricated traces)
+4. MCP or Not? (integration choice, credentials, untrusted tool output)
+5. Build a Reliable AI Workflow (gates, bounded retries, approval before irreversible steps; checks your saved Playbook)
+6. AI Evaluation Fundamentals (baseline, variance, held-out cases; checks a real AI Lab experiment)
+7. Efficient AI-Assisted Development (slices, verify with a run, parallel only when independent)
+8. Discover and Evaluate an AI Tool (claims versus evidence, popularity is not safety)
+
+**Learning-science choices.** Prediction before explanation (not graded, not stored); confidence calibration kept from Round 2; decision battles (Opportunity Finder); failure autopsies; spaced review pools of 8 items per new lesson; a diagnostic that covers all 17 competencies and never raises a level. No points, streaks or badges.
+
+**Mastery rules unchanged.** Level 3 still needs an unseen, hint-free attempt with no missed critical item; level 4 still needs self-reported field evidence. The Personal AI Mastery Profile is a *view* (state follows the weakest competency in an area). Practice runs and goals never change a level.
+
+**Recommendations stay explainable.** Due reviews first; then prerequisites, failed attempts, goals (+30 per goal, with the reason shown), practice gaps (+10), interests, diagnostic hints and game relevance. No AI coach.

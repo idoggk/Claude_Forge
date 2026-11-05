@@ -398,7 +398,7 @@ function ExportTab({ draft, update, errors, findings }: { draft: SkillDraft; upd
       <RevisionCompare draft={draft} />
       <AdoptionPanel entryId={`custom:${draft.id}`} heading="Arsenal record for this Skill" local />
 
-      <p className="text-xs text-muted"><Icon name="info" size={14} className="mr-1 inline" />Related: <Link className="underline" to="/academy/lesson/L05-first-custom-skill">Lesson 5</Link> · <SafeLink href="https://code.claude.com/docs/en/skills">Skills docs</SafeLink> · <Link className="underline" to="/battle-lab">compare it in the Battle Lab</Link></p>
+      <p className="text-xs text-muted"><Icon name="info" size={14} className="mr-1 inline" />Related: <Link className="underline" to="/academy/lesson/L05-first-custom-skill">Lesson 5</Link> · <SafeLink href="https://code.claude.com/docs/en/skills">Skills docs</SafeLink> · <Link className="underline" to="/battle-lab">compare it in the AI Lab</Link></p>
     </div>
   );
 }

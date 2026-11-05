@@ -12,3 +12,11 @@ Deliberately **not** in this release: accounts, cloud sync, community features, 
 6. **Tune the review ladder with real data** once there are enough attempts, keeping it explicit and testable.
 7. **Tooling.** Screenshot regression tests, pin GitHub Actions to commit SHAs, actually run the optional WebKit smoke project somewhere it can be installed.
 8. **Loop depth.** Repeat runs per case (a run count above one) with a variance display; a second held-out set per mission; transcript import so verdicts and checklist ticks can be user-imported rather than hand-entered; a Skill-to-experiment link so the maturity ladder can credit Battle Lab comparisons, not only graduated loops.
+
+## After Round 3 (the next three priorities)
+
+1. **Close the research gaps.** Run `scripts/check-sources.mjs` from a network that can reach `modelcontextprotocol.io`, `openai.github.io`, `genai.owasp.org` and `ai.google.dev`; read them; add catalog entries (a Gemini/Google entry, an OWASP LLM-risk entry, the MCP documentation) and a prompt-injection lesson for the Safety track. The registry already marks them unreachable so no claim leaks in.
+2. **Teach the planned tracks that matter most.** The twelve tracks exist; many topics are marked planned. Highest value first: structured outputs and tool calling (Track 1), few-shot examples and prompt-injection awareness (Track 2), RAG and evaluation harnesses (Track 12). Each needs a real lesson with an independent assessment before it can leave "planned".
+3. **Make playbooks and the Lab talk to each other.** Link a playbook to an AI Lab experiment ("this workflow versus one big prompt") so a step can be marked verified *from* recorded runs; add transcript import so run data can be user-imported rather than typed.
+
+Still deliberately out: accounts, sync, executing playbooks, real Claude API calls, auto-installing anything.

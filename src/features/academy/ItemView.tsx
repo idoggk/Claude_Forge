@@ -29,6 +29,7 @@ const KIND_LABEL: Record<Item['kind'], string> = {
   order: 'Put in order',
   numeric: 'Enter a number',
   keywords: 'Short answer (keyword-checked)',
+  fields: 'Improve it - fill each field',
   flaglines: 'Flag the lines',
   reflect: 'Self-assessment',
   external: 'Verified from your saved work',
@@ -197,6 +198,25 @@ function Body({ item, value, onChange, disabled, grade, external, seed }: { item
           <p className="mt-1 text-xs text-muted">Checked deterministically for key ideas - not for quality of reasoning.</p>
         </div>
       );
+    case 'fields': {
+      const map = (value && typeof value === 'object' && !Array.isArray(value) ? value : {}) as Record<string, string>;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-line bg-surface2 p-3 text-sm">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">The brief to improve</p>
+            <Markdown>{item.brief}</Markdown>
+          </div>
+          {item.fields.map((f) => (
+            <div key={f.id} className="space-y-1">
+              <label htmlFor={`${name}-${f.id}`} className="block text-sm font-semibold">{f.label}</label>
+              <p id={`${name}-${f.id}-help`} className="text-xs text-muted">{f.help}</p>
+              <textarea id={`${name}-${f.id}`} aria-describedby={`${name}-${f.id}-help`} rows={3} disabled={disabled} value={map[f.id] ?? ''} onChange={(e) => onChange({ ...map, [f.id]: e.target.value })} placeholder={f.placeholder ?? ''} className="w-full rounded-lg border border-line bg-surface2 p-3 text-sm focus:border-accent" />
+            </div>
+          ))}
+          <p className="text-xs text-muted">Each field is checked deterministically for the ideas it must contain. That check is narrow: it cannot judge your wording, so read the model answer afterwards.</p>
+        </div>
+      );
+    }
     case 'flaglines': {
       const flagged = new Set(Array.isArray(value) ? (value as number[]) : []);
       const marks: Record<number, 'ok' | 'miss' | 'fp'> | undefined = grade

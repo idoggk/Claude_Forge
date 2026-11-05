@@ -19,7 +19,7 @@ export const L02_FLAWED_LINES = [
 export const L02: Lesson = {
   id: 'L02-inside-skill-md',
   version: 1,
-  track: 'A',
+  track: 'claude-code',
   order: 2,
   title: 'Inside SKILL.md',
   subtitle: 'Portable structure, Claude Code extensions and progressive disclosure',

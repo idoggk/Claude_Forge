@@ -4,7 +4,8 @@ import { TIER_LABELS, freshnessOf } from '@/domain/catalog/schema';
 import { LESSONS } from '@/content/lessons';
 import { Badge, Button, Callout, Card, EmptyState, LinkButton, PageHeader, SafeLink, Spinner, useToast } from '@/components/ui';
 import { AdoptionPanel } from '@/features/arsenal/AdoptionPanel';
-import { tierTone } from './DiscoveryPage';
+import { tierTone, TYPE_LABEL } from './DiscoveryPage';
+import { CAPABILITY_BY_ID } from '@/content/capability/map';
 import { todayKey } from '@/lib/clock';
 import { getDb } from '@/persistence/db';
 import { useLive } from '@/persistence/useLive';
@@ -65,7 +66,7 @@ export default function EntryPage() {
       />
       <div className="mb-4 flex flex-wrap gap-2">
         <Badge tone={tierTone(e.tier)}>{TIER_LABELS[e.tier].label}</Badge>
-        {e.componentTypes.map((t) => <Badge key={t}>{t}</Badge>)}
+        {e.componentTypes.map((t) => <Badge key={t}>{TYPE_LABEL[t]}</Badge>)}
         <Badge tone={e.security.reviewStatus === 'not-reviewed' ? 'warn' : 'neutral'}>Security: {e.security.reviewStatus.replace('-', ' ')}</Badge>
         {fresh !== 'not-applicable' && <Badge tone={fresh === 'fresh' ? 'ok' : fresh === 'aging' ? 'warn' : 'bad'}>{fresh}</Badge>}
       </div>
@@ -133,7 +134,8 @@ export default function EntryPage() {
 
           <Sec n={12} title="Related lessons and experiments">
             <ul className="list-disc space-y-1 pl-5">{lessons.map((l) => <li key={l.id}><Link className="text-accent-text underline" to={`/academy/lesson/${l.id}`}>{l.title}</Link></li>)}{lessons.length === 0 && <li className="list-none text-muted">No linked lessons.</li>}</ul>
-            <LinkButton to="/battle-lab" size="sm" icon="flask">Compare it in the Battle Lab</LinkButton>
+            {e.capabilityIds.length > 0 && <p className="mt-3 text-sm" data-testid="entry-capabilities"><span className="font-semibold">On the Capability Map: </span>{e.capabilityIds.map((id, i) => <span key={id}>{i > 0 && ' · '}<Link className="text-accent-text underline" to={`/explore/${id}`}>{CAPABILITY_BY_ID.get(id)?.title ?? id}</Link></span>)}</p>}
+            <LinkButton to="/battle-lab" size="sm" icon="flask">Compare it in the AI Lab</LinkButton>
             {e.tier === 'custom' && <LinkButton to="/workshop" size="sm" icon="hammer">Draft it in the Workshop</LinkButton>}
           </Sec>
         </div>

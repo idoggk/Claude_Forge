@@ -117,3 +117,19 @@ select, input, textarea { max-width: 100%; }
 
 /* Code containers never force horizontal page scroll. */
 .code-scroll { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+
+/* Decorative artwork (public/assets/forge). Never carries meaning, never animates. */
+.forge-art { background: var(--surface2); }
+/* A faint contour texture behind the top of every page in the dark theme only. It sits behind all content at a very
+   low opacity, fades out downwards, and is omitted entirely in the light theme and for printing. */
+.forge-contours {
+  display: none;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: 0.09;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+}
+:root[data-theme='dark'] .forge-contours { display: block; }
+@media print { .forge-contours, .forge-art { display: none; } }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { INTEREST_LABELS, type InterestTag } from '@/domain/curriculum/types';
-import { Button, Callout, Card, PageHeader, SelectField, TextInput, useToast } from '@/components/ui';
+import { Button, Callout, Card, Illustration, PageHeader, SelectField, TextInput, useToast } from '@/components/ui';
 import { saveProfile } from '@/persistence/repo';
 import { useData } from '@/app/providers/DataProvider';
 import { nowIso } from '@/lib/clock';
@@ -28,16 +28,17 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      {!editing && <div className="mb-5" aria-hidden="true"><Illustration name="hero-forge" className="h-40 object-[center_45%] sm:h-64" /></div>}
       <PageHeader
         eyebrow={editing ? 'Your profile' : 'Welcome to Claude Forge'}
-        title={editing ? 'Tune your learning plan' : 'Become genuinely good at Claude Skills'}
+        title={editing ? 'Tune your learning plan' : 'Become genuinely good at using AI'}
         subtitle="A static, offline-capable academy. You learn by doing, we record what you can actually demonstrate, and nothing leaves your device."
       />
       {!editing && (
         <div className="mb-5 grid gap-3 sm:grid-cols-3">
           {[
             ['Discover → Understand → Practice', 'Short lessons, then exercises that grade your answers with feedback on every wrong option.'],
-            ['Experiment → Apply → Measure', 'Compare workflows with a Battle Lab that refuses to turn one lucky run into a conclusion.'],
+            ['Experiment → Apply → Measure', 'Compare workflows with an AI Lab that refuses to turn one lucky run into a conclusion.'],
             ['Evidence, not impressions', 'Mastery changes only when you pass unseen assessments and log real-world application.'],
           ].map(([t, d]) => (
             <Card key={t}><h2 className="font-semibold">{t}</h2><p className="mt-1 text-sm text-muted">{d}</p></Card>

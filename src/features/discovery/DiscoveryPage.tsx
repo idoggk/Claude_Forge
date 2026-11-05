@@ -12,7 +12,10 @@ import { newId } from '@/lib/ids';
 import { todayKey } from '@/lib/clock';
 import { isSafeExternalUrl } from '@/lib/safeUrl';
 
-const TYPE_LABEL: Record<ComponentType, string> = { skill: 'Skill', plugin: 'Plugin', mcp: 'MCP server', agent: 'Agent', hook: 'Hook', marketplace: 'Marketplace', other: 'Other' };
+export const TYPE_LABEL: Record<ComponentType, string> = {
+  skill: 'Skill', plugin: 'Plugin', mcp: 'MCP server', 'agent-framework': 'Agent framework', 'ai-coding-tool': 'AI coding tool', model: 'Model', 'automation-tool': 'Automation tool', 'research-tool': 'Research tool',
+  technique: 'Technique', 'workflow-pattern': 'Workflow pattern', 'developer-integration': 'Developer integration', agent: 'Agent', hook: 'Hook', marketplace: 'Marketplace', other: 'Other',
+};
 const SEC_LABEL = { 'not-reviewed': 'Not reviewed', 'metadata-only': 'Metadata only', 'content-inspected': 'Content inspected' } as const;
 const FRESH_LABEL: Record<Freshness, string> = { fresh: 'Verified ≤30 days ago', aging: 'Verified 31–90 days ago', stale: 'Verified >90 days ago', 'not-applicable': 'No source to verify' };
 
@@ -98,13 +101,14 @@ export default function DiscoveryPage() {
   const { data: arsenal } = useArsenal();
   const { data: candidates } = useLive(() => getDb().annotations.filter((a) => a.candidate !== null).toArray());
   const statuses = useMemo(() => new Map((arsenal ?? []).map((a) => [a.entryId, a.status])), [arsenal]);
+  const presentTypes = useMemo(() => COMPONENT_TYPES.filter((t) => CATALOG.some((e) => e.componentTypes.includes(t))), []);
   const results = useMemo(() => filterCatalog(CATALOG, f, { today: todayKey(), arsenalStatus: statuses }), [f, statuses]);
   if (!arsenal || !candidates) return <Spinner label="Loading the catalog" />;
   const active = JSON.stringify(f) !== JSON.stringify(EMPTY_FILTERS);
 
   return (
     <div>
-      <PageHeader eyebrow="Discovery Hub" title="Curated Skills and integrations" subtitle={`${CATALOG.length} entries, a small deliberately-checked set - not a crawl. Snapshot read ${CATALOG_SNAPSHOT_DATE}. Popularity is never shown as proof of quality.`} actions={<Button icon="plus" onClick={() => setAdding(true)} data-testid="add-candidate">Add a candidate</Button>} />
+      <PageHeader eyebrow="Discovery Hub" title="Curated tools, frameworks and techniques" subtitle={`${CATALOG.length} entries, a small deliberately-checked set - not a crawl. Snapshot read ${CATALOG_SNAPSHOT_DATE}. Popularity is never shown as proof of quality.`} actions={<Button icon="plus" onClick={() => setAdding(true)} data-testid="add-candidate">Add a candidate</Button>} />
       <div className="mb-4"><Callout tone="info" title="How to read this catalog">Facts come from pages read on the stated date through an automated fetch-and-summarize step, not from cloning or running anything. Anything that was not visible is marked <em>unknown</em>, never guessed. Install commands are quoted from their source with a link and are never executed here.</Callout></div>
       {adding && <div className="mb-4"><CandidateForm onDone={() => setAdding(false)} /></div>}
 
@@ -113,7 +117,7 @@ export default function DiscoveryPage() {
           <TextInput label="Search name, outcome, technology, type, project relevance" type="search" value={f.query} onChange={(e) => setF({ ...f, query: e.target.value })} placeholder="e.g. debugging, browser, react, mcp" data-testid="catalog-search" />
           <div className="grid gap-4 lg:grid-cols-2">
             <Toggle label="Source tier" values={TIERS} selected={f.tiers} onChange={(tiers) => setF({ ...f, tiers })} render={(t) => ({ official: 'Official', community: 'Community', candidate: 'Candidate', custom: 'Custom (proposed)' })[t]} />
-            <Toggle label="Component type" values={COMPONENT_TYPES} selected={f.types} onChange={(types) => setF({ ...f, types })} render={(t) => TYPE_LABEL[t]} />
+            <Toggle label="What it is" values={presentTypes} selected={f.types} onChange={(types) => setF({ ...f, types })} render={(t) => `${TYPE_LABEL[t]} (${CATALOG.filter((e) => e.componentTypes.includes(t)).length})`} />
             <Toggle label="Security review status" values={['not-reviewed', 'metadata-only', 'content-inspected'] as const} selected={f.securityStatus} onChange={(securityStatus) => setF({ ...f, securityStatus })} render={(s) => SEC_LABEL[s]} />
             <Toggle label="Verification freshness" values={['fresh', 'aging', 'stale'] as const} selected={f.freshness} onChange={(freshness) => setF({ ...f, freshness })} render={(s) => FRESH_LABEL[s]} />
           </div>

@@ -49,7 +49,7 @@ export function ExerciseRunner({ items, seed, mode, askConfidence, allowHints, s
 
   const { data: ext } = useLive(async () => {
     const i = await loadExternalInputs();
-    return evaluateExternal(i.skills, i.experiments, i.evidence);
+    return evaluateExternal(i.skills, i.experiments, i.evidence, i.playbooks);
   }, []);
   const external: ExternalResults = ext ?? {};
 

@@ -28,6 +28,9 @@ import type { SkillDraft, SkillContent, Revision } from '@/domain/skills/model';
 import { contentOf } from '@/domain/skills/model';
 import type { Evidence, Experiment } from '@/domain/experiments/model';
 import { newId } from '@/lib/ids';
+import { LearningGoalSchema, MAX_ACTIVE_GOALS, type LearningGoal } from '@/domain/goals/model';
+import { PlaybookSchema, type Playbook, type PlaybookContent } from '@/domain/playbook/model';
+import { ActivityRunSchema, type ActivityRun } from './schemas';
 
 /* ---------------------------------- profile & prefs ---------------------------------- */
 
@@ -107,8 +110,8 @@ const PRACTICE_MARK = 0.7;
 
 export async function loadExternalInputs() {
   const db = getDb();
-  const [skills, experiments, evidence] = await Promise.all([db.customSkills.toArray(), db.experiments.toArray(), db.evidence.toArray()]);
-  return { skills, experiments, evidence };
+  const [skills, experiments, evidence, playbooks] = await Promise.all([db.customSkills.toArray(), db.experiments.toArray(), db.evidence.toArray(), db.playbooks.toArray()]);
+  return { skills, experiments, evidence, playbooks };
 }
 
 async function recomputeCompetenciesTx(reason: string): Promise<{ before: Record<string, number>; after: Record<string, number> }> {
@@ -132,7 +135,7 @@ export async function recomputeCompetencies(reason: string): Promise<void> {
 
 export async function submitAttempt(input: SubmitInput): Promise<SubmitResult> {
   const db = getDb();
-  return db.transaction('rw', [db.attempts, db.lessonProgress, db.competencies, db.reviews, db.customSkills, db.experiments, db.evidence, db.fieldEvidence], async () => {
+  return db.transaction('rw', [db.attempts, db.lessonProgress, db.competencies, db.reviews, db.customSkills, db.experiments, db.evidence, db.fieldEvidence, db.playbooks], async () => {
     const dupe = await db.attempts.get(input.attemptId);
     if (dupe) {
       const cur = Object.fromEntries((await db.competencies.toArray()).map((r) => [r.competencyId, r.level]));
@@ -141,7 +144,7 @@ export async function submitAttempt(input: SubmitInput): Promise<SubmitResult> {
     const { lesson, stage } = input;
     const items: Item[] = stage === 'practice' ? lesson.activity.items : lesson.assessment.items;
     const passMark = stage === 'practice' ? PRACTICE_MARK : lesson.assessment.passMark;
-    const external = evaluateExternal(await db.customSkills.toArray(), await db.experiments.toArray(), await db.evidence.toArray());
+    const external = evaluateExternal(await db.customSkills.toArray(), await db.experiments.toArray(), await db.evidence.toArray(), await db.playbooks.toArray());
     const grade = gradeAttempt(items, input.answers, { passMark, external });
     const prior = await db.attempts.where('[lessonId+stage]').equals([lesson.id, stage]).filter((a) => a.lessonVersion === lesson.version).count();
     const attemptNumber = prior + 1;
@@ -412,6 +415,87 @@ export async function addEvidence(ev: Evidence): Promise<void> {
 
 export async function deleteEvidence(id: string): Promise<void> {
   await getDb().evidence.delete(id);
+}
+
+/* ------------------------------------------ goals ------------------------------------------ */
+
+export class GoalLimitError extends Error {}
+
+/** Create or update a learning goal. Goals steer recommendations; they are never evidence of skill. */
+export async function saveGoal(input: { id?: string; title: string; why?: string; capabilityIds: string[] }): Promise<LearningGoal> {
+  const db = getDb();
+  const now = nowIso();
+  return db.transaction('rw', db.goals, async () => {
+    const existing = input.id ? await db.goals.get(input.id) : undefined;
+    if (!existing) {
+      const active = await db.goals.where('status').equals('active').count();
+      if (active >= MAX_ACTIVE_GOALS) throw new GoalLimitError(`You can keep ${MAX_ACTIVE_GOALS} active goals at a time. Archive or complete one first.`);
+    }
+    const next = LearningGoalSchema.parse({
+      ...(existing ?? { id: input.id ?? newId('goal'), status: 'active', achievedNote: '', achievedAt: null, createdAt: now }),
+      title: input.title.trim(),
+      why: input.why ?? existing?.why ?? '',
+      capabilityIds: input.capabilityIds,
+      updatedAt: now,
+    });
+    await db.goals.put(next);
+    return next;
+  });
+}
+
+/** Declare a goal achieved (with a note in your own words), archived, or active again. Forge never decides this for you. */
+export async function setGoalStatus(id: string, status: LearningGoal['status'], achievedNote = ''): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', db.goals, async () => {
+    const g = await db.goals.get(id);
+    if (!g) return;
+    if (status === 'active' && g.status !== 'active') {
+      const active = await db.goals.where('status').equals('active').count();
+      if (active >= MAX_ACTIVE_GOALS) throw new GoalLimitError(`You can keep ${MAX_ACTIVE_GOALS} active goals at a time.`);
+    }
+    const now = nowIso();
+    await db.goals.put({ ...g, status, achievedNote: status === 'achieved' ? achievedNote.trim() : g.achievedNote, achievedAt: status === 'achieved' ? now : null, updatedAt: now });
+  });
+}
+
+export async function deleteGoal(id: string): Promise<void> {
+  await getDb().goals.delete(id);
+}
+
+/* ---------------------------------------- playbooks ---------------------------------------- */
+
+const MAX_REVISIONS = 30;
+const contentOfPlaybook = (p: PlaybookContent): PlaybookContent => ({
+  title: p.title, goal: p.goal, prerequisites: p.prerequisites, inputs: p.inputs, outputs: p.outputs, completionCriteria: p.completionCriteria, steps: p.steps, notes: p.notes, capabilityIds: p.capabilityIds,
+});
+
+/** Save a playbook. When `revisionLabel` is given, the PREVIOUS saved content is kept as a version-history entry. */
+export async function savePlaybook(pb: Playbook, revisionLabel?: string): Promise<Playbook> {
+  const db = getDb();
+  const now = nowIso();
+  return db.transaction('rw', db.playbooks, async () => {
+    const prev = await db.playbooks.get(pb.id);
+    let revisions = pb.revisions;
+    if (revisionLabel && prev) {
+      revisions = [...prev.revisions, { id: newId('rev'), savedAt: now, label: revisionLabel.slice(0, 120), snapshot: contentOfPlaybook(prev) }].slice(-MAX_REVISIONS);
+    }
+    const next = PlaybookSchema.parse({ ...pb, revisions, updatedAt: now });
+    await db.playbooks.put(next);
+    return next;
+  });
+}
+
+export async function deletePlaybook(id: string): Promise<void> {
+  await getDb().playbooks.delete(id);
+}
+
+/* ------------------------------------- activity runs ------------------------------------- */
+
+/** Record a standalone practice run (for example the Opportunity Finder). Never changes a competency level by itself. */
+export async function recordActivityRun(run: Omit<ActivityRun, 'takenAt'>): Promise<ActivityRun> {
+  const rec = ActivityRunSchema.parse({ ...run, takenAt: nowIso() });
+  await getDb().activityRuns.put(rec);
+  return rec;
 }
 
 /* ------------------------------------------ reset ------------------------------------------ */

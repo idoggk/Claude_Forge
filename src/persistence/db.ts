@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type {
+  ActivityRun,
   Annotation,
   ArsenalRecord,
   Attempt,
@@ -15,16 +16,18 @@ import type {
 import type { SkillDraft } from '@/domain/skills/model';
 import type { Evidence, Experiment } from '@/domain/experiments/model';
 import type { LoopRun } from '@/domain/loop/model';
+import type { LearningGoal } from '@/domain/goals/model';
+import type { Playbook } from '@/domain/playbook/model';
 
 export const DB_NAME = 'claude-forge';
 /** Bump when stores or record shapes change, and add a numbered `version()` block with an upgrade. */
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 /**
  * Stores (all local to this browser profile):
  *  profile · preferences · lessonProgress · attempts · competencies · reviews ·
  *  annotations (catalog notes) · arsenal · customSkills · experiments · evidence ·
- *  fieldEvidence (v2) · loops (v3) · diagnostics (v4) · meta
+ *  fieldEvidence (v2) · loops (v3) · diagnostics (v4) · goals, playbooks, activityRuns (v5) · meta
  */
 export class ForgeDB extends Dexie {
   profile!: Table<Profile, string>;
@@ -41,6 +44,9 @@ export class ForgeDB extends Dexie {
   fieldEvidence!: Table<FieldEvidence, string>;
   loops!: Table<LoopRun, string>;
   diagnostics!: Table<DiagnosticRecord, string>;
+  goals!: Table<LearningGoal, string>;
+  playbooks!: Table<Playbook, string>;
+  activityRuns!: Table<ActivityRun, string>;
   meta!: Table<MetaRecord, string>;
 
   constructor(name: string = DB_NAME) {
@@ -106,6 +112,21 @@ export class ForgeDB extends Dexie {
     // v4 - adds `diagnostics` (placement diagnostic results). Purely additive: no existing record changes, and
     // diagnostics never feed competency levels.
     this.version(4).stores({ diagnostics: 'id, takenAt' });
+
+    // v5 - adds `goals` (learning goals), `playbooks` (AI workflow playbooks) and `activityRuns` (standalone practice
+    // activities). Experiments gain `experimentType` ('skill' for every existing one) and `subject`. No record is
+    // removed or rewritten otherwise, and every existing experiment keeps working as a Skill experiment.
+    this.version(5)
+      .stores({ goals: 'id, status, updatedAt', playbooks: 'id, updatedAt', activityRuns: 'id, activityId, takenAt' })
+      .upgrade(async (tx) => {
+        await tx
+          .table('experiments')
+          .toCollection()
+          .modify((e: Record<string, unknown>) => {
+            if (e.experimentType === undefined) e.experimentType = 'skill';
+            if (e.subject === undefined) e.subject = '';
+          });
+      });
   }
 }
 
@@ -136,6 +157,9 @@ export const ALL_STORES = [
   'fieldEvidence',
   'loops',
   'diagnostics',
+  'goals',
+  'playbooks',
+  'activityRuns',
   'meta',
 ] as const;
 export type StoreName = (typeof ALL_STORES)[number];

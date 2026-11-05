@@ -9,7 +9,7 @@ import { answerItems, goto, startApp } from './helpers';
  * Automated checks catch a subset of problems; keyboard and screen-reader behaviour is covered by other tests
  * and should still be spot-checked by hand.
  */
-const ROUTES = ['/', '/loop', '/academy', '/academy/lesson/L01-skill-or-tool', '/academy/diagnostic', '/discovery', '/discovery/playwright-mcp', '/workshop', '/battle-lab', '/battle-lab/demo-merge-cascade', '/arsenal', '/growth', '/settings', '/more', '/search?q=skill'];
+const ROUTES = ['/', '/explore', '/explore/reliable-workflows', '/playbooks', '/academy/opportunity-finder', '/academy/lesson/L12-context-engineering', '/loop', '/academy', '/academy/lesson/L01-skill-or-tool', '/academy/diagnostic', '/discovery', '/discovery/playwright-mcp', '/workshop', '/battle-lab', '/battle-lab/demo-merge-cascade', '/arsenal', '/growth', '/settings', '/more', '/search?q=skill'];
 
 async function audit(page: Page, label: string) {
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();

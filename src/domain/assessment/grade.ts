@@ -1,4 +1,4 @@
-import type { ExternalCheckId, FlagLinesItem, Item } from '../curriculum/types';
+import type { ExternalCheckId, FieldsItem, FlagLinesItem, Item } from '../curriculum/types';
 
 /**
  * Deterministic grading. Every item type is graded by explicit rules - there is
@@ -219,6 +219,8 @@ export function gradeItem(item: Item, answer: unknown, external: ExternalResults
         details,
       });
     }
+    case 'fields':
+      return gradeFields(item, answer);
     case 'flaglines':
       return gradeFlagLines(item, answer);
     case 'reflect': {
@@ -245,6 +247,38 @@ export function gradeItem(item: Item, answer: unknown, external: ExternalResults
       });
     }
   }
+}
+
+function gradeFields(item: FieldsItem, answer: unknown): ItemGrade {
+  const map = answer && typeof answer === 'object' && !Array.isArray(answer) ? (answer as Record<string, unknown>) : {};
+  let total = 0;
+  let allOk = true;
+  let any = false;
+  const details: GradeDetail[] = item.fields.map((f) => {
+    const raw = typeof map[f.id] === 'string' ? (map[f.id] as string) : '';
+    const text = normalizeText(raw);
+    if (text) any = true;
+    const need = f.minGroups ?? f.groups.length;
+    const hits = f.groups.map((g) => ({ g, hit: text ? g.anyOf.find((k) => text.includes(normalizeText(k))) : undefined }));
+    const met = hits.filter((h) => h.hit).length;
+    const ok = met >= need;
+    if (!ok) allOk = false;
+    total += text ? clamp01(met / need) : 0;
+    const found = hits.filter((h) => h.hit).map((h) => h.g.label);
+    const missing = hits.filter((h) => !h.hit).map((h) => `${h.g.label} (accepted terms include: ${h.g.anyOf.slice(0, 4).join(' / ')})`);
+    return {
+      label: f.label,
+      ok,
+      note: !text ? `Left blank. ${f.help}` : `${found.length ? `Contains: ${found.join('; ')}. ` : ''}${missing.length ? `Not found: ${missing.join('; ')}.` : 'Every required idea is present.'}`,
+    };
+  });
+  return base(item, {
+    answered: any,
+    correct: allOk,
+    score: round(total / item.fields.length),
+    feedback: allOk ? 'Every field contains the ideas it needs (keyword check - it cannot judge the quality of your wording).' : 'Some fields are missing ideas. This check is deterministic and narrow: compare your wording with the model answer in the explanation.',
+    details,
+  });
 }
 
 const SEVERITY_WEIGHT = { critical: 3, major: 2, minor: 1 } as const;

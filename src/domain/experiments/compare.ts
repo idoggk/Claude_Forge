@@ -1,5 +1,5 @@
 import type { Condition, CriterionId, Experiment, MetricId, Run } from './model';
-import { CRITERION_IDS, METRICS, RUBRIC_CRITERIA } from './model';
+import { CRITERION_IDS, METRICS, RUBRIC_CRITERIA, isBaselineKind } from './model';
 
 /**
  * Comparison rules (honesty first):
@@ -168,9 +168,9 @@ export function compareExperiment(exp: Experiment, seededTotal: number | null = 
   }
 
   const integrity: string[] = [];
-  const hasBaseline = conds.some((c) => c.kind === 'no-skill');
-  if (conds.length >= 2 && !hasBaseline) integrity.push('No "without a Skill" baseline: you cannot attribute differences to the Skill itself.');
-  for (const c of conds) if (c.kind !== 'no-skill' && !c.difference.trim()) integrity.push(`Condition ${c.label} does not state what differs from the baseline. Experiments need exactly one explicit difference.`);
+  const hasBaseline = conds.some((c) => isBaselineKind(c.kind));
+  if (conds.length >= 2 && !hasBaseline) integrity.push(exp.experimentType === 'skill' ? 'No "without a Skill" baseline: you cannot attribute differences to the Skill itself.' : 'No baseline condition (the current way of doing it): you cannot attribute differences to the thing you changed.');
+  for (const c of conds) if (!isBaselineKind(c.kind) && !c.difference.trim()) integrity.push(`Condition ${c.label} does not state what differs from the baseline. Experiments need exactly one explicit difference.`);
   const counts = runsPerCondition.map((r) => r.recorded);
   if (counts.length >= 2 && new Set(counts).size > 1) integrity.push(`Unequal number of runs across conditions (${runsPerCondition.map((r) => `${r.label}: ${r.recorded}`).join(', ')}).`);
   if (exp.runs.length > 0 && exp.runs.length < exp.plannedRuns * Math.max(conds.length, 1)) integrity.push(`Planned ${exp.plannedRuns} run(s) per condition but recorded ${exp.runs.length} in total.`);

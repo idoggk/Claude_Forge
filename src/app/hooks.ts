@@ -42,3 +42,15 @@ export function useSkills() {
 export function useExperiments() {
   return useLive(() => getDb().experiments.orderBy('updatedAt').reverse().toArray());
 }
+
+export function useGoals() {
+  return useLive(() => getDb().goals.orderBy('updatedAt').reverse().toArray());
+}
+
+export function usePlaybooks() {
+  return useLive(() => getDb().playbooks.orderBy('updatedAt').reverse().toArray());
+}
+
+export function useActivityRuns() {
+  return useLive(() => getDb().activityRuns.orderBy('takenAt').reverse().toArray());
+}

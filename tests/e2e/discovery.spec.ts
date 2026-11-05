@@ -6,23 +6,23 @@ test.describe('Discovery', () => {
 
   test('9. searching finds the right Skill', async ({ page }) => {
     await page.getByTestId('catalog-search').fill('superpowers');
-    await expect(page.getByTestId('result-count')).toHaveText(/1 of 11 entries/);
+    await expect(page.getByTestId('result-count')).toHaveText(/1 of 23 entries/);
     await expect(page.getByTestId('entry-obra-superpowers')).toBeVisible();
     await page.getByTestId('catalog-search').fill('zzzznothing');
     await expect(page.getByText('No entries match')).toBeVisible();
     await page.getByTestId('clear-filters').click();
-    await expect(page.getByTestId('result-count')).toHaveText(/11 of 11/);
+    await expect(page.getByTestId('result-count')).toHaveText(/23 of 23/);
   });
 
   test('10. filtering by integration type works', async ({ page }) => {
     await page.getByLabel('MCP server').check();
-    await expect(page.getByTestId('result-count')).toHaveText(/2 of 11/);
+    await expect(page.getByTestId('result-count')).toHaveText(/2 of 23/);
     await expect(page.getByTestId('entry-playwright-mcp')).toBeVisible();
     await expect(page.getByTestId('entry-mcp-reference-servers')).toBeVisible();
     await expect(page.getByTestId('entry-obra-superpowers')).toHaveCount(0);
     await page.getByLabel('MCP server').uncheck();
     await page.getByLabel('Custom (proposed)').check();
-    await expect(page.getByTestId('result-count')).toHaveText(/3 of 11/);
+    await expect(page.getByTestId('result-count')).toHaveText(/3 of 23/);
   });
 
   test('11. a detail page shows provenance, unknowns and installation with its source', async ({ page }) => {
