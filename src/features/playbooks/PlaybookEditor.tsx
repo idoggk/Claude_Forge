@@ -96,8 +96,9 @@ export default function PlaybookEditor() {
   const [result, setResult] = useState<{ outcome: 'worked' | 'partly' | 'failed' | 'unknown'; text: string }>({ outcome: 'unknown', text: '' });
 
   useEffect(() => { if (stored && !draft) setDraft(stored); }, [stored, draft]);
-  // Evidence is written straight to the stored playbook; with no unsaved edits the draft simply follows it.
-  useEffect(() => { if (stored && draft && !dirty && stored.updatedAt !== draft.updatedAt) setDraft(stored); }, [stored, draft, dirty]);
+  // Evidence is written straight to the stored playbook; with no unsaved edits the draft follows it, but only when the
+  // stored copy is NEWER than the draft, so the draft never flips back to an older copy while its own save is still settling.
+  useEffect(() => { if (stored && draft && !dirty && stored.updatedAt > draft.updatedAt) setDraft(stored); }, [stored, draft, dirty]);
   const problems = useMemo(() => (draft ? playbookProblems(draft) : []), [draft]);
   const check = useMemo(() => (draft ? reliabilityChecklist(draft) : null), [draft]);
 

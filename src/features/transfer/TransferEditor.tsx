@@ -28,7 +28,7 @@ export default function TransferEditor() {
   latest.current = draft;
 
   useEffect(() => { if (stored && !draft) setDraft(stored); }, [stored, draft]);
-  useEffect(() => { if (stored && draft && !dirty && stored.updatedAt !== draft.updatedAt) setDraft(stored); }, [stored, draft, dirty]);
+  useEffect(() => { if (stored && draft && !dirty && stored.updatedAt > draft.updatedAt) setDraft(stored); }, [stored, draft, dirty]);
 
   if (!tasks) return <Spinner label="Loading the task" />;
   if (!stored && !draft) return <EmptyState title="That transfer task does not exist" action={<LinkButton to="/transfer" variant="primary">Back to transfer tasks</LinkButton>}>It may have been deleted.</EmptyState>;

@@ -263,6 +263,7 @@ test.describe('Round 4: real-world transfer tasks', () => {
   test('a playbook-sourced task can record a self-reported real-work result on the playbook, which raises maturity to "Applied to real work" without touching fixture evidence', async ({ page }) => {
     await goto(page, '/playbooks');
     await page.getByTestId('use-seed-release-notes').click();
+    await expect(page.getByTestId('playbook-editor')).toBeVisible(); // the id is in the URL only once the editor has opened
     const pbUrl = page.url();
     const pbId = pbUrl.split('/').pop()!;
     await goto(page, `/transfer?source=playbook&id=${pbId}`);

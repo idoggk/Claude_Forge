@@ -124,7 +124,9 @@ export function recommend(input: RecommendInput): { primary: Recommendation; alt
     // A failed prerequisite concept raises the priority of lessons that depend on it.
     const dependents = lessons.filter((l) => l.prerequisites.includes(lesson.id) && lessonStatus(l, attempts, progress) !== 'passed');
     if (dependents.length > 0) {
-      score += 6 * dependents.length;
+      // Capped: with 24 lessons a foundational lesson such as Context Engineering is a prerequisite of many later ones, and an
+      // uncapped bonus would let that outrank the next lesson in the learner's own track.
+      score += 6 * Math.min(3, dependents.length);
       reasons.push(`It is required before: ${dependents.map((d) => d.title).join(', ')}.`);
     }
 

@@ -107,7 +107,7 @@ test.describe('Round 3: Workflow Playbooks', () => {
     await page.getByTestId('step-0-verified-note').fill('Ran the script on last week\'s export and saw it validate.');
     await expect(page.getByRole('alert').filter({ hasText: 'what verified it' })).toHaveCount(0);
     await page.getByTestId('save-playbook').click();
-    await expect(page.getByText('Saved').first()).toBeVisible();
+    await expect(page.getByText('Saved', { exact: true }).first()).toBeVisible();
 
     // version history keeps the previous content
     await page.getByTestId('pb-title').fill('Release notes v2');

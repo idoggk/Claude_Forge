@@ -172,3 +172,17 @@ describe('recommendations surface the advanced lessons with reasons', () => {
     expect(steered.status).toBe('not-started');
   });
 });
+
+describe('adding advanced lessons does not reorder the first track', () => {
+  const lesson = (id: string) => LESSONS.find((l) => l.id.startsWith(id))!;
+  const passed = (l: (typeof LESSONS)[number]) => ({
+    id: `a-${l.id}`, lessonId: l.id, lessonVersion: l.version, stage: 'assessment' as const, startedAt: 't', submittedAt: '2026-11-01T00:00:00Z', attemptNumber: 1, answers: {}, results: [], score: 1, passed: true, criticalFailed: [], hintsUsed: 0,
+    confidence: 4, predictedPct: null, independent: true, unseen: true, conceptResults: {},
+  });
+  const input = (done: string[]) => ({ lessons: LESSONS, attempts: done.map((d) => passed(lesson(d))), progress: [], reviews: [], profile: { interests: [] }, today: '2026-11-05' });
+
+  it('after the first lesson the next recommendation is the second lesson, not a foundational lesson that many later ones depend on', () => {
+    const r = recommend(input(['L01'])).primary;
+    expect(r.title).toBe(lesson('L02').title);
+  });
+});
