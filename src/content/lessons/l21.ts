@@ -1,5 +1,5 @@
 import type { Lesson } from '@/domain/curriculum/types';
-import { o, DOCS, ARTICLES } from './helpers';
+import { o, DOCS, ARTICLES, THIRD_PARTY } from './helpers';
 
 const TRUST = [
   { id: 'trusted', label: 'Trusted instruction' },
@@ -405,5 +405,7 @@ Apply the four questions:
     { ...DOCS.handleToolCalls, supports: 'The warning that tool results carry untrusted content and should stay in tool_result blocks.' },
     { ...DOCS.mcp, supports: 'Claude Code\'s MCP documentation warning that servers fetching external content can expose you to prompt injection.' },
     { ...ARTICLES.writingTools, supports: 'Tool design that keeps results high-signal.' },
+    { ...THIRD_PARTY.owaspLlm01, supports: 'A community description of direct and indirect injection, seven mitigations (least privilege in code, human approval, segregating external content, adversarial testing) and the statement that fool-proof prevention is unclear.' },
+    { ...THIRD_PARTY.mcpSecurity, supports: 'The protocol project\'s own list of attacks on MCP integrations, including token passthrough and local server compromise.' },
   ],
 };

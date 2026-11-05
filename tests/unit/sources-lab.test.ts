@@ -17,11 +17,32 @@ describe('source registry (living-discovery data)', () => {
     const urls = new Set(SOURCE_REGISTRY.map((s) => s.url));
     for (const e of CATALOG) if (e.sourceUrl) expect(urls.has(e.sourceUrl), `${e.id} source is not in the registry`).toBe(true);
     const unreachable = SOURCE_REGISTRY.filter((s) => s.status === 'unreachable');
-    expect(unreachable.length).toBeGreaterThanOrEqual(3);
     for (const s of unreachable) {
       expect(s.usedBy, s.id).toEqual([]);
       expect(s.note, s.id).toMatch(/No claim|nothing from it|Gemini|repository page was read instead|DNS/i);
       for (const e of CATALOG) expect(e.sourceUrl, `${e.id} uses unreachable ${s.url}`).not.toBe(s.url);
+    }
+  });
+  it('hosts that were blocked earlier in Round 4 were retried, and what was read from them is a catalog entry with a matching registry record', () => {
+    const hosts = ['modelcontextprotocol.io', 'genai.owasp.org', 'ai.google.dev', 'openai.github.io'];
+    for (const h of hosts) {
+      const recs = SOURCE_REGISTRY.filter((s) => new URL(s.url).host === h);
+      expect(recs.length, h).toBeGreaterThan(0);
+      for (const r of recs) {
+        // either read (and used by an entry or lesson) or still honestly marked unreachable with a retry date
+        if (r.status === 'read') expect(r.usedBy.length + r.usedByLessons.length, r.id).toBeGreaterThan(0);
+        else expect(r.retriedAt, r.id).toBeDefined();
+      }
+    }
+    // the ids of the new Round 4 catalog entries exist and cite a "read" record
+    for (const id of ['mcp-docs-intro', 'mcp-specification-docs', 'mcp-security-best-practices', 'owasp-llm-top-10-2025', 'owasp-llm01-prompt-injection', 'gemini-function-calling', 'gemini-structured-output', 'openai-agents-docs']) {
+      const e = CATALOG.find((x) => x.id === id);
+      expect(e, id).toBeDefined();
+      expect(SOURCE_REGISTRY.find((s) => s.url === e!.sourceUrl)?.status, id).toBe('read');
+      expect(e!.evidenceStatus).toBe('official-docs-read');
+      expect(e!.limitations.length, `${id} states its limits`).toBeGreaterThan(0);
+      expect(e!.missingChecks.length, `${id} lists what is unknown`).toBeGreaterThan(0);
+      expect(e!.install.methods, `${id} reproduces no install command`).toEqual([]);
     }
   });
   it('each "read" source is used by a real catalog entry whose source matches', () => {

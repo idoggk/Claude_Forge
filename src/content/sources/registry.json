@@ -245,13 +245,15 @@
     },
     {
       "id": "src-mcp-docs-site",
-      "label": "Model Context Protocol documentation site",
-      "url": "https://modelcontextprotocol.io/",
+      "label": "MCP documentation - What is the Model Context Protocol",
+      "url": "https://modelcontextprotocol.io/docs/getting-started/intro",
       "kind": "docs",
-      "status": "unreachable",
+      "status": "read",
       "checkedAt": "2026-11-05",
-      "usedBy": [],
-      "note": "DNS resolution failed from the research environment. No claim from this site is used anywhere in Forge. Re-check from an environment that can reach it. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "usedBy": [
+        "mcp-docs-intro"
+      ],
+      "note": "Redirected to a dated documentation path (docs/2026-07-28/...). The introductory text was read from an automated fetch converted to text; sidebar and navigation content was not. Earlier in Round 4 this host was refused by the session network allowlist; it was read after being allowed.",
       "retriedAt": "2026-11-05"
     },
     {
@@ -259,32 +261,38 @@
       "label": "OpenAI Agents SDK documentation",
       "url": "https://openai.github.io/openai-agents-python/",
       "kind": "docs",
-      "status": "unreachable",
+      "status": "read",
       "checkedAt": "2026-11-05",
-      "usedBy": [],
-      "note": "DNS resolution failed from the research environment. The repository page was read instead. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "usedBy": [
+        "openai-agents-docs"
+      ],
+      "note": "Landing page read. The repository page was read earlier for the repository entry. Earlier in Round 4 this host was refused by the session network allowlist.",
       "retriedAt": "2026-11-05"
     },
     {
       "id": "src-owasp-genai",
-      "label": "OWASP GenAI Security Project",
-      "url": "https://genai.owasp.org/",
+      "label": "OWASP GenAI Security Project - 2025 Top 10 for LLM applications",
+      "url": "https://genai.owasp.org/llm-top-10/",
       "kind": "docs",
-      "status": "unreachable",
+      "status": "read",
       "checkedAt": "2026-11-05",
-      "usedBy": [],
-      "note": "DNS resolution failed from the research environment. A lead for a future security-track lesson; nothing from it is claimed. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "usedBy": [
+        "owasp-llm-top-10-2025"
+      ],
+      "note": "The listing page shows a teaser of each of the ten risks, not their full text. Earlier in Round 4 this host was refused by the session network allowlist.",
       "retriedAt": "2026-11-05"
     },
     {
       "id": "src-google-ai-docs",
-      "label": "Google AI for Developers documentation",
-      "url": "https://ai.google.dev/",
+      "label": "Gemini API documentation - Function calling",
+      "url": "https://ai.google.dev/gemini-api/docs/function-calling",
       "kind": "docs",
-      "status": "unreachable",
+      "status": "read",
       "checkedAt": "2026-11-05",
-      "usedBy": [],
-      "note": "DNS resolution failed from the research environment. Gemini-related coverage is therefore absent from the catalog; this is a gap, not a judgement. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "usedBy": [
+        "gemini-function-calling"
+      ],
+      "note": "ai.google.dev redirected to aistudio.google.com/docs/function-calling; both hosts had to be allowed. The page includes install commands in its landing tab (npx and curl piped to a shell); none were run and none are reproduced in Forge. Earlier in Round 4 the host was refused by the session network allowlist.",
       "retriedAt": "2026-11-05"
     },
     {
@@ -384,6 +392,58 @@
         "anthropic-long-running-harness"
       ],
       "note": ""
+    },
+    {
+      "id": "src-mcp-spec",
+      "label": "Model Context Protocol specification",
+      "url": "https://modelcontextprotocol.io/specification/",
+      "kind": "spec",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "mcp-specification-docs"
+      ],
+      "usedByLessons": [],
+      "note": "Redirected to the dated revision 2026-07-28. Landing page of the specification read, not every sub-page."
+    },
+    {
+      "id": "src-mcp-security",
+      "label": "MCP documentation - Security best practices",
+      "url": "https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "mcp-security-best-practices"
+      ],
+      "usedByLessons": [],
+      "note": "Redirected to the 2026-07-28 documentation path. Page is long; the introduction and the sections on confused deputy, token passthrough and local server compromise were read closely, the rest skimmed by heading."
+    },
+    {
+      "id": "src-owasp-llm01",
+      "label": "OWASP GenAI - LLM01:2025 Prompt Injection",
+      "url": "https://genai.owasp.org/llmrisk/llm01-prompt-injection/",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "owasp-llm01-prompt-injection"
+      ],
+      "usedByLessons": [],
+      "note": ""
+    },
+    {
+      "id": "src-gemini-structured",
+      "label": "Gemini API documentation - Structured outputs",
+      "url": "https://ai.google.dev/gemini-api/docs/structured-output",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "gemini-structured-output"
+      ],
+      "usedByLessons": [],
+      "note": "ai.google.dev redirected to aistudio.google.com/docs/structured-output. Only the introduction and the first example were read closely."
     }
   ]
 }

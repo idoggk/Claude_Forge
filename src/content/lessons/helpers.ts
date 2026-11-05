@@ -22,6 +22,14 @@ export const DOCS = {
   developTests: { label: 'Claude API docs - Create strong empirical evaluations', url: 'https://platform.claude.com/docs/en/test-and-evaluate/develop-tests' },
 } as const;
 
+/** Third-party documentation read after four hosts were allowed on 2026-11-05 (see the source registry). Not Anthropic sources. */
+export const THIRD_PARTY = {
+  owaspLlm01: { label: 'OWASP Gen AI Security Project - LLM01:2025 Prompt Injection', url: 'https://genai.owasp.org/llmrisk/llm01-prompt-injection/' },
+  mcpSecurity: { label: 'Model Context Protocol - Security best practices', url: 'https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices' },
+  geminiStructured: { label: 'Gemini API docs - Structured outputs', url: 'https://ai.google.dev/gemini-api/docs/structured-output' },
+  geminiFunctionCalling: { label: 'Gemini API docs - Function calling', url: 'https://ai.google.dev/gemini-api/docs/function-calling' },
+} as const;
+
 /** Anthropic engineering articles read for Round 3 (dates are the publication dates shown on each page). */
 export const ARTICLES = {
   buildingAgents: { label: 'Anthropic - Building effective agents (Dec 19, 2024)', url: 'https://www.anthropic.com/engineering/building-effective-agents' },

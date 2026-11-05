@@ -124,7 +124,7 @@ describe('transfer tasks and older backups', () => {
     const parsed = parseBackup(file);
     expect(parsed.preview.fatal).toBeNull();
     expect(parsed.preview.invalidCount).toBe(0);
-    await applyImport(parsed.valid, 'merge');
+    await applyImport(parsed.valid!, 'merge');
     const pb = (await db.playbooks.get('pb-old'))!;
     expect(pb.contentVersion).toBe(1);
     expect(pb.evidenceLinks).toEqual([]);

@@ -1,5 +1,5 @@
 import type { Lesson } from '@/domain/curriculum/types';
-import { o, DOCS, ARTICLES } from './helpers';
+import { o, DOCS, ARTICLES, THIRD_PARTY } from './helpers';
 
 const LAYERS = [
   { id: 'schema', label: 'Schema validation (shape)' },
@@ -410,5 +410,6 @@ The repaired design cannot be satisfied by "n/a". It can still be wrong - which 
     { ...DOCS.handleToolCalls, supports: 'tool_result formatting, is_error, instructive error messages, and retry behaviour for invalid calls.' },
     { ...DOCS.structuredOutputs, supports: 'JSON outputs and strict tool use, what is guaranteed, and the refusal and max_tokens caveats.' },
     { ...ARTICLES.writingTools, supports: 'Designing a few high-impact tools with clear descriptions and high-signal results.' },
+    { ...THIRD_PARTY.geminiFunctionCalling, supports: 'A second provider\'s tool-calling guidance: strong typing, a small active tool set, validating function calls before executing them, and schema-complexity limits.' },
   ],
 };
