@@ -17,6 +17,12 @@ import { L15 } from './l15';
 import { L16 } from './l16';
 import { L17 } from './l17';
 import { L18 } from './l18';
+import { L19 } from './l19';
+import { L20 } from './l20';
+import { L21 } from './l21';
+import { L22 } from './l22';
+import { L23 } from './l23';
+import { L24 } from './l24';
 import { EXTRA_REVIEW_ITEMS } from './review-extra';
 import { REVIEW_POOL_2 } from './review-pool-2';
 
@@ -42,7 +48,7 @@ const withReviewPool = (l: Lesson): Lesson => ({
   reviewItems: [...l.reviewItems, ...(EXTRA_REVIEW_ITEMS[l.id] ?? []), ...(REVIEW_POOL_2[l.id] ?? [])].map(withDifficulty),
 });
 
-export const LESSONS: Lesson[] = [L01, L02, L03, L04, L05, L06, L07, L08, L09, L10, L11, L12, L13, L14, L15, L16, L17, L18].map(withReviewPool).sort((a, b) => a.order - b.order);
+export const LESSONS: Lesson[] = [L01, L02, L03, L04, L05, L06, L07, L08, L09, L10, L11, L12, L13, L14, L15, L16, L17, L18, L19, L20, L21, L22, L23, L24].map(withReviewPool).sort((a, b) => a.order - b.order);
 
 export function getLesson(id: string): Lesson | undefined {
   return LESSONS.find((l) => l.id === id);

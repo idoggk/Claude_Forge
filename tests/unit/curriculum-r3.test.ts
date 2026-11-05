@@ -85,8 +85,8 @@ describe('Round 3 lessons', () => {
     for (const m of text.matchAll(/https?:\/\/([a-z0-9.-]+)/g)) expect(m[1], 'fabricated hosts must be .example').toMatch(/\.example(\.com)?$|^code\.claude\.com$|^www\.anthropic\.com$/);
   });
 
-  it('the diagnostic covers every competency exactly once and the corrective questions of new misconceptions exist', () => {
-    expect(DIAGNOSTIC.items.map((i) => i.concept).sort()).toEqual(COMPETENCIES.map((c) => c.id).sort());
+  it('the diagnostic covers every foundation competency exactly once and the corrective questions of new misconceptions exist', () => {
+    expect(DIAGNOSTIC.items.map((i) => i.concept).sort()).toEqual(COMPETENCIES.filter((c) => !c.advanced).map((c) => c.id).sort());
     for (const id of ['agents-always-better', 'longer-prompt-better', 'confident-trace-success', 'mcp-for-everything', 'secrets-in-config', 'vendor-claim-is-evidence', 'parallel-always-faster', 'works-once-reliable']) {
       expect(MISCONCEPTIONS[id], id).toBeDefined();
     }

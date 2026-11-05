@@ -14,6 +14,10 @@ export const SourceRecordSchema = z.object({
   status: z.enum(['read', 'unreachable', 'lead']),
   checkedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   usedBy: z.array(z.string()),
+  /** Lessons that cite this source without a catalog entry of their own. */
+  usedByLessons: z.array(z.string()).default([]),
+  /** Set when an unreachable source was tried again; the date of the latest attempt. */
+  retriedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   note: z.string(),
 });
 export type SourceRecord = z.infer<typeof SourceRecordSchema>;

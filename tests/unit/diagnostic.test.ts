@@ -6,7 +6,10 @@ import * as repo from '@/persistence/repo';
 import { DIAGNOSTIC } from '@/content/diagnostic';
 import { MISCONCEPTIONS } from '@/content/misconceptions';
 import { LESSONS } from '@/content/lessons';
-import { COMPETENCIES } from '@/domain/curriculum/competencies';
+import { COMPETENCIES as ALL_COMPETENCIES } from '@/domain/curriculum/competencies';
+
+/** The placement diagnostic probes the foundations; advanced competencies (Round 4) are taught but not placed. */
+const COMPETENCIES = ALL_COMPETENCIES.filter((c) => !c.advanced);
 import { gradeDiagnostic, latestHint } from '@/domain/mastery/diagnostic';
 import { recommend } from '@/domain/mastery/recommend';
 import { applyImport, exportAll, parseBackup, serializeBackup } from '@/persistence/backup';

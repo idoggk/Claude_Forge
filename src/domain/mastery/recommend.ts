@@ -146,6 +146,17 @@ export function recommend(input: RecommendInput): { primary: Recommendation; alt
     } else if (input.diagnostic && lesson.competencies.every((c) => input.diagnostic!.solid.includes(c))) {
       reasons.push('Your diagnostic answers here were correct; the assessment will confirm it.');
     }
+    // A belief the learner recently acted on in ANOTHER lesson, when this lesson is the one that teaches the competency
+    // it belongs to (for example choosing an injected instruction in a tool-use question points at the injection lesson).
+    const taught = (input.misconceptionHits ?? []).filter((h) => {
+      const m = getMisconception(h.id);
+      return m && h.lessonId !== lesson.id && lesson.competencies.includes(m.competency);
+    });
+    if (taught.length > 0) {
+      score += 14;
+      const m = getMisconception(taught[0]!.id)!;
+      reasons.push(`You recently chose an answer reflecting “${m.belief}” in a different lesson; this lesson teaches ${COMPETENCY_BY_ID[m.competency]?.title ?? m.competency} directly.`);
+    }
     // Recent misconceptions from this lesson's own content.
     const mine = (input.misconceptionHits ?? []).filter((h) => h.lessonId === lesson.id);
     if (mine.length > 0) {

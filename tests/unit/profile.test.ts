@@ -20,7 +20,7 @@ describe('Personal AI Mastery Profile', () => {
     const p = build();
     expect(p).toHaveLength(13);
     const planned = p.filter((a) => a.state === 'planned');
-    expect(planned.map((a) => a.area.id)).toEqual(expect.arrayContaining(['ai-fundamentals', 'prompting', 'research', 'ai-system-design']));
+    expect(planned.map((a) => a.area.id)).toEqual(['ai-fundamentals']); // Round 4 lessons made prompting, research and system design available
     for (const a of planned) { expect(a.competencies).toEqual([]); expect(a.next).toBeNull(); expect(a.lessonsTotal).toBe(0); expect(STATE_LABEL[a.state]).toMatch(/Planned/); }
   });
 

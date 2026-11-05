@@ -3,29 +3,387 @@
   "version": 1,
   "note": "Where Claude Forge's ecosystem knowledge came from. 'read' = the page was read through an automated fetch-and-summarise step on checkedAt. 'unreachable' = the page could not be reached from the research environment on checkedAt, so NO claim from it is used. 'lead' = worth reading, not yet read. Nothing here is executed, installed or cloned.",
   "sources": [
-    { "id": "src-anthropics-skills", "label": "anthropics/skills (GitHub)", "url": "https://github.com/anthropics/skills", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["anthropics-skills"], "note": "Catalog entry written from the repository page." },
-    { "id": "src-claude-code-skills", "label": "Claude Code docs - Skills", "url": "https://code.claude.com/docs/en/skills", "kind": "docs", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["skill-creator-plugin"], "note": "Skill mechanics and the skill-creator plugin." },
-    { "id": "src-obra-superpowers", "label": "obra/superpowers (GitHub)", "url": "https://github.com/obra/superpowers", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["obra-superpowers"], "note": "" },
-    { "id": "src-getsentry-skills", "label": "getsentry/skills (GitHub)", "url": "https://github.com/getsentry/skills", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["getsentry-skills"], "note": "" },
-    { "id": "src-vercel-agent-skills", "label": "vercel-labs/agent-skills (GitHub)", "url": "https://github.com/vercel-labs/agent-skills", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["vercel-agent-skills"], "note": "" },
-    { "id": "src-playwright-mcp", "label": "microsoft/playwright-mcp (GitHub)", "url": "https://github.com/microsoft/playwright-mcp", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["playwright-mcp"], "note": "" },
-    { "id": "src-mcp-servers", "label": "modelcontextprotocol/servers (GitHub)", "url": "https://github.com/modelcontextprotocol/servers", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["mcp-reference-servers"], "note": "" },
-    { "id": "src-claude-code-repo", "label": "anthropics/claude-code (GitHub)", "url": "https://github.com/anthropics/claude-code", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["anthropics-claude-code-repo"], "note": "" },
-    { "id": "src-agent-sdk-overview", "label": "Claude Agent SDK overview", "url": "https://code.claude.com/docs/en/agent-sdk/overview", "kind": "docs", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["claude-agent-sdk"], "note": "Quickstart and reference pages were not read." },
-    { "id": "src-models-overview", "label": "Claude models overview", "url": "https://platform.claude.com/docs/en/models/overview", "kind": "docs", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["claude-model-family"], "note": "Prices appear on the page as displayed that day; the separate Pricing page was not read." },
-    { "id": "src-openai-agents-python", "label": "openai/openai-agents-python (GitHub)", "url": "https://github.com/openai/openai-agents-python", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["openai-agents-python"], "note": "" },
-    { "id": "src-langgraph", "label": "langchain-ai/langgraph (GitHub)", "url": "https://github.com/langchain-ai/langgraph", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["langgraph"], "note": "" },
-    { "id": "src-aider", "label": "Aider-AI/aider (GitHub)", "url": "https://github.com/Aider-AI/aider", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["aider"], "note": "" },
-    { "id": "src-claude-code-action", "label": "anthropics/claude-code-action (GitHub)", "url": "https://github.com/anthropics/claude-code-action", "kind": "repo", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["claude-code-action"], "note": "" },
-    { "id": "src-mcp-spec-repo", "label": "modelcontextprotocol/modelcontextprotocol (GitHub)", "url": "https://github.com/modelcontextprotocol/modelcontextprotocol", "kind": "spec", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["mcp-specification-repo"], "note": "Only the repository page was read." },
-    { "id": "src-building-agents", "label": "Anthropic - Building effective agents", "url": "https://www.anthropic.com/engineering/building-effective-agents", "kind": "article", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["anthropic-building-effective-agents"], "note": "" },
-    { "id": "src-context-engineering", "label": "Anthropic - Effective context engineering for AI agents", "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents", "kind": "article", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["anthropic-context-engineering"], "note": "" },
-    { "id": "src-evals", "label": "Anthropic - Demystifying evals for AI agents", "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents", "kind": "article", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["anthropic-evals-guide"], "note": "" },
-    { "id": "src-writing-tools", "label": "Anthropic - Writing effective tools for agents", "url": "https://www.anthropic.com/engineering/writing-tools-for-agents", "kind": "article", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["anthropic-writing-tools"], "note": "" },
-    { "id": "src-multi-agent", "label": "Anthropic - How we built our multi-agent research system", "url": "https://www.anthropic.com/engineering/multi-agent-research-system", "kind": "article", "status": "read", "checkedAt": "2026-11-05", "usedBy": ["anthropic-multi-agent-research"], "note": "" },
-    { "id": "src-mcp-docs-site", "label": "Model Context Protocol documentation site", "url": "https://modelcontextprotocol.io/", "kind": "docs", "status": "unreachable", "checkedAt": "2026-11-05", "usedBy": [], "note": "DNS resolution failed from the research environment. No claim from this site is used anywhere in Forge. Re-check from an environment that can reach it." },
-    { "id": "src-openai-agents-docs", "label": "OpenAI Agents SDK documentation", "url": "https://openai.github.io/openai-agents-python/", "kind": "docs", "status": "unreachable", "checkedAt": "2026-11-05", "usedBy": [], "note": "DNS resolution failed from the research environment. The repository page was read instead." },
-    { "id": "src-owasp-genai", "label": "OWASP GenAI Security Project", "url": "https://genai.owasp.org/", "kind": "docs", "status": "unreachable", "checkedAt": "2026-11-05", "usedBy": [], "note": "DNS resolution failed from the research environment. A lead for a future security-track lesson; nothing from it is claimed." },
-    { "id": "src-google-ai-docs", "label": "Google AI for Developers documentation", "url": "https://ai.google.dev/", "kind": "docs", "status": "unreachable", "checkedAt": "2026-11-05", "usedBy": [], "note": "DNS resolution failed from the research environment. Gemini-related coverage is therefore absent from the catalog; this is a gap, not a judgement." }
+    {
+      "id": "src-anthropics-skills",
+      "label": "anthropics/skills (GitHub)",
+      "url": "https://github.com/anthropics/skills",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropics-skills"
+      ],
+      "note": "Catalog entry written from the repository page."
+    },
+    {
+      "id": "src-claude-code-skills",
+      "label": "Claude Code docs - Skills",
+      "url": "https://code.claude.com/docs/en/skills",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "skill-creator-plugin"
+      ],
+      "note": "Skill mechanics and the skill-creator plugin."
+    },
+    {
+      "id": "src-obra-superpowers",
+      "label": "obra/superpowers (GitHub)",
+      "url": "https://github.com/obra/superpowers",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "obra-superpowers"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-getsentry-skills",
+      "label": "getsentry/skills (GitHub)",
+      "url": "https://github.com/getsentry/skills",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "getsentry-skills"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-vercel-agent-skills",
+      "label": "vercel-labs/agent-skills (GitHub)",
+      "url": "https://github.com/vercel-labs/agent-skills",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "vercel-agent-skills"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-playwright-mcp",
+      "label": "microsoft/playwright-mcp (GitHub)",
+      "url": "https://github.com/microsoft/playwright-mcp",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "playwright-mcp"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-mcp-servers",
+      "label": "modelcontextprotocol/servers (GitHub)",
+      "url": "https://github.com/modelcontextprotocol/servers",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "mcp-reference-servers"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-claude-code-repo",
+      "label": "anthropics/claude-code (GitHub)",
+      "url": "https://github.com/anthropics/claude-code",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropics-claude-code-repo"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-agent-sdk-overview",
+      "label": "Claude Agent SDK overview",
+      "url": "https://code.claude.com/docs/en/agent-sdk/overview",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "claude-agent-sdk"
+      ],
+      "note": "Quickstart and reference pages were not read."
+    },
+    {
+      "id": "src-models-overview",
+      "label": "Claude models overview",
+      "url": "https://platform.claude.com/docs/en/models/overview",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "claude-model-family"
+      ],
+      "note": "Prices appear on the page as displayed that day; the separate Pricing page was not read."
+    },
+    {
+      "id": "src-openai-agents-python",
+      "label": "openai/openai-agents-python (GitHub)",
+      "url": "https://github.com/openai/openai-agents-python",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "openai-agents-python"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-langgraph",
+      "label": "langchain-ai/langgraph (GitHub)",
+      "url": "https://github.com/langchain-ai/langgraph",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "langgraph"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-aider",
+      "label": "Aider-AI/aider (GitHub)",
+      "url": "https://github.com/Aider-AI/aider",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "aider"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-claude-code-action",
+      "label": "anthropics/claude-code-action (GitHub)",
+      "url": "https://github.com/anthropics/claude-code-action",
+      "kind": "repo",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "claude-code-action"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-mcp-spec-repo",
+      "label": "modelcontextprotocol/modelcontextprotocol (GitHub)",
+      "url": "https://github.com/modelcontextprotocol/modelcontextprotocol",
+      "kind": "spec",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "mcp-specification-repo"
+      ],
+      "note": "Only the repository page was read."
+    },
+    {
+      "id": "src-building-agents",
+      "label": "Anthropic - Building effective agents",
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "kind": "article",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-building-effective-agents"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-context-engineering",
+      "label": "Anthropic - Effective context engineering for AI agents",
+      "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents",
+      "kind": "article",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-context-engineering"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-evals",
+      "label": "Anthropic - Demystifying evals for AI agents",
+      "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+      "kind": "article",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-evals-guide"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-writing-tools",
+      "label": "Anthropic - Writing effective tools for agents",
+      "url": "https://www.anthropic.com/engineering/writing-tools-for-agents",
+      "kind": "article",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-writing-tools"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-multi-agent",
+      "label": "Anthropic - How we built our multi-agent research system",
+      "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+      "kind": "article",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-multi-agent-research"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-mcp-docs-site",
+      "label": "Model Context Protocol documentation site",
+      "url": "https://modelcontextprotocol.io/",
+      "kind": "docs",
+      "status": "unreachable",
+      "checkedAt": "2026-11-05",
+      "usedBy": [],
+      "note": "DNS resolution failed from the research environment. No claim from this site is used anywhere in Forge. Re-check from an environment that can reach it. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "retriedAt": "2026-11-05"
+    },
+    {
+      "id": "src-openai-agents-docs",
+      "label": "OpenAI Agents SDK documentation",
+      "url": "https://openai.github.io/openai-agents-python/",
+      "kind": "docs",
+      "status": "unreachable",
+      "checkedAt": "2026-11-05",
+      "usedBy": [],
+      "note": "DNS resolution failed from the research environment. The repository page was read instead. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "retriedAt": "2026-11-05"
+    },
+    {
+      "id": "src-owasp-genai",
+      "label": "OWASP GenAI Security Project",
+      "url": "https://genai.owasp.org/",
+      "kind": "docs",
+      "status": "unreachable",
+      "checkedAt": "2026-11-05",
+      "usedBy": [],
+      "note": "DNS resolution failed from the research environment. A lead for a future security-track lesson; nothing from it is claimed. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "retriedAt": "2026-11-05"
+    },
+    {
+      "id": "src-google-ai-docs",
+      "label": "Google AI for Developers documentation",
+      "url": "https://ai.google.dev/",
+      "kind": "docs",
+      "status": "unreachable",
+      "checkedAt": "2026-11-05",
+      "usedBy": [],
+      "note": "DNS resolution failed from the research environment. Gemini-related coverage is therefore absent from the catalog; this is a gap, not a judgement. Retried in Round 4 (still DNS failure: the host is outside this session's allowed network domains).",
+      "retriedAt": "2026-11-05"
+    },
+    {
+      "id": "src-tool-use",
+      "label": "Claude API docs - Tool use with Claude",
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "claude-tool-use-docs"
+      ],
+      "note": "Overview page only."
+    },
+    {
+      "id": "src-handle-tool-calls",
+      "label": "Claude API docs - Handle tool calls",
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [],
+      "note": "Read for tool_result formatting, is_error and the untrusted-content warning; it is a lesson source, not a separate catalog entry.",
+      "usedByLessons": [
+        "L19-structured-outputs-tool-calling",
+        "L21-prompt-injection-trust-boundaries"
+      ]
+    },
+    {
+      "id": "src-structured-outputs",
+      "label": "Claude API docs - Structured outputs",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/structured-outputs",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "claude-structured-outputs"
+      ],
+      "note": "About the first 100,000 of ~106,000 characters."
+    },
+    {
+      "id": "src-prompting-practices",
+      "label": "Claude API docs - Prompting best practices",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "claude-prompting-best-practices"
+      ],
+      "note": "Examples and XML sections read in detail; the rest of this long page was not."
+    },
+    {
+      "id": "src-develop-tests",
+      "label": "Claude API docs - Create strong empirical evaluations",
+      "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "claude-develop-tests"
+      ],
+      "note": "About the first 100,000 of ~153,000 characters."
+    },
+    {
+      "id": "src-mitigate-injection",
+      "label": "Claude API docs - Mitigate jailbreaks and prompt injections",
+      "url": "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks",
+      "kind": "docs",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-prompt-injection-mitigations"
+      ],
+      "note": ""
+    },
+    {
+      "id": "src-contextual-retrieval",
+      "label": "Anthropic - Introducing Contextual Retrieval",
+      "url": "https://www.anthropic.com/news/contextual-retrieval",
+      "kind": "article",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-contextual-retrieval"
+      ],
+      "note": "Publication date not shown on the page that was read."
+    },
+    {
+      "id": "src-long-running-harness",
+      "label": "Anthropic - Effective harnesses for long-running agents",
+      "url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+      "kind": "article",
+      "status": "read",
+      "checkedAt": "2026-11-05",
+      "usedBy": [
+        "anthropic-long-running-harness"
+      ],
+      "note": ""
+    }
   ]
 }

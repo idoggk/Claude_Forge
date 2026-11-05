@@ -20,12 +20,13 @@ test.describe('Round 3: navigation and the Capability Map', () => {
     await startApp(page);
     await page.getByTestId('nav-explore').click();
     const all = await page.getByTestId('capability-count').textContent();
-    expect(all).toMatch(/19 of 19/);
+    const total = Number(all!.match(/of (\d+)/)![1]);
+    expect(total).toBeGreaterThanOrEqual(22);
     await page.getByTestId('outcome-automate-safely').click();
     await expect(page.getByTestId('outcome-description')).toBeVisible();
     const filtered = Number((await page.getByTestId('capability-count').textContent())!.match(/^(\d+)/)![1]);
     expect(filtered).toBeGreaterThan(0);
-    expect(filtered).toBeLessThan(19);
+    expect(filtered).toBeLessThan(total);
     // every card opens a page that leads somewhere real
     const hrefs = await page.getByTestId('capability-results').getByRole('link', { name: 'Open' }).evaluateAll((els) => els.map((e) => e.getAttribute('href')!));
     expect(hrefs.length).toBe(filtered);

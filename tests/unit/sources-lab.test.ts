@@ -26,7 +26,7 @@ describe('source registry (living-discovery data)', () => {
   });
   it('each "read" source is used by a real catalog entry whose source matches', () => {
     for (const s of SOURCE_REGISTRY.filter((x) => x.status === 'read')) {
-      expect(s.usedBy.length, s.id).toBeGreaterThan(0);
+      expect(s.usedBy.length + s.usedByLessons.length, s.id).toBeGreaterThan(0);
       for (const id of s.usedBy) expect(CATALOG.find((e) => e.id === id)?.sourceUrl, `${s.id} -> ${id}`).toBe(s.url);
     }
   });

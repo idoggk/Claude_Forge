@@ -14,6 +14,12 @@ export const DOCS = {
   mcp: { label: 'Claude Code docs - Connect Claude Code to tools via MCP', url: 'https://code.claude.com/docs/en/mcp' },
   permissions: { label: 'Claude Code docs - Configure permissions', url: 'https://code.claude.com/docs/en/permissions' },
   workflows: { label: 'Claude Code docs - Common workflows', url: 'https://code.claude.com/docs/en/common-workflows' },
+  toolUse: { label: 'Claude API docs - Tool use with Claude', url: 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview' },
+  handleToolCalls: { label: 'Claude API docs - Handle tool calls', url: 'https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls' },
+  structuredOutputs: { label: 'Claude API docs - Structured outputs', url: 'https://platform.claude.com/docs/en/build-with-claude/structured-outputs' },
+  mitigateInjection: { label: 'Claude API docs - Mitigate jailbreaks and prompt injections', url: 'https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks' },
+  promptingPractices: { label: 'Claude API docs - Prompting best practices', url: 'https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices' },
+  developTests: { label: 'Claude API docs - Create strong empirical evaluations', url: 'https://platform.claude.com/docs/en/test-and-evaluate/develop-tests' },
 } as const;
 
 /** Anthropic engineering articles read for Round 3 (dates are the publication dates shown on each page). */
@@ -23,4 +29,6 @@ export const ARTICLES = {
   multiAgent: { label: 'Anthropic - How we built our multi-agent research system (Jun 13, 2025)', url: 'https://www.anthropic.com/engineering/multi-agent-research-system' },
   writingTools: { label: 'Anthropic - Writing effective tools for agents (Sep 11, 2025)', url: 'https://www.anthropic.com/engineering/writing-tools-for-agents' },
   evals: { label: 'Anthropic - Demystifying evals for AI agents (Jan 9, 2026)', url: 'https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents' },
+  contextualRetrieval: { label: 'Anthropic - Introducing Contextual Retrieval', url: 'https://www.anthropic.com/news/contextual-retrieval' },
+  longRunningHarness: { label: 'Anthropic - Effective harnesses for long-running agents (Nov 26, 2025)', url: 'https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents' },
 } as const;
