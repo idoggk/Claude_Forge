@@ -15,6 +15,7 @@ import { newId } from '@/lib/ids';
 import { nowIso } from '@/lib/clock';
 import { ComparisonView } from './ComparisonView';
 import { RunForm, type RunFormResult } from './RunForm';
+import { PlaybookLinksCard } from './PlaybookLinksCard';
 
 type TabId = 'setup' | 'record' | 'compare' | 'report';
 
@@ -102,6 +103,7 @@ export default function ExperimentPage() {
               {fx && !readOnly && <><p className="mt-2 text-sm text-muted">{fx.objectiveHow}</p><Button className="mt-2" size="sm" icon="download" onClick={async () => { const p = await buildFixturePack(fx.id); downloadBlob(p.blob, p.filename); }} data-testid="download-pack">Download fixture pack (ZIP)</Button></>}
               <p className="mt-2 text-xs text-muted">Rubric {exp.rubricLockedAt ? `locked ${new Date(exp.rubricLockedAt).toLocaleString()} (first run recorded)` : 'will lock when the first run is recorded'}.</p>
             </Card>
+            {!readOnly && <PlaybookLinksCard exp={exp} seededTotal={seededTotal} />}
             <Card>
               <h2 className="font-semibold">Conditions</h2>
               <ul className="mt-2 space-y-2 text-sm">{exp.conditions.map((c) => <li key={c.id} className="rounded-lg border border-line p-2"><strong>{c.label}</strong> · {c.kind} {c.skillName && <>· {c.skillName} {c.skillVersion && `(${c.skillVersion})`}</>}<span className="block text-muted">Differs: {c.difference || 'baseline'}</span></li>)}</ul>

@@ -29,8 +29,8 @@ import { contentOf } from '@/domain/skills/model';
 import type { Evidence, Experiment } from '@/domain/experiments/model';
 import { newId } from '@/lib/ids';
 import { LearningGoalSchema, MAX_ACTIVE_GOALS, type LearningGoal } from '@/domain/goals/model';
-import { PlaybookSchema, type Playbook, type PlaybookContent } from '@/domain/playbook/model';
-import { createEvidenceLink, playbookContentFingerprint, stepFingerprint } from '@/domain/playbook/evidence';
+import { PlaybookSchema, type EvidenceLink, type Playbook, type PlaybookContent, type PlaybookEvaluation } from '@/domain/playbook/model';
+import { buildEvaluation, createEvidenceLink, linkCurrency, playbookContentFingerprint, reassessLink, reviewLink, stepFingerprint } from '@/domain/playbook/evidence';
 import { TransferTaskSchema, completionProblems, type TransferTask } from '@/domain/transfer/model';
 import { ActivityRunSchema, type ActivityRun } from './schemas';
 
@@ -487,7 +487,11 @@ export async function savePlaybook(pb: Playbook, revisionLabel?: string): Promis
     const contentVersion = prev && playbookContentFingerprint(prev) !== playbookContentFingerprint(pb) ? pv + 1 : pv;
     // A step marked verified records the wording it was verified against; later edits invalidate it.
     const steps = pb.steps.map((st) => (st.status === 'verified' && !st.verifiedFingerprint ? { ...st, verifiedFingerprint: stepFingerprint(st) } : st.status !== 'verified' && st.verifiedFingerprint ? { ...st, verifiedFingerprint: null } : st));
-    const next = PlaybookSchema.parse({ ...pb, steps, contentVersion, revisions, updatedAt: now });
+    // Evidence links and evaluation summaries change only through the dedicated functions below, so an editor draft
+    // that was opened before a link was made can never overwrite it.
+    const evidenceLinks = prev ? prev.evidenceLinks : pb.evidenceLinks;
+    const evaluations = prev ? prev.evaluations : pb.evaluations;
+    const next = PlaybookSchema.parse({ ...pb, steps, contentVersion, revisions, evidenceLinks, evaluations, updatedAt: now });
     await db.playbooks.put(next);
     return next;
   });
@@ -502,7 +506,7 @@ export async function deletePlaybook(id: string): Promise<void> {
  * Link an AI Lab experiment to a playbook step (used when an experiment is created FROM a step). The link starts
  * unreviewed: it proves nothing until the learner writes criteria and a judgement. Reads and writes only Dexie tables.
  */
-export async function linkExperimentToStep(playbookId: string, stepId: string, experimentId: string): Promise<EvidenceLinkResult> {
+export async function linkExperimentToStep(playbookId: string, stepId: string, experimentId: string, seededTotal: number | null = null): Promise<EvidenceLinkResult> {
   const db = getDb();
   return db.transaction('rw', [db.playbooks, db.experiments], async () => {
     const pb = await db.playbooks.get(playbookId);
@@ -510,13 +514,77 @@ export async function linkExperimentToStep(playbookId: string, stepId: string, e
     const exp = await db.experiments.get(experimentId);
     if (!pb || !step || !exp) return { ok: false as const, reason: !pb ? 'The playbook no longer exists.' : !step ? 'The step no longer exists.' : 'The experiment no longer exists.' };
     if (pb.evidenceLinks.some((l) => l.stepId === stepId && l.experimentId === experimentId)) return { ok: false as const, reason: 'That experiment is already linked to this step.' };
-    const link = createEvidenceLink({ id: newId('evl'), playbook: pb, step, experiment: exp, now: nowIso() });
+    if (pb.evidenceLinks.length >= 200) return { ok: false as const, reason: 'This playbook already has the maximum number of evidence links.' };
+    const link = createEvidenceLink({ id: newId('evl'), playbook: pb, step, experiment: exp, now: nowIso(), seededTotal });
     const next = PlaybookSchema.parse({ ...pb, evidenceLinks: [...pb.evidenceLinks, link], updatedAt: nowIso() });
     await db.playbooks.put(next);
     return { ok: true as const, link };
   });
 }
 export type EvidenceLinkResult = { ok: true; link: import('@/domain/playbook/model').EvidenceLink } | { ok: false; reason: string };
+
+/** Mutate ONE link inside a playbook, atomically. Evidence changes never touch the playbook's content or its content version. */
+async function updateLink(playbookId: string, linkId: string, fn: (link: EvidenceLink, pb: Playbook, exp: Experiment | undefined) => EvidenceLink | null | string): Promise<{ ok: true; playbook: Playbook } | { ok: false; reason: string }> {
+  const db = getDb();
+  return db.transaction('rw', [db.playbooks, db.experiments], async () => {
+    const pb = await db.playbooks.get(playbookId);
+    const link = pb?.evidenceLinks.find((l) => l.id === linkId);
+    if (!pb || !link) return { ok: false as const, reason: 'That evidence link no longer exists.' };
+    const exp = await db.experiments.get(link.experimentId);
+    const changed = fn(link, pb, exp);
+    if (typeof changed === 'string') return { ok: false as const, reason: changed };
+    const evidenceLinks = changed === null ? pb.evidenceLinks.filter((l) => l.id !== linkId) : pb.evidenceLinks.map((l) => (l.id === linkId ? changed : l));
+    const next = PlaybookSchema.parse({ ...pb, evidenceLinks, updatedAt: nowIso() });
+    await db.playbooks.put(next);
+    return { ok: true as const, playbook: next };
+  });
+}
+
+/** Record the learner's own criteria and judgement. Nothing here is computed from the experiment. */
+export function reviewEvidenceLink(playbookId: string, linkId: string, patch: Parameters<typeof reviewLink>[1]) {
+  return updateLink(playbookId, linkId, (link, pb, exp) => {
+    // A stale link cannot be judged: the learner must reassess it first, so a judgement is always about the CURRENT step and experiment.
+    if (linkCurrency(link, pb.steps.find((st) => st.id === link.stepId), exp) !== 'current') return 'This evidence is stale. Reassess it against the current step and experiment before judging it.';
+    return reviewLink(link, patch, nowIso());
+  });
+}
+
+/** Re-snapshot a stale link against the step and experiment as they are now. The old judgement moves to history; the new one starts blank. */
+export function reassessEvidenceLink(playbookId: string, linkId: string, seededTotal: number | null = null) {
+  return updateLink(playbookId, linkId, (link, pb, exp) => {
+    const step = pb.steps.find((s) => s.id === link.stepId);
+    if (!step || !exp) return link; // nothing to reassess against: stays stale
+    return reassessLink(link, step, exp, pb.contentVersion, nowIso(), seededTotal);
+  });
+}
+
+export function unlinkEvidence(playbookId: string, linkId: string) {
+  return updateLink(playbookId, linkId, () => null);
+}
+
+/** Save a versioned evaluation summary of the playbook's evidence as it stands now. Older summaries are kept. */
+export async function saveEvaluation(playbookId: string, label = ''): Promise<{ ok: true; evaluation: PlaybookEvaluation } | { ok: false; reason: string }> {
+  const db = getDb();
+  return db.transaction('rw', [db.playbooks, db.experiments], async () => {
+    const pb = await db.playbooks.get(playbookId);
+    if (!pb) return { ok: false as const, reason: 'The playbook no longer exists.' };
+    const exps = await db.experiments.bulkGet([...new Set(pb.evidenceLinks.map((l) => l.experimentId))]);
+    const map = new Map(exps.filter((e): e is Experiment => Boolean(e)).map((e) => [e.id, e]));
+    const evaluation = buildEvaluation(pb, map, newId('pev'), nowIso(), label.trim());
+    const next = PlaybookSchema.parse({ ...pb, evaluations: [...pb.evaluations, evaluation].slice(-20), updatedAt: nowIso() });
+    await db.playbooks.put(next);
+    return { ok: true as const, evaluation };
+  });
+}
+
+export async function deleteEvaluation(playbookId: string, evaluationId: string): Promise<void> {
+  const db = getDb();
+  await db.transaction('rw', db.playbooks, async () => {
+    const pb = await db.playbooks.get(playbookId);
+    if (!pb) return;
+    await db.playbooks.put({ ...pb, evaluations: pb.evaluations.filter((e) => e.id !== evaluationId), updatedAt: nowIso() });
+  });
+}
 
 /* ------------------------------------------- transfer tasks ------------------------------------------- */
 

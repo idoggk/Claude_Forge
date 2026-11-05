@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, Callout, Card, ConfirmButton, EmptyState, LinkButton, PageHeader, SelectField, Spinner, TextArea, TextInput, useToast } from '@/components/ui';
-import { usePlaybooks, useSkills } from '@/app/hooks';
+import { useExperiments, usePlaybooks, useSkills } from '@/app/hooks';
 import { savePlaybook } from '@/persistence/repo';
 import { blankStep, counts, exportPlaybookJson, exportPlaybookMarkdown, playbookProblems, reliabilityChecklist } from '@/domain/playbook/ops';
 import { STEP_STATUSES, type Playbook, type Step, type StepStatus } from '@/domain/playbook/model';
+import { MATURITY_LABEL, MATURITY_MEANING, effectiveStepStatus, playbookMaturity } from '@/domain/playbook/evidence';
+import type { Experiment } from '@/domain/experiments/model';
+import { EvaluationCard, MaturityCard, OrphanLinks, StepEvidencePanel } from './EvidencePanel';
 import { CATALOG } from '@/content/catalog/entries';
 import { CAPABILITIES } from '@/content/capability/map';
 import { newId } from '@/lib/ids';
@@ -19,15 +22,16 @@ function LinesField({ label, value, onChange, hint, testId }: { label: string; v
   return <TextArea label={label} hint={hint} rows={3} value={text} data-testid={testId} onChange={(e) => { setText(e.target.value); onChange(e.target.value.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 20)); }} />;
 }
 
-function StepEditor({ s, i, n, onChange, onMove, onRemove, skills }: { s: Step; i: number; n: number; onChange: (s: Step) => void; onMove: (d: -1 | 1) => void; onRemove: () => void; skills: { id: string; name: string }[] }) {
+function StepEditor({ s, i, n, onChange, onMove, onRemove, skills, evidence }: { s: Step; i: number; n: number; onChange: (s: Step) => void; onMove: (d: -1 | 1) => void; onRemove: () => void; skills: { id: string; name: string }[]; evidence: React.ReactNode }) {
   const [linkKind, setLinkKind] = useState<'catalog' | 'skill'>('catalog');
   const [linkRef, setLinkRef] = useState('');
   const set = <K extends keyof Step>(k: K, v: Step[K]) => onChange({ ...s, [k]: v });
+  const outdated = effectiveStepStatus(s) === 'verification-outdated';
   return (
     <li className="rounded-xl border border-line p-4" data-testid={`step-${i}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-semibold">Step {i + 1}</span>
-        <Badge tone={s.status === 'verified' ? 'ok' : s.status === 'planned' ? 'neutral' : 'accent'}>{STATUS_LABEL[s.status]}</Badge>
+        <Badge tone={outdated ? 'warn' : s.status === 'verified' ? 'ok' : s.status === 'planned' ? 'neutral' : 'accent'}>{outdated ? 'Verification outdated' : STATUS_LABEL[s.status]}</Badge>
         {s.humanApproval && <Badge tone="warn">Human approval</Badge>}
         <span className="ml-auto flex gap-1">
           <Button size="sm" variant="ghost" disabled={i === 0} onClick={() => onMove(-1)} aria-label={`Move step ${i + 1} up`}>Up</Button>
@@ -43,11 +47,18 @@ function StepEditor({ s, i, n, onChange, onMove, onRemove, skills }: { s: Step; 
         <TextArea label="If it fails: retry limit, fallback, or stop and escalate" rows={2} value={s.failureHandling} maxLength={1500} onChange={(e) => set('failureHandling', e.target.value)} data-testid={`step-${i}-failure`} />
         <label className="flex min-h-11 items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={s.humanApproval} onChange={(e) => set('humanApproval', e.target.checked)} data-testid={`step-${i}-approval`} />A person must decide before this step proceeds</label>
         <div className="grid gap-3 sm:grid-cols-2">
-          <SelectField label="Status" value={s.status} onChange={(e) => onChange({ ...s, status: e.target.value as StepStatus, verifiedAt: e.target.value === 'verified' ? (s.verifiedAt ?? new Date().toISOString()) : null })} data-testid={`step-${i}-status`}>
+          <SelectField label="Status" value={s.status} onChange={(e) => onChange({ ...s, status: e.target.value as StepStatus, verifiedAt: e.target.value === 'verified' ? (s.verifiedAt ?? new Date().toISOString()) : null, verifiedFingerprint: null })} data-testid={`step-${i}-status`}>
             {STEP_STATUSES.map((x) => <option key={x} value={x}>{STATUS_LABEL[x]}</option>)}
           </SelectField>
           {s.status === 'verified' && <TextArea label="What verified it? (required)" rows={2} value={s.verifiedNote} maxLength={1500} onChange={(e) => set('verifiedNote', e.target.value)} data-testid={`step-${i}-verified-note`} />}
         </div>
+        {outdated && (
+          <Callout tone="warn" title="This step changed after it was verified" role="status">
+            “Verified” described the earlier wording, so it no longer counts. Check the step against its gate again, update what verified it, then re-confirm.
+            <div className="mt-2"><Button size="sm" onClick={() => onChange({ ...s, verifiedFingerprint: null, verifiedAt: new Date().toISOString() })} data-testid={`step-${i}-reconfirm`}>Re-confirm verification for the current wording</Button></div>
+          </Callout>
+        )}
+        {evidence}
         <div>
           <p className="mb-1 text-sm font-semibold">Uses</p>
           {s.links.length > 0 && <ul className="mb-2 flex flex-wrap gap-2">{s.links.map((l, k) => <li key={k} className="flex items-center gap-1 rounded-lg border border-line px-2 py-1 text-sm">{l.kind === 'catalog' && l.ref ? <Link className="underline" to={`/discovery/${l.ref}`}>{l.label}</Link> : l.kind === 'skill' && l.ref ? <Link className="underline" to={`/workshop/${l.ref}`}>{l.label}</Link> : l.label}<button type="button" className="ml-1 min-h-8 min-w-8 text-muted hover:text-bad" aria-label={`Remove link ${l.label}`} onClick={() => set('links', s.links.filter((_, j) => j !== k))}>×</button></li>)}</ul>}
@@ -73,19 +84,24 @@ export default function PlaybookEditor() {
   const { playbookId = '' } = useParams();
   const { data: all } = usePlaybooks();
   const { data: skills } = useSkills();
+  const { data: experimentsRaw } = useExperiments();
   const nav = useNavigate();
   const toast = useToast();
   const stored = all?.find((p) => p.id === playbookId);
   const [draft, setDraft] = useState<Playbook | null>(null);
   const [dirty, setDirty] = useState(false);
+  const latest = useRef<Playbook | null>(null);
+  latest.current = draft;
   const [label, setLabel] = useState('');
   const [result, setResult] = useState<{ outcome: 'worked' | 'partly' | 'failed' | 'unknown'; text: string }>({ outcome: 'unknown', text: '' });
 
   useEffect(() => { if (stored && !draft) setDraft(stored); }, [stored, draft]);
+  // Evidence is written straight to the stored playbook; with no unsaved edits the draft simply follows it.
+  useEffect(() => { if (stored && draft && !dirty && stored.updatedAt !== draft.updatedAt) setDraft(stored); }, [stored, draft, dirty]);
   const problems = useMemo(() => (draft ? playbookProblems(draft) : []), [draft]);
   const check = useMemo(() => (draft ? reliabilityChecklist(draft) : null), [draft]);
 
-  if (!all || !skills) return <Spinner label="Loading the playbook" />;
+  if (!all || !skills || !experimentsRaw) return <Spinner label="Loading the playbook" />;
   if (!stored && !draft) return <EmptyState title="That playbook does not exist" action={<LinkButton to="/playbooks" variant="primary">Back to playbooks</LinkButton>}>It may have been deleted.</EmptyState>;
   if (!draft) return <Spinner />;
 
@@ -93,12 +109,21 @@ export default function PlaybookEditor() {
   const setStep = (i: number, s: Step) => upd({ steps: draft.steps.map((x, j) => (j === i ? s : x)) });
   const move = (i: number, d: -1 | 1) => { const a = [...draft.steps]; const j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j]!, a[i]!]; upd({ steps: a }); };
   const c = counts(draft);
+  const experiments: Experiment[] = experimentsRaw;
+  // Evidence always reflects the SAVED playbook; the draft only supplies the step wording being edited.
+  const saved = stored ?? draft;
+  const expMap = new Map(experiments.map((x) => [x.id, x]));
+  const maturity = playbookMaturity(saved, expMap);
 
   const save = async (withRevision?: string) => {
     if (problems.length) return toast(problems[0]!);
-    const next = await savePlaybook(draft, withRevision);
-    setDraft(next);
-    setDirty(false);
+    const sent = draft;
+    const next = await savePlaybook(sent, withRevision);
+    const cur = latest.current;
+    if (!cur || cur === sent) { setDraft(next); setDirty(false); } else {
+      // The learner kept typing while the save was in flight: keep their newer text, take the stored bookkeeping.
+      setDraft({ ...cur, revisions: next.revisions, contentVersion: next.contentVersion, evidenceLinks: next.evidenceLinks, evaluations: next.evaluations, updatedAt: next.updatedAt });
+    }
     toast(withRevision ? 'Saved with a version-history entry' : 'Saved');
   };
 
@@ -107,11 +132,12 @@ export default function PlaybookEditor() {
       <PageHeader eyebrow="Playbook" title={draft.title || 'Untitled playbook'} subtitle="A design, not a run. Forge does not execute any step. Mark a step verified only after you have seen it work." actions={<LinkButton to="/playbooks" variant="ghost" size="sm">All playbooks</LinkButton>} />
       <div className="sticky top-14 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3">
         <Badge>{c.total} steps</Badge><Badge>{c.planned} planned</Badge><Badge tone={c.verified ? 'ok' : 'neutral'}>{c.verified} verified</Badge>
+        <Badge tone={maturity.state === 'draft' || maturity.state === 'ready-to-test' ? 'neutral' : 'ok'} title={MATURITY_MEANING[maturity.state]}>{MATURITY_LABEL[maturity.state]}</Badge>
         {dirty && <Badge tone="warn">Unsaved changes</Badge>}
         <span className="ml-auto flex flex-wrap gap-2">
           <Button variant="primary" onClick={() => void save()} disabled={!dirty} data-testid="save-playbook">Save</Button>
           <Button icon="download" onClick={() => downloadText(exportPlaybookMarkdown(draft), `${slug(draft.title)}.md`, 'text/markdown')} data-testid="export-playbook-md">Markdown</Button>
-          <Button icon="download" onClick={() => downloadText(exportPlaybookJson(draft), `${slug(draft.title)}.json`, 'application/json')} data-testid="export-playbook-json">JSON</Button>
+          <Button icon="download" onClick={() => downloadText(exportPlaybookJson({ ...draft, evidenceLinks: saved.evidenceLinks, evaluations: saved.evaluations }), `${slug(draft.title)}.json`, 'application/json')} data-testid="export-playbook-json">JSON</Button>
         </span>
       </div>
       {problems.length > 0 && <div className="mb-4"><Callout tone="warn" title="Fix before saving" role="alert">{problems.join(' ')}</Callout></div>}
@@ -131,9 +157,16 @@ export default function PlaybookEditor() {
           <section aria-labelledby="steps-h">
             <div className="mb-2 flex items-center gap-2"><h2 id="steps-h" className="text-xl font-semibold">Steps</h2><Button size="sm" icon="plus" className="ml-auto" disabled={draft.steps.length >= 40} onClick={() => upd({ steps: [...draft.steps, blankStep(newId('st'))] })} data-testid="add-step">Add step</Button></div>
             {draft.steps.length === 0 ? <EmptyState title="No steps yet" icon="flag">Add the first step: what happens, and how you will know it worked.</EmptyState> : (
-              <ol className="space-y-3">{draft.steps.map((s, i) => <StepEditor key={s.id} s={s} i={i} n={draft.steps.length} skills={skills.map((k) => ({ id: k.id, name: k.name }))} onChange={(x) => setStep(i, x)} onMove={(d) => move(i, d)} onRemove={() => upd({ steps: draft.steps.filter((_, j) => j !== i) })} />)}</ol>
+              <ol className="space-y-3">{draft.steps.map((s, i) => {
+                const savedStep = saved.steps.find((x) => x.id === s.id);
+                return (
+                  <StepEditor key={s.id} s={s} i={i} n={draft.steps.length} skills={skills.map((k) => ({ id: k.id, name: k.name }))} onChange={(x) => setStep(i, x)} onMove={(d) => move(i, d)} onRemove={() => upd({ steps: draft.steps.filter((_, j) => j !== i) })}
+                    evidence={savedStep ? <StepEvidencePanel playbook={saved} step={savedStep} index={i} experiments={experiments} dirty={dirty} /> : <p className="text-xs text-muted">Save the playbook to link evidence to this new step.</p>} />
+                );
+              })}</ol>
             )}
           </section>
+          <OrphanLinks playbook={saved} />
           <Card>
             <h2 className="text-lg font-semibold">Capabilities</h2>
             <p className="mb-2 text-sm text-muted">Tag the Capability Map areas this playbook exercises.</p>
@@ -157,6 +190,7 @@ export default function PlaybookEditor() {
         </div>
 
         <aside className="space-y-4" aria-label="Playbook checks and history">
+          <MaturityCard playbook={saved} experiments={experiments} />
           {check && (
             <Card aria-labelledby="chk-h" data-testid="reliability-checklist">
               <h2 id="chk-h" className="text-lg font-semibold">Reliability checklist</h2>
@@ -164,6 +198,7 @@ export default function PlaybookEditor() {
               <ul className="space-y-1 text-sm">{check.checks.map((k) => <li key={k.label} className="flex gap-2"><span aria-hidden>{k.ok ? '✓' : '○'}</span><span><span className="sr-only">{k.ok ? 'Met: ' : 'Not met: '}</span>{k.label}{!k.ok && <span className="block text-xs text-muted">{k.note}</span>}</span></li>)}</ul>
             </Card>
           )}
+          <EvaluationCard playbook={saved} experiments={experiments} dirty={dirty} />
           <Card aria-labelledby="hist-h" data-testid="version-history">
             <h2 id="hist-h" className="text-lg font-semibold">Version history</h2>
             <div className="mt-2 flex gap-2"><TextInput label="Label for this save" value={label} maxLength={120} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. added approval step" data-testid="revision-label" /></div>

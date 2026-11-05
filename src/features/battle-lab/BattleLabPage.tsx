@@ -12,7 +12,8 @@ export default function BattleLabPage() {
   const { data: experiments } = useExperiments();
   const [params] = useSearchParams();
   const [tplId, setTplId] = useState<string | undefined>(params.get('template') ?? undefined);
-  const [creating, setCreating] = useState(Boolean(params.get('template')));
+  const forStep = params.get('playbook') && params.get('step') ? { playbookId: params.get('playbook')!, stepId: params.get('step')! } : undefined;
+  const [creating, setCreating] = useState(Boolean(params.get('template') || forStep));
   const toast = useToast();
   if (!experiments) return <Spinner label="Loading the AI Lab" />;
   return (
@@ -25,7 +26,7 @@ export default function BattleLabPage() {
         actions={<><Button variant="primary" icon="plus" onClick={() => { setTplId(undefined); setCreating(true); }} data-testid="new-experiment">New experiment</Button><LinkButton to={`/battle-lab/${DEMO_ID}`} icon="flask" data-testid="open-demo">Synthetic demo</LinkButton></>}
       />
       <div className="mb-5"><Callout tone="info" title="What this lab will and will not do">It will keep conditions, fixtures, prompts and rubrics fixed, show every value with its provenance, keep missing data as <em>unknown</em>, and say when evidence is too thin. It will not call Claude, generate results, or declare a Skill &ldquo;better&rdquo; from one run.</Callout></div>
-      {creating && <NewExperimentForm key={tplId ?? 'blank'} templateId={tplId} onCancel={() => setCreating(false)} />}
+      {creating && <NewExperimentForm key={tplId ?? 'blank'} templateId={tplId} forStep={forStep} onCancel={() => setCreating(false)} />}
       {!creating && (
         <section aria-labelledby="tpl-h" className="mb-6" data-testid="lab-templates">
           <h2 id="tpl-h" className="mb-1 text-lg font-semibold">Start from a template</h2>

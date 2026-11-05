@@ -384,3 +384,101 @@ describe('migration v5 -> v6: a real older database is upgraded without losing a
     expect(await db.transferTasks.count()).toBe(0);
   });
 });
+
+describe('review, reassess, unlink and evaluation summaries go through the repository', () => {
+  it('a review cannot be recorded on stale evidence; reassessing keeps the old judgement in history and blanks the new one', async () => {
+    const db = await freshDb();
+    await repo.savePlaybook(seed());
+    const e = experiment('e1', goodRuns);
+    await db.experiments.put(e);
+    const stepId = (await db.playbooks.get('pb'))!.steps[0]!.id;
+    const linked = await repo.linkExperimentToStep('pb', stepId, 'e1');
+    expect(linked.ok).toBe(true);
+    const lid = linked.ok ? linked.link.id : '';
+    const r1 = await repo.reviewEvidenceLink('pb', lid, { criteria: 'Rework rounds must not exceed the baseline.', status: 'supports', claimedOutcome: 'met', reviewerNote: 'Fewer rework rounds in both runs.', limitations: 'One repository.' });
+    expect(r1.ok).toBe(true);
+    expect((await db.playbooks.get('pb'))!.evidenceLinks[0]!.status).toBe('supports');
+    // the experiment gains a run -> the link is stale -> judging it is refused
+    await db.experiments.put(experiment('e1', [...goodRuns, { cond: 'cB', i: 3, rework: 5 }]));
+    const refused = await repo.reviewEvidenceLink('pb', lid, { status: 'supports', reviewerNote: 'Still fine, I think.' });
+    expect(refused).toMatchObject({ ok: false, reason: expect.stringMatching(/stale/i) });
+    const re = await repo.reassessEvidenceLink('pb', lid);
+    expect(re.ok).toBe(true);
+    const link = (await db.playbooks.get('pb'))!.evidenceLinks[0]!;
+    expect(link.status).toBe('unreviewed');
+    expect(link.history).toHaveLength(1);
+    expect(link.history[0]!.status).toBe('supports');
+    expect(link.snapshot.conditions.map((c) => c.runsWithData)).toEqual([2, 3]);
+    expect(linkCurrency(link, (await db.playbooks.get('pb'))!.steps[0], (await db.experiments.get('e1')))).toBe('current');
+  });
+
+  it('a stale link whose experiment was deleted stays stale and cannot be reassessed into currency', async () => {
+    const db = await freshDb();
+    await repo.savePlaybook(seed());
+    await db.experiments.put(experiment('e1', goodRuns));
+    const stepId = (await db.playbooks.get('pb'))!.steps[0]!.id;
+    const linked = await repo.linkExperimentToStep('pb', stepId, 'e1');
+    const lid = linked.ok ? linked.link.id : '';
+    await db.experiments.delete('e1');
+    await repo.reassessEvidenceLink('pb', lid);
+    const pb = (await db.playbooks.get('pb'))!;
+    expect(linkCurrency(pb.evidenceLinks[0]!, pb.steps[0], undefined)).toBe('experiment-missing');
+    expect(stepEvidence(pb.steps[0]!, pb.evidenceLinks, new Map()).state).toBe('needs-reassessment');
+    expect((await repo.unlinkEvidence('pb', lid)).ok).toBe(true);
+    expect((await db.playbooks.get('pb'))!.evidenceLinks).toHaveLength(0);
+    expect(await repo.unlinkEvidence('pb', lid)).toMatchObject({ ok: false });
+  });
+
+  it('saving an editor draft opened before a link was made cannot erase the link or the saved summaries', async () => {
+    const db = await freshDb();
+    const base = seed();
+    await repo.savePlaybook(base);
+    const staleDraft = (await db.playbooks.get('pb'))!; // opened with no evidence
+    await db.experiments.put(experiment('e1', goodRuns));
+    const stepId = staleDraft.steps[0]!.id;
+    await repo.linkExperimentToStep('pb', stepId, 'e1');
+    await repo.saveEvaluation('pb', 'first');
+    await repo.savePlaybook({ ...staleDraft, notes: 'Edited while the evidence was being added.' });
+    const after = (await db.playbooks.get('pb'))!;
+    expect(after.notes).toMatch(/Edited/);
+    expect(after.evidenceLinks).toHaveLength(1);
+    expect(after.evaluations).toHaveLength(1);
+  });
+
+  it('evaluation summaries are versioned snapshots: they keep the version and maturity of their moment and never update themselves', async () => {
+    const db = await freshDb();
+    await repo.savePlaybook(seed());
+    await db.experiments.put(experiment('e1', goodRuns));
+    const stepId = (await db.playbooks.get('pb'))!.steps[0]!.id;
+    await repo.linkExperimentToStep('pb', stepId, 'e1');
+    const a = await repo.saveEvaluation('pb', 'before judging');
+    expect(a.ok && a.evaluation.maturity).toBe('ready-to-test');
+    expect(a.ok && a.evaluation.playbookContentVersion).toBe(1);
+    expect(a.ok && a.evaluation.markdown).toMatch(/## Observed evidence/);
+    expect(a.ok && a.evaluation.markdown).toMatch(/## Limitations/);
+    expect(a.ok && a.evaluation.markdown).toMatch(/## Next experiment/);
+    const cur = (await db.playbooks.get('pb'))!;
+    await repo.savePlaybook({ ...cur, steps: cur.steps.map((st, i) => (i === 0 ? { ...st, instruction: st.instruction + ' Revised.' } : st)) });
+    const b = await repo.saveEvaluation('pb', 'after editing the step');
+    expect(b.ok && b.evaluation.playbookContentVersion).toBe(2);
+    const pb = (await db.playbooks.get('pb'))!;
+    expect(pb.evaluations.map((x) => x.label)).toEqual(['before judging', 'after editing the step']);
+    expect(pb.evaluations[0]!.playbookContentVersion).toBe(1); // untouched by the later edit
+    await repo.deleteEvaluation('pb', pb.evaluations[0]!.id);
+    expect((await db.playbooks.get('pb'))!.evaluations).toHaveLength(1);
+  });
+
+  it('an imported playbook JSON arrives without evidence, evaluations or verified steps', async () => {
+    const { exportPlaybookJson, parsePlaybookJson } = await import('@/domain/playbook/ops');
+    const pb = seed();
+    const link = supportedLink(pb, 0, experiment('e1', goodRuns));
+    const withEvidence = { ...pb, evidenceLinks: [link], evaluations: [buildEvaluation({ ...pb, evidenceLinks: [link] }, exps(experiment('e1', goodRuns)), 'ev', T1)], steps: pb.steps.map((st) => withVerification({ ...st, verifiedNote: 'claimed by the author' }, T0)) };
+    const r = parsePlaybookJson(exportPlaybookJson(withEvidence), 'pb-new', sid);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.playbook.evidenceLinks).toEqual([]);
+      expect(r.playbook.evaluations).toEqual([]);
+      expect(r.playbook.steps.every((st) => st.status === 'planned' && st.verifiedFingerprint === null)).toBe(true);
+    }
+  });
+});
