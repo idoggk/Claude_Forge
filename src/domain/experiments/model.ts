@@ -141,8 +141,20 @@ export const RunSchema = z.object({
   /** Rubric level 0..3 per criterion, null = not assessed. Subjective, self-assessed. */
   rubric: z.record(z.string(), z.number().int().min(0).max(3).nullable()).default({}),
   observations: z.string().max(4000).default(''),
+  /**
+   * How this attempt ended. Failed and abandoned attempts are KEPT and counted: dropping them would make a condition look
+   * more reliable than it was. Their measurements stay unknown unless the learner recorded them.
+   */
+  attempt: z.enum(['completed', 'failed', 'abandoned']).default('completed'),
+  /** Workflow / Skill version actually used in THIS run (may differ from the condition's stated version). */
+  skillVersion: z.string().max(120).default(''),
+  /** Fixture version actually used in THIS run. */
+  fixtureVersion: z.string().max(40).default(''),
+  /** Execution context for THIS run: model, session, settings, or anything that differed. Free text. */
+  context: z.string().max(300).default(''),
 });
 export type Run = z.infer<typeof RunSchema>;
+export const ATTEMPT_LABELS = { completed: 'Completed', failed: 'Failed (kept)', abandoned: 'Abandoned (kept)' } as const;
 
 export const EvidenceSchema = z.object({
   id: z.string().min(1),

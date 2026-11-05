@@ -5,7 +5,7 @@ import { Badge, Callout, cx } from '@/components/ui';
 function fmt(row: ComparisonRow, s: Stat): string {
   if (s.mean === null) return s.unknown ? `unknown (${s.unknown} missing)` : 'no data';
   const f = (n: number) => (row.unit === 'ratio' ? n.toFixed(2) : Number.isInteger(n) ? String(n) : n.toFixed(1));
-  return `${f(s.mean)} [${f(s.min as number)}–${f(s.max as number)}] n=${s.n}${s.unknown ? ` · ${s.unknown} missing` : ''}`;
+  return `${f(s.mean)} [${f(s.min as number)}–${f(s.max as number)}] n=${s.n}${s.sd !== null ? ` · sd ${f(s.sd)}` : ''}${s.unknown ? ` · ${s.unknown} missing` : ''}`;
 }
 
 const READING_TONE = { separated: 'ok', overlap: 'warn', 'one-sided': 'warn', 'no-data': 'neutral' } as const;
@@ -56,9 +56,9 @@ export function ComparisonView({ experiment, seededTotal = null }: { experiment:
         {c.detail && <p className="mt-1" data-testid="comparison-summary">{c.detail}</p>}
       </Callout>
       <div className="grid gap-2 sm:grid-cols-2">
-        {c.runsPerCondition.map((r) => <div key={r.conditionId} className="rounded-lg border border-line p-3 text-sm"><strong>{r.label}</strong>: {r.recorded} run(s) recorded, {r.withData} with at least one known measurement</div>)}
+        {c.runsPerCondition.map((r) => <div key={r.conditionId} className="rounded-lg border border-line p-3 text-sm"><strong>{r.label}</strong>: {r.recorded} attempt(s) recorded, {r.withData} with at least one known measurement{r.failed + r.abandoned > 0 && <> · <span className="font-semibold">{r.failed} failed, {r.abandoned} abandoned (kept)</span></>}</div>)}
       </div>
-      <p className="text-xs text-muted">Format: mean [min–max] n=known values. &ldquo;unknown&rdquo; means nothing was recorded - it is never counted as zero. All values are self-reported or user-imported; Claude Forge verifies none of them.</p>
+      <p className="text-xs text-muted">Format: mean [min–max] n=known values · sd = sample standard deviation (shown from two values, a description of spread only). No significance test is computed: with this few runs it would not mean what it appears to mean. &ldquo;unknown&rdquo; means nothing was recorded - it is never counted as zero. All values are self-reported or user-imported; Claude Forge verifies none of them.</p>
       {table(objective, 'Objective and measured results')}
       {table(rubric, 'Rubric scores (subjective, self-assessed, 0–3)')}
       {c.rubricTotal && (

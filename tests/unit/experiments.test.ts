@@ -7,7 +7,7 @@ import { parseTestReport } from '@/domain/experiments/testReport';
 
 const t = '2026-01-01T00:00:00.000Z';
 function run(conditionId: string, index: number, over: Partial<Run> = {}): Run {
-  return { id: `${conditionId}${index}`, conditionId, index, recordedAt: t, testsPassed: null, testsTotal: null, testsProvenance: 'self-reported', successMet: null, seededFound: null, caseId: null, verdict: null, gradedTruth: null, skillActivated: null, metrics: {}, rubric: {}, observations: '', ...over };
+  return { id: `${conditionId}${index}`, conditionId, index, recordedAt: t, testsPassed: null, testsTotal: null, testsProvenance: 'self-reported', successMet: null, seededFound: null, caseId: null, verdict: null, gradedTruth: null, skillActivated: null, metrics: {}, rubric: {}, observations: '', attempt: 'completed', skillVersion: '', fixtureVersion: '', context: '', ...over };
 }
 function exp(runs: Run[], over: Partial<Experiment> = {}): Experiment {
   return ExperimentSchema.parse({
@@ -25,8 +25,10 @@ function exp(runs: Run[], over: Partial<Experiment> = {}): Experiment {
 describe('stat', () => {
   it('never treats unknown as zero', () => {
     const s = stat([4, null, 6]);
-    expect(s).toEqual({ n: 2, unknown: 1, mean: 5, min: 4, max: 6 });
-    expect(stat([null, null])).toEqual({ n: 0, unknown: 2, mean: null, min: null, max: null });
+    expect(s).toMatchObject({ n: 2, unknown: 1, mean: 5, min: 4, max: 6 });
+    expect(s.sd).toBeCloseTo(Math.SQRT2, 10); // sample sd of 4 and 6
+    expect(stat([null, null])).toEqual({ n: 0, unknown: 2, mean: null, min: null, max: null, sd: null });
+    expect(stat([3]).sd, 'one value has no spread to describe').toBeNull();
   });
 });
 

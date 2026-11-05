@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, Callout, Card, ConfirmButton, EmptyState, LinkButton, PageHeader, SafeLink, SelectField, Spinner, TabPanel, Tabs, TextArea, TextInput, useToast } from '@/components/ui';
 import { DEMO_EXPERIMENT, DEMO_ID } from '@/domain/experiments/demo';
-import { ExperimentSchema, type Evidence, type Experiment, type Run } from '@/domain/experiments/model';
+import { ATTEMPT_LABELS, ExperimentSchema, type Evidence, type Experiment, type Run } from '@/domain/experiments/model';
 import { compareExperiment } from '@/domain/experiments/compare';
 import { buildExperimentReport, exportExperimentJson } from '@/domain/experiments/report';
 import { addEvidence, deleteEvidence, saveExperiment } from '@/persistence/repo';
@@ -139,7 +139,8 @@ export default function ExperimentPage() {
                     const evs = ev.filter((x) => x.runId === r.id);
                     return (
                       <Card as="li" key={r.id}>
-                        <p className="font-semibold">{c?.label} · run {r.index}</p>
+                        <p className="font-semibold">{c?.label} · run {r.index} {r.attempt !== 'completed' && <Badge tone="warn">{ATTEMPT_LABELS[r.attempt]}</Badge>}</p>
+                        {(r.skillVersion || r.fixtureVersion || r.context) && <p className="text-xs text-muted">{[r.skillVersion && `version ${r.skillVersion}`, r.fixtureVersion && `fixture v${r.fixtureVersion}`, r.context && `context: ${r.context}`].filter(Boolean).join(' · ')}</p>}
                         <p className="text-sm text-muted">Tests: {r.testsPassed !== null && r.testsTotal !== null ? `${r.testsPassed}/${r.testsTotal} (${r.testsProvenance})` : 'unknown'} · Success: {r.successMet === null ? 'not assessed' : r.successMet ? 'yes' : 'no'} · Runtime: {r.metrics.runtimeSec?.value ?? 'unknown'} · Effort: {r.metrics.developerEffortMin?.value ?? 'unknown'} · Rubric assessed: {Object.values(r.rubric).filter((v) => v !== null && v !== undefined).length}/4</p>
                         {r.observations && <p className="mt-1 text-sm">{r.observations}</p>}
                         {evs.length > 0 && <ul className="mt-1 text-xs text-muted">{evs.map((e) => <li key={e.id} className="flex items-center gap-2"><Badge tone="teal">{e.kind}</Badge>{e.name} · {e.provenance} · {e.size} bytes <ConfirmButton label="Remove" confirmLabel="Remove evidence" onConfirm={() => deleteEvidence(e.id)} /></li>)}</ul>}

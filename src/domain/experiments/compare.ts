@@ -16,13 +16,17 @@ export interface Stat {
   mean: number | null;
   min: number | null;
   max: number | null;
+  /** Sample standard deviation (n-1). A description of the spread of the recorded values; null with fewer than two. No inference is drawn from it. */
+  sd: number | null;
 }
 
 export function stat(values: (number | null)[]): Stat {
   const known = values.filter((v): v is number => v !== null && Number.isFinite(v));
-  if (known.length === 0) return { n: 0, unknown: values.length, mean: null, min: null, max: null };
+  if (known.length === 0) return { n: 0, unknown: values.length, mean: null, min: null, max: null, sd: null };
   const sum = known.reduce((a, b) => a + b, 0);
-  return { n: known.length, unknown: values.length - known.length, mean: sum / known.length, min: Math.min(...known), max: Math.max(...known) };
+  const mean = sum / known.length;
+  const sd = known.length >= 2 ? Math.sqrt(known.reduce((a, v) => a + (v - mean) ** 2, 0) / (known.length - 1)) : null;
+  return { n: known.length, unknown: values.length - known.length, mean, min: Math.min(...known), max: Math.max(...known), sd };
 }
 
 export function runMetric(run: Run, id: MetricId, seededTotal: number | null): number | null {
@@ -66,7 +70,7 @@ export interface Comparison {
   rubricTotal: null | { included: CriterionId[]; excluded: CriterionId[]; totals: { conditionId: string; label: string; total: number; max: number }[] };
   sufficiency: { level: SufficiencyLevel; headline: string; reasons: string[] };
   integrity: string[];
-  runsPerCondition: { conditionId: string; label: string; recorded: number; withData: number }[];
+  runsPerCondition: { conditionId: string; label: string; recorded: number; withData: number; failed: number; abandoned: number }[];
   /** Headline + detail. */
   summary: string;
   /** The part of the summary after the headline (may be empty). */
@@ -141,7 +145,7 @@ export function compareExperiment(exp: Experiment, seededTotal: number | null = 
     }
   }
 
-  const runsPerCondition = conds.map((c) => ({ conditionId: c.id, label: c.label, recorded: runsBy(c).length, withData: runsBy(c).filter((r) => runHasData(r, seededTotal)).length }));
+  const runsPerCondition = conds.map((c) => ({ conditionId: c.id, label: c.label, recorded: runsBy(c).length, withData: runsBy(c).filter((r) => runHasData(r, seededTotal)).length, failed: runsBy(c).filter((r) => r.attempt === 'failed').length, abandoned: runsBy(c).filter((r) => r.attempt === 'abandoned').length }));
   const minWithData = runsPerCondition.length ? Math.min(...runsPerCondition.map((r) => r.withData)) : 0;
 
   const reasons: string[] = [];
@@ -186,6 +190,22 @@ export function compareExperiment(exp: Experiment, seededTotal: number | null = 
     const unknown = exp.runs.reduce((acc, r) => acc + exp.plannedMeasures.filter((m) => runMetric(r, m as MetricId, seededTotal) === null).length, 0);
     if (unknown > 0) integrity.push(`${unknown} of ${totalCells} planned measurements are missing (shown as "unknown", never as 0).`);
   }
+
+  // Failed and abandoned attempts are part of the evidence, not noise to delete.
+  const kept = runsPerCondition.filter((r) => r.failed + r.abandoned > 0);
+  if (kept.length) integrity.push(`Failed or abandoned attempts are kept and counted (${kept.map((r) => `${r.label}: ${r.failed} failed, ${r.abandoned} abandoned`).join('; ')}). Statistics describe only the measurements recorded for them; a blank measurement is unknown, not a pass.`);
+  const failRates = runsPerCondition.filter((r) => r.recorded > 0).map((r) => (r.failed + r.abandoned) / r.recorded);
+  if (failRates.length >= 2 && Math.max(...failRates) - Math.min(...failRates) >= 0.34) integrity.push('The share of failed or abandoned attempts differs a lot between conditions. A comparison of the completed runs alone would hide that.');
+  // Is it a valid comparison at all? Versions and context must match where they should.
+  for (const c of conds) {
+    const versions = [...new Set(runsBy(c).map((r) => r.skillVersion.trim()).filter(Boolean))];
+    if (versions.length > 1) integrity.push(`Condition ${c.label} used more than one workflow or Skill version across its runs (${versions.join(', ')}). Runs of different versions are not repeats of the same condition.`);
+  }
+  const fixtureVersions = [...new Set(exp.runs.map((r) => r.fixtureVersion.trim()).filter(Boolean))];
+  if (fixtureVersions.length > 1) integrity.push(`Runs used different fixture versions (${fixtureVersions.join(', ')}). Unless the versions are equivalent, the conditions were not tested on the same task.`);
+  else if (fixtureVersions.length === 1 && exp.fixture.version && fixtureVersions[0] !== exp.fixture.version) integrity.push(`Run fixture version (${fixtureVersions[0]}) differs from the version the experiment was set up with (${exp.fixture.version}).`);
+  const ctxByCond = conds.map((c) => ({ label: c.label, ctx: [...new Set(runsBy(c).map((r) => r.context.trim()).filter(Boolean))] })).filter((x) => x.ctx.length > 0);
+  if (ctxByCond.length >= 2 && new Set(ctxByCond.map((x) => x.ctx.join(' | '))).size > 1) integrity.push(`Execution context differs between conditions (${ctxByCond.map((x) => `${x.label}: ${x.ctx.join(' | ')}`).join('; ')}). A difference in results may come from the context instead of the condition.`);
 
   const sep = rows.filter((r) => r.assessment === 'separated');
   const overlap = rows.filter((r) => r.assessment === 'overlap');

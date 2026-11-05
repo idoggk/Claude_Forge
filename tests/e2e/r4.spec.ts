@@ -134,3 +134,79 @@ test.describe('Round 4: playbook steps and AI Lab evidence', () => {
     await expect(box).toContainText('No unlinked experiments yet');
   });
 });
+
+async function createLabExperiment(page: Page) {
+  await goto(page, '/battle-lab');
+  await page.getByTestId('new-experiment').click();
+  await page.getByTestId('exp-title').fill('Checker Skill vs none');
+  await page.getByTestId('exp-hypothesis').fill('With the Skill more runs pass all tests. I would change my mind if ranges overlap.');
+  await page.getByTestId('cond-skill-1').fill('release-notes-checker');
+  await page.getByTestId('cond-diff-1').fill('release-notes-checker Skill enabled; nothing else differs');
+  await page.getByTestId('create-experiment').click();
+  await expect(page).toHaveURL(/#\/battle-lab\/exp_/);
+}
+
+test.describe('Round 4: AI Lab quality', () => {
+  test.beforeEach(async ({ page }) => { await startApp(page); });
+
+  test('a statement in pasted output is never a measurement; a recognised summary is parsed and applied only when you choose', async ({ page }) => {
+    await createLabExperiment(page);
+    await page.getByTestId('evidence-text').fill('I fixed it. All tests pass now.');
+    await expect(page.getByTestId('found-in-text')).toContainText('Inferred');
+    await expect(page.getByTestId('found-in-text')).toContainText('not test output');
+    await expect(page.getByTestId('use-parsed-counts')).toHaveCount(0);
+    await expect(page.getByTestId('tests-passed')).toHaveValue('');
+    await page.getByTestId('evidence-text').fill('All tests pass!\n Tests  2 failed | 10 passed (12)\n');
+    await expect(page.getByTestId('found-in-text')).toContainText('The text contradicts its own test summary');
+    await expect(page.getByTestId('tests-passed')).toHaveValue(''); // still nothing applied
+    await page.getByTestId('use-parsed-counts').click();
+    await expect(page.getByTestId('tests-passed')).toHaveValue('10');
+    await expect(page.getByTestId('tests-total')).toHaveValue('12');
+  });
+
+  test('failed attempts are kept and counted, and the report separates observed results, interpretation, limitations and next experiment', async ({ page }) => {
+    await createLabExperiment(page);
+    await recordRun(page, 'A', '6', '10');
+    await recordRun(page, 'A', '7', '10');
+    await recordRun(page, 'B', '9', '10');
+    await page.getByRole('radio', { name: 'Failed' }).click();
+    await page.getByTestId('run-condition').selectOption({ label: 'B - release-notes-checker' });
+    await page.getByTestId('run-observations').fill('The model looped and I stopped it.');
+    await page.getByTestId('save-run').click();
+    await expect(page.getByTestId('run-list')).toContainText('Failed (kept)');
+    await page.getByRole('tab', { name: 'Compare' }).click();
+    await expect(page.getByTestId('comparison')).toContainText('1 failed, 0 abandoned (kept)');
+    await expect(page.getByTestId('integrity-notes')).toContainText('Failed or abandoned attempts are kept and counted');
+    await page.getByRole('tab', { name: 'Report & export' }).click();
+    const [md] = await Promise.all([page.waitForEvent('download'), page.getByTestId('export-report').click()]);
+    const report = await readFile((await md.path())!, 'utf8');
+    for (const h of ['## Observed results', '## Interpretation', '## Limitations', '## Next experiment']) expect(report).toContain(h);
+    expect(report).toContain('No significance test was computed');
+  });
+
+  test('an exported experiment imports only after a preview and confirmation, as a new experiment with user-imported values', async ({ page }) => {
+    await createLabExperiment(page);
+    await recordRun(page, 'A', '6', '10');
+    await recordRun(page, 'B', '9', '10');
+    await page.getByRole('tab', { name: 'Report & export' }).click();
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.getByTestId('export-json').click()]);
+    const buffer = await readFile((await dl.path())!);
+    await goto(page, '/battle-lab');
+    await page.getByTestId('import-experiment-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('nope') });
+    await expect(page.getByText('Could not import that file')).toBeVisible();
+    await page.getByRole('button', { name: 'Close' }).click();
+    await page.getByTestId('import-experiment-file').setInputFiles({ name: 'exp.json', mimeType: 'application/json', buffer });
+    const preview = page.getByTestId('import-preview');
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText('Nothing has been saved');
+    await expect(preview).toContainText('Parsed');
+    await expect(preview).toContainText('User-supplied');
+    await expect(page.getByTestId('import-warnings')).toContainText('cannot verify any imported value');
+    // nothing was saved yet
+    await expect(page.getByTestId('experiment-list').locator('li')).toHaveCount(1);
+    await page.getByTestId('confirm-import-experiment').click();
+    await expect(page).toHaveURL(/#\/battle-lab\/exp_/);
+    await expect(page.getByRole('heading', { level: 1, name: /\(imported\)/ })).toBeVisible();
+    await expect(page.getByTestId('run-list')).toContainText('(user-imported)');
+  });
+});

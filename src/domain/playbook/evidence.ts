@@ -51,7 +51,7 @@ export function experimentFingerprint(e: Experiment): string {
       e.plannedMeasures,
       e.rubricLockedAt,
       e.conditions.map((c) => [c.id, c.kind, c.label, c.difference, c.skillName, c.skillVersion]),
-      e.runs.map((r) => [r.id, r.conditionId, r.index, r.testsPassed, r.testsTotal, r.testsProvenance, r.successMet, r.seededFound, r.caseId, r.verdict, r.gradedTruth, r.metrics, r.rubric]),
+      e.runs.map((r) => [r.id, r.conditionId, r.index, r.testsPassed, r.testsTotal, r.testsProvenance, r.successMet, r.seededFound, r.caseId, r.verdict, r.gradedTruth, r.metrics, r.rubric, r.attempt, r.skillVersion, r.fixtureVersion, r.context]),
     ]),
   );
 }
