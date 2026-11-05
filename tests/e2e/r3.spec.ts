@@ -293,3 +293,27 @@ test.describe('Visual assets', () => {
     await expect(bg).toBeHidden();
   });
 });
+
+test.describe('Layout with wider system fonts', () => {
+  // The app uses the system font stack, so a machine with wider default fonts (such as a CI runner) lays text out wider
+  // than the developer's machine. This test forces a wide stack so such overflow is caught locally. It was added after the
+  // first CI run overflowed by 49px at 375px: a non-wrapping badge in the Workshop's Scenarios tab.
+  for (const width of [375, 390]) {
+    test(`no horizontal overflow at ${width}px with DejaVu fonts`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await startApp(page);
+      await page.addStyleTag({ content: "html[data-theme]{--font-sans:'DejaVu Sans',sans-serif;--font-display:'DejaVu Serif',serif;--font-mono:'DejaVu Sans Mono',monospace}" });
+      await goto(page, '/workshop');
+      await page.getByTestId('new-starter').click();
+      for (const tab of ['Basics', 'Instructions', 'Resources', 'Scenarios & Dojo', 'Trigger tuning', 'Validate', 'Quality review', 'Preview', 'Live test', 'Export & history']) {
+        await page.getByRole('tab', { name: new RegExp(`^${tab}`) }).click();
+        await expectNoHorizontalOverflow(page);
+      }
+      for (const route of ['/', '/academy', '/academy/lesson/L13-why-agents-fail', '/academy/diagnostic', '/explore', '/explore/reliable-workflows', '/playbooks', '/battle-lab', '/battle-lab/demo-merge-cascade', '/discovery', '/discovery/claude-model-family', '/loop', '/arsenal', '/growth']) {
+        await goto(page, route);
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await expectNoHorizontalOverflow(page);
+      }
+    });
+  }
+});
