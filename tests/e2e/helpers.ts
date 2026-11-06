@@ -68,6 +68,15 @@ export async function answerItems(page: Page, items: Item[], opts: { wrong?: boo
         for (const n of lines) await box.getByRole('button', { name: new RegExp(`^${n}(\\s|$)`) }).click();
         break;
       }
+      case 'case':
+        for (const p of it.parts) {
+          const opt = opts.wrong ? p.options.find((o) => o.id !== p.correct)! : p.options.find((o) => o.id === p.correct)!;
+          await box.getByTestId(`part-${it.id}-${p.id}`).getByText(opt.text, { exact: true }).click();
+        }
+        break;
+      case 'construct':
+        await box.getByLabel(/^Your (JSON|draft)/).fill(opts.wrong ? '{}' : it.reference);
+        break;
       default:
         break;
     }

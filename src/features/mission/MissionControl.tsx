@@ -19,6 +19,8 @@ import { latestHint } from '@/domain/mastery/diagnostic';
 import { misconceptionsHit } from '@/domain/mastery/reviewPlan';
 import { useData } from '@/app/providers/DataProvider';
 import { ARSENAL_STATUSES } from '@/persistence/schemas';
+import { useAdaptive } from '@/features/practice/useAdaptive';
+import { SuggestionCard } from '@/features/practice/SuggestionCard';
 
 export default function MissionControl() {
   const { data: l } = useLearning();
@@ -29,6 +31,7 @@ export default function MissionControl() {
   const { data: runs } = useActivityRuns();
   const { data: playbooks } = usePlaybooks();
   const { profile } = useData();
+  const adaptive = useAdaptive();
   if (!l || !arsenal || !experiments || !loops || !goals || !runs || !playbooks) return <Spinner label="Loading Mission Control" />;
 
   const today = todayKey();
@@ -147,6 +150,13 @@ export default function MissionControl() {
 
       {returning && inProgress.length > 0 && (
         <p className="mt-3 text-sm text-muted">Also in progress: {inProgress.map((x, i) => <span key={x.id}>{i > 0 && ', '}<Link className="text-accent-text underline" to={`/academy/lesson/${x.id}`}>{x.title}</Link></span>)}</p>
+      )}
+
+      {returning && adaptive && adaptive.length > 0 && (
+        <section aria-labelledby="adaptive-h" className="mt-5" data-testid="home-adaptive">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h2 id="adaptive-h" className="text-lg font-semibold">Practice that fits you</h2><Link className="text-sm font-semibold text-accent-text underline" to="/practice">All suggestions and mixed-topic exercises</Link></div>
+          <SuggestionCard s={adaptive[0]!} />
+        </section>
       )}
 
       <LearningPaths returning={returning} lessons={LESSONS} attempts={l.attempts} progress={l.progress} missionCount={MISSIONS.length} />

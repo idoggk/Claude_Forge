@@ -48,10 +48,13 @@ describe('the four learning paths are views over the real lessons', () => {
     expect(s.next?.id).toBe(l.id);
   });
 
-  it('planned topics are counted apart, so the research path says its research track is planned', () => {
+  it('planned topics are counted apart from lessons: a path never counts a planned topic as available', () => {
+    const engineering = pathStats(HOME_PATHS[0]!.trackIds, LESSONS, [], []);
+    expect(engineering.plannedTopics).toBeGreaterThanOrEqual(3);
+    expect(engineering.total).toBe(LESSONS.filter((l) => HOME_PATHS[0]!.trackIds.includes(l.track)).length);
     const research = pathStats(HOME_PATHS[3]!.trackIds, LESSONS, [], []);
-    expect(research.plannedTopics).toBeGreaterThanOrEqual(3);
     expect(research.total).toBe(LESSONS.filter((l) => ['safety-eval', 'research'].includes(l.track)).length);
+    expect(research.plannedTopics).toBe(TRACKS.filter((t) => HOME_PATHS[3]!.trackIds.includes(t.id)).reduce((n, t) => n + t.topics.filter((x) => !x.lessonId).length, 0));
     expect(TRACKS.find((t) => t.id === 'research')!.topics.every((t) => !t.lessonId || LESSONS.some((l) => l.id === t.lessonId))).toBe(true);
   });
 

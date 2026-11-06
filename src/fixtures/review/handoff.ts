@@ -174,9 +174,9 @@ export const INTEGRATION_STEPS: { id: string; text: string; why: string }[] = [
 
 export const VERDICTS: { id: string; text: string; correct: boolean; why: string }[] = [
   { id: 'v-block', text: 'Do not merge: return to the Builder with the required changes, then re-run all gates', correct: true, why: 'Three critical issues and a review that did not cover the core file.' },
-  { id: 'v-merge-followup', text: 'Merge now and file follow-up tickets for the problems', correct: false, why: 'Merging known nondeterminism and disabled tests into core rules trades a cheap fix now for an expensive investigation later.' },
-  { id: 'v-trust-review', text: 'Merge: the Reviewer approved and CI is green', correct: false, why: 'The approval did not cover the core file and "green" includes two skipped tests on a stale base.' },
-  { id: 'v-nits', text: 'Approve with nits: only the banner copy needs changing', correct: false, why: 'Misses every critical issue; the nit is the least important finding.' },
+  { id: 'v-merge-followup', text: 'Merge now and file follow-up tickets for each of the problems the Reviewer and the gates found', correct: false, why: 'Merging known nondeterminism and disabled tests into core rules trades a cheap fix now for an expensive investigation later.' },
+  { id: 'v-trust-review', text: 'Merge: the Reviewer approved the change and CI is green, so the gates have been passed', correct: false, why: 'The approval did not cover the core file and "green" includes two skipped tests on a stale base.' },
+  { id: 'v-nits', text: 'Approve with nits: only the banner copy needs to change before the merge goes ahead', correct: false, why: 'Misses every critical issue; the nit is the least important finding.' },
 ];
 
 export function evidenceText(source: 'diff' | 'ci' | 'reviewer' | 'summary'): string {

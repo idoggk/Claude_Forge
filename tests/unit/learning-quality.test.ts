@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { LESSONS } from '@/content/lessons';
 import { gradeItem, readsAsTermList } from '@/domain/assessment/grade';
-import { allItems, answerEchoesPrompt, choiceItems, correctPositionCounts, duplicatePrompts, longestCorrectShare, reviewRepeatsAssessment, shortcutOptions, weakDistractors, writtenItems } from '@/domain/curriculum/audit';
+import { absoluteWordCue, allItems, answerEchoesPrompt, answerRevealedElsewhere, auditReport, brokenLessonLinks, choiceItems, correctPositionCounts, duplicateChoices, duplicatePrompts, emptyFeedback, longestCorrectShare, malformedChoices, reviewRepeatsAssessment, shortcutOptions, weakDistractors, writtenItems } from '@/domain/curriculum/audit';
+import { seededOrder } from '@/domain/assessment/grade';
+import { lessonStatus } from '@/domain/mastery/recommend';
+import { readFileSync, writeFileSync } from 'node:fs';
 import type { Item } from '@/domain/curriculum/types';
 
 const all = allItems();
@@ -22,14 +25,45 @@ describe('learning-quality audit (see docs/LEARNING_AUDIT.md)', () => {
     for (const [a, b] of duplicatePrompts(all)) expect(sig(by.get(a)!), `${a} vs ${b}`).not.toBe(sig(by.get(b)!));
   });
 
-  it('RATCHET: the right option is not allowed to become longer than the wrong ones more often than it is today', () => {
-    // Measured at the time of the audit: 211 of 258 single-answer items (82%) have a correct option at least 25% longer than every
-    // wrong option, so a learner can pass by choosing the longest. The target is 40% or lower. This guard only stops it getting worse.
+  it('LENGTH LEAK: at most 40% of single-answer items let a learner pick the right option by length (target met; ratchet at 10%)', () => {
+    // Round 5 measured 211 of 258 (82%): the correct option was at least 25% longer than every wrong option.
+    // Round 6 rewrote the wrong options as plausible misconceptions of comparable length. Items whose longest option is under
+    // 25 characters (identifiers, numbers) have no room for a length cue and are skipped.
     const { share } = longestCorrectShare(all);
-    expect(share).toBeLessThanOrEqual(0.83);
+    expect(share).toBeLessThanOrEqual(0.4);
+    expect(share).toBeLessThanOrEqual(0.1);
   });
-  it('RATCHET: wrong options with almost no explanation do not increase', () => {
-    expect(weakDistractors(all).length).toBeLessThanOrEqual(110);
+  it('the fix did not invert the cue: the right option is not systematically the longest, and its tendency to be the shortest is capped (RATCHET at 50%, measured 46%; chance is 25-33%)', () => {
+    let longest = 0, shortest = 0, n = 0;
+    for (const { item } of choiceItems(all)) {
+      if (item.kind !== 'single' || item.options.length < 3 || Math.max(...item.options.map((o) => o.text.length)) < 25) continue;
+      const c = item.options.find((o) => o.id === item.correct)!;
+      const others = item.options.filter((o) => o !== c);
+      n++;
+      if (others.every((o) => c.text.length > o.text.length)) longest++;
+      if (others.every((o) => c.text.length < o.text.length)) shortest++;
+    }
+    expect(longest / n).toBeLessThanOrEqual(0.4);
+    expect(shortest / n).toBeLessThanOrEqual(0.5);
+  });
+  it('wrong options do not give themselves away with absolute words much more often than right options do', () => {
+    const cue = absoluteWordCue(all);
+    expect(cue.wrong - cue.right).toBeLessThanOrEqual(0.2);
+  });
+  it('no choice item has two options that say the same thing, an empty option, or fewer than three options', () => {
+    expect(duplicateChoices(all)).toEqual([]);
+    expect(malformedChoices(all)).toEqual([]);
+  });
+  it('no assessment or practice answer is restated in another item of the same lesson', () => { expect(answerRevealedElsewhere()).toEqual([]); });
+  it('every option of every choice item has feedback that explains it (not just "Correct." or "Not the reason.")', () => {
+    expect(weakDistractors(all)).toEqual([]);
+    expect(emptyFeedback(all)).toEqual([]);
+  });
+  it('prerequisite links point at lessons that exist', () => { expect(brokenLessonLinks()).toEqual([]); });
+  it('the audit report is readable and states the key figures', () => {
+    const r = auditReport();
+    expect(r).toMatch(/length leak: \d+ of \d+/);
+    if (process.env.AUDIT_REPORT) writeFileSync('docs/audit-report.txt', r + '\n');
   });
   it('authored correct positions are shuffled at display time, so a bias in the source is not what a learner sees', () => {
     const { counts, n } = correctPositionCounts(all);
@@ -62,7 +96,39 @@ describe('written answers cannot be passed by typing the accepted terms', () => 
   });
 });
 
-describe('lessons whose grading changed carry a new version, so old attempts stop counting', () => {
+describe('options are shuffled for the learner at display time', () => {
+  it('seededOrder is a permutation, deterministic per seed, and places the right option in every position over many seeds', () => {
+    const opts = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }];
+    const pos = [0, 0, 0, 0];
+    for (let i = 0; i < 400; i++) {
+      const o = seededOrder(opts, `attempt-${i}:item`);
+      expect(o.map((x) => x.id).sort()).toEqual(['a', 'b', 'c', 'd']);
+      expect(seededOrder(opts, `attempt-${i}:item`)).toEqual(o);
+      pos[o.findIndex((x) => x.id === 'a')]!++;
+    }
+    for (const c of pos) { expect(c).toBeGreaterThan(60); expect(c).toBeLessThan(140); }
+  });
+  it('the only place that renders choice items always passes an option seed', () => {
+    const src = readFileSync('src/features/academy/ExerciseRunner.tsx', 'utf8');
+    expect(src).toMatch(/optionSeed=\{/);
+  });
+});
+
+describe('lessons whose assessments changed carry a new version, and old attempts stop counting', () => {
+  it('a passing attempt recorded under the previous version does not count for the current lesson', () => {
+    const l = LESSONS[0]!;
+    const attempt = (v: number) => ({ id: `a${v}`, lessonId: l.id, lessonVersion: v, stage: 'assessment' as const, answers: {}, results: [], score: 1, passed: true, submittedAt: '2026-01-01T00:00:00.000Z' });
+    const status = (v: number) => lessonStatus(l, [attempt(v) as never], []);
+    expect(status(l.version)).toBe('passed');
+    expect(status(l.version - 1)).not.toBe('passed');
+  });
+  it('every lesson whose multiple-choice options were rewritten in Round 6 is at least one version above its Round 5 version', () => {
+    // Round 5 versions: 14 lessons with written items were at 2, the other 10 at 1. Round 6 added one to every lesson.
+    const writtenLessons = new Set(writtenItems(all).map((x) => x.lessonId));
+    const NEW_IN_ROUND_6 = /^L(2[5-9]|[3-9]\d)-/; // lessons written in Round 6 start at version 1
+    for (const l of LESSONS.filter((x) => !NEW_IN_ROUND_6.test(x.id))) expect(l.version, l.id).toBeGreaterThanOrEqual(writtenLessons.has(l.id) ? 3 : 2);
+  });
+
   it('every lesson with a written-answer item is at version 2 or higher', () => {
     const ids = new Set(writtenItems(all).map((x) => x.lessonId));
     for (const l of LESSONS) if (ids.has(l.id)) expect(l.version, l.id).toBeGreaterThanOrEqual(2);

@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "audit:content": "AUDIT_REPORT=1 vitest run tests/unit/learning-quality.test.ts",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e",
     "lint": "eslint .",
     "test:e2e:webkit": "PW_WEBKIT=1 playwright test --project=webkit tests/e2e/smoke-webkit.spec.ts"

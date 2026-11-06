@@ -80,6 +80,15 @@ The registry lists every external page the ecosystem knowledge rests on, with st
 - `domain/library`: takeaways, evidence-gated confidence, exports. **Database v7** adds the `takeaways` store only.
 - `domain/curriculum/audit.ts`: content measurements used by `tests/unit/learning-quality.test.ts`.
 
+## Round 6 additions
+
+- **New item kinds** (`domain/curriculum/types.ts`, `domain/assessment/grade.ts`, `features/academy/ItemView.tsx`): `case` (a scenario or diagnosis made of linked single-choice parts, graded per part, correct only if every part is) and `construct` (a text artifact checked by pure functions, with an unscored rubric and a reference solution that a test requires to pass every check). Both feed the existing attempt, concept-result and misconception machinery; option order is shuffled per part.
+- **`domain/mastery/adaptive.ts`**: `competencyEvidence` and `adaptiveSuggestions`. Inputs are attempts, lessons and misconception hits; output is a list of suggestions with a tier, a reason, evidence and an improvement criterion. It reads only current-version, hint-free, unseen attempts as independent evidence, never changes a level, and returns nothing without evidence.
+- **`content/interleaved`**: mixed-topic exercises (each a `case` item) run on `features/practice` and saved as activity runs (`interleaved:<id>`), never as attempts.
+- **`PilotFeedbackSchema`** is an optional field of the pilot metadata on an experiment (Zod default `null`), so no database bump was needed and older records parse unchanged. Feedback is excluded from every comparison and from the pilot step logic.
+- **`domain/curriculum/audit.ts`** grew the content audit; `seededOrder` has a proper finaliser.
+- Four lessons (L25 to L28) and four advanced competencies (`agent-permissions`, `deterministic-gates`, `research-reliability`, `workflow-architecture`). The database is still schema v7.
+
 ## Data model (IndexedDB `claude-forge`, schema version 7)
 
 `profile · preferences · lessonProgress · attempts · competencies · reviews · annotations · arsenal · customSkills · experiments · evidence · fieldEvidence (v2) · loops (v3) · diagnostics (v4) · meta`

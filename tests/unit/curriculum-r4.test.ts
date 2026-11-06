@@ -18,6 +18,7 @@ describe('Round 4 advanced lessons', () => {
     expect(lessons).toHaveLength(6);
     expect(lessons.map((l) => l.order)).toEqual([19, 20, 21, 22, 23, 24]);
     const advanced = new Set(COMPETENCIES.filter((c) => c.advanced).map((c) => c.id));
+    for (const id of ['agent-permissions', 'deterministic-gates', 'research-reliability', 'workflow-architecture']) advanced.delete(id as never); // taught by the Round 6 lessons, tested in curriculum-r6.test.ts
     expect(advanced.size).toBe(6);
     for (const l of lessons) {
       expect(l.version).toBeGreaterThanOrEqual(1);

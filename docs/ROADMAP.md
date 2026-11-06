@@ -35,3 +35,10 @@ Round 4 items from earlier lists that are now done: connecting playbooks and the
 1. **Fix the multiple-choice length leak** (docs/LEARNING_AUDIT.md): rewrite wrong options lesson by lesson and lower the ratchet in `tests/unit/learning-quality.test.ts`.
 2. **Run the pilot** (docs/REAL_WORLD_PILOT.md) with the guided experiment, a blinded review and a saved takeaway, on a real project, and fix what it shows.
 3. **Planned topics** (research track, hooks and guardrails, agent permission design) and real-device checks (a phone, Safari) once WebKit CI has run.
+
+
+## After Round 6 (the next three priorities)
+
+1. **Close the remaining assessment cue and run the pilot together.** Sharpen the right option in the roughly 110 single-answer items where it is now the shortest, lower the ratchet, and have a real learner take a few assessments and the guided experiment to see what the heuristics cannot.
+2. **Verify on real devices and the live site.** Allow the Pages host in the build environment (or check it from a normal browser), check loading, routing, offline behaviour and caching, and test on a real iPhone.
+3. **More judgment formats and planned topics.** Extend case and construct items to more existing lessons (the original 24 have few), add a second diagnosis per module, and build the topics still marked planned (fundamentals, engineering, game development, ecosystem, advanced).

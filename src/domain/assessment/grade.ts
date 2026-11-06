@@ -1,4 +1,4 @@
-import type { ExternalCheckId, FieldsItem, FlagLinesItem, Item } from '../curriculum/types';
+import type { CaseItem, ConstructItem, ExternalCheckId, FieldsItem, FlagLinesItem, Item } from '../curriculum/types';
 
 /**
  * Deterministic grading. Every item type is graded by explicit rules - there is
@@ -238,6 +238,10 @@ export function gradeItem(item: Item, answer: unknown, external: ExternalResults
     }
     case 'fields':
       return gradeFields(item, answer);
+    case 'case':
+      return gradeCase(item, answer);
+    case 'construct':
+      return gradeConstruct(item, answer);
     case 'flaglines':
       return gradeFlagLines(item, answer);
     case 'reflect': {
@@ -264,6 +268,51 @@ export function gradeItem(item: Item, answer: unknown, external: ExternalResults
       });
     }
   }
+}
+
+function gradeCase(item: CaseItem, answer: unknown): ItemGrade {
+  const map = answer && typeof answer === 'object' && !Array.isArray(answer) ? (answer as Record<string, unknown>) : {};
+  let hits = 0;
+  let answered = 0;
+  const details: GradeDetail[] = item.parts.map((p) => {
+    const picked = typeof map[p.id] === 'string' ? (map[p.id] as string) : null;
+    if (picked) answered++;
+    const ok = picked === p.correct;
+    if (ok) hits++;
+    const chosen = p.options.find((o) => o.id === picked);
+    const right = p.options.find((o) => o.id === p.correct);
+    return {
+      label: `${p.label}: ${chosen ? chosen.text : 'no answer'}`,
+      ok,
+      note: ok ? (right?.why ?? '') : `${chosen ? `${chosen.why} ` : ''}Best answer: ${right?.text ?? ''} - ${right?.why ?? ''}`,
+    };
+  });
+  return base(item, {
+    answered: answered > 0,
+    correct: hits === item.parts.length,
+    score: round(hits / item.parts.length),
+    feedback: hits === item.parts.length ? 'Every part is right.' : `${hits} of ${item.parts.length} parts right. Each part depends on the constraints and evidence given, so check them again.`,
+    details,
+  });
+}
+
+/** Objective structure only. A pass means the required parts are present, never that the result is good. */
+function gradeConstruct(item: ConstructItem, answer: unknown): ItemGrade {
+  const text = typeof answer === 'string' ? answer : '';
+  if (!text.trim()) return base(item, { feedback: 'Build it in the box first.', details: item.checks.map((c) => ({ label: c.label, ok: false, note: c.why })) });
+  const details: GradeDetail[] = item.checks.map((c) => {
+    let ok = false;
+    try { ok = c.test(text); } catch { ok = false; }
+    return { label: c.label, ok, note: ok ? 'Present.' : c.why };
+  });
+  const passed = details.filter((d) => d.ok).length;
+  return base(item, {
+    answered: true,
+    correct: passed === details.length,
+    score: round(passed / details.length),
+    feedback: `Structure check (deterministic): ${passed} of ${details.length} required parts present. This cannot tell you whether your design is good - judge that against the rubric below.`,
+    details,
+  });
 }
 
 function gradeFields(item: FieldsItem, answer: unknown): ItemGrade {
@@ -372,6 +421,9 @@ export function seededOrder<T extends { id: string }>(items: T[], seed: string):
     let h = 2166136261;
     const s = seed + ':' + it.id;
     for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+    // FNV-1a alone leaves ids that differ only in their last character correlated; a murmur3 finaliser mixes every bit so
+    // each option is equally likely to land in each position across attempts.
+    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
     return { it, h: h >>> 0 };
   });
   keyed.sort((a, b) => a.h - b.h || a.it.id.localeCompare(b.it.id));

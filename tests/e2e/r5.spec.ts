@@ -313,4 +313,28 @@ test.describe('Round 5: blinded evaluation', () => {
     expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id} ${v.nodes.slice(0, 2).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
     await expectNoHorizontalOverflow(page);
   });
+
+  test.describe('Round 6: easier first experiment and feedback capture', () => {
+    test('a plain "do this now" line follows the steps, and feedback is stored locally and survives a reload', async ({ page }) => {
+      await startPrompts(page); // the enclosing describe's beforeEach has already finished onboarding
+      await expect(page.getByTestId('pilot-next-action')).toContainText('Copy the prompt into your own Claude Code and run condition');
+      await page.getByText('Plan the next improvement').first().click();
+      await page.getByText(/Tell the next version what got in your way/).click();
+      await expect(page.getByTestId('pilot-feedback')).toContainText('never sent anywhere');
+      await page.getByTestId('fb-confusing').fill('I was not sure whether to count a failed attempt.');
+      await page.getByTestId('fb-effort').fill('Copying the prompt twice.');
+      await page.getByTestId('fb-improve').fill('Show the run order next to the prompt.');
+      await page.getByRole('radio', { name: 'Somewhat' }).click();
+      await page.getByRole('radio', { name: 'Yes', exact: true }).last().click();
+      await page.getByTestId('fb-save').click();
+      await expect(page.getByText('Feedback saved on this device').first()).toBeVisible();
+      await page.reload();
+      await page.getByText('Plan the next improvement').first().click();
+      await expect(page.getByTestId('pilot-feedback').locator('summary')).toContainText('(saved)');
+      await page.getByTestId('pilot-feedback').locator('summary').click();
+      await expect(page.getByTestId('fb-confusing')).toHaveValue('I was not sure whether to count a failed attempt.');
+      // it is not evidence: the step list and the counts are unchanged by it
+      await expect(page.getByTestId('pilot-progress')).toContainText('of 8 steps done');
+    });
+  });
 });

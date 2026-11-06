@@ -22,6 +22,7 @@ const SAVE = page('save', 'Write down what you learned', 'Capture one takeaway w
 export const PATHWAYS: Pathway[] = [
   { id: 'choose-approach', title: 'Choose the right approach', outcome: 'Decide quickly whether a task wants AI, ordinary software, a person, or nothing.', whoFor: 'Anyone who reaches for AI first.', steps: [
     lesson('learn', 'Lesson: choose the right approach', 'The judgement everything else depends on.', 'L11-choose-ai-approach'),
+    lesson('learn', 'Lesson: AI workflow architecture', 'Steps, checkpoints, retries, approvals and an owner.', 'L28-ai-workflow-architecture'),
     page('practice', 'Opportunity Finder', 'Invented scenarios where the best answer is often not AI.', '/academy/opportunity-finder'),
     page('experiment', 'Run your first real AI experiment', 'Test one choice on a task you really do.', '/pilot'),
     page('apply', 'Take it to real work', 'Plan, observe and reflect on a real task.', '/transfer'),
@@ -38,6 +39,7 @@ export const PATHWAYS: Pathway[] = [
   { id: 'trustworthy-research', title: 'Trustworthy AI-assisted research', outcome: 'Check a summary against its sources, not its tone.', whoFor: 'Anyone who uses AI to read, summarise or compare sources.', steps: [
     lesson('learn', 'Lesson: retrieval-augmented generation', 'What a grounded answer needs, and how it still fails.', 'L22-retrieval-augmented-generation'),
     lesson('learn', 'Lesson: AI evaluation', 'Judging output against a standard you set in advance.', 'L16-ai-evaluation'),
+    lesson('learn', 'Lesson: research reliability', 'Sources, evidence strength, conflicts and what was not checked.', 'L27-research-reliability'),
     challenge('Challenge: research reliability', 'Catch invented quotes, altered numbers and stale sources.', 'research'),
     page('experiment', 'Compare two approaches in the Lab', 'Run both on the same cases and judge the results.', '/battle-lab'),
     page('apply', 'Apply it to a real task', 'Use the checks on a summary you actually need.', '/transfer'),
@@ -46,6 +48,7 @@ export const PATHWAYS: Pathway[] = [
   { id: 'agents-that-do-not-fool-you', title: 'Agents that do not fool you', outcome: 'Read an agent run for failure, and add guardrails that stop it.', whoFor: 'Anyone letting an agent act on files, tools or data.', steps: [
     lesson('learn', 'Lesson: why agents fail', 'The failure patterns behind most bad runs.', 'L13-why-agents-fail'),
     lesson('learn', 'Lesson: long-running agent context', 'What breaks as a task gets long.', 'L24-long-running-agent-context'),
+    lesson('learn', 'Lesson: hooks, guardrails and deterministic gates', 'Which rules need enforcement, not a reminder.', 'L26-hooks-guardrails-deterministic-gates'),
     challenge('Challenge: agent failure investigator', 'Choose guardrails that contain faults without blocking good runs.', 'agent'),
     page('experiment', 'Improve a Skill in the loop', 'Change one thing, re-test, keep what helps.', '/loop'),
     page('apply', 'Design the workflow as a playbook', 'Steps, checks and what is verified, in writing.', '/playbooks'),
@@ -62,6 +65,7 @@ export const PATHWAYS: Pathway[] = [
   { id: 'safe-integrations', title: 'Safe tool integrations', outcome: 'Connect tools and data without giving untrusted text the power to give orders.', whoFor: 'Anyone adding tools, MCP servers or automations.', steps: [
     lesson('learn', 'Lesson: prompt injection and trust boundaries', 'Where instructions can sneak in.', 'L21-prompt-injection-trust-boundaries'),
     lesson('learn', 'Lesson: MCP or not', 'When an integration earns its risk.', 'L14-mcp-or-not'),
+    lesson('learn', 'Lesson: agent permissions and least privilege', 'What an agent may read, write, run and send.', 'L25-agent-permissions-least-privilege'),
     challenge('Challenge: agent failure investigator', 'Practise scope and evidence guardrails on recorded runs.', 'agent'),
     page('experiment', 'Evaluate a tool before you adopt it', 'Inspect it in Discovery and test it in the Lab.', '/discovery'),
     page('apply', 'Write the safe workflow as a playbook', 'Permissions, checks and a rollback.', '/playbooks'),

@@ -102,6 +102,27 @@ export function pilotSteps(exp: Experiment): PilotStep[] {
   ];
 }
 
+/**
+ * One plain sentence about what to do right now, so the first experiment can be done without reading long documentation.
+ * It names the single next action for the first step that is not done.
+ */
+export function nextActionText(exp: Experiment): { text: string; stepId: string } {
+  const step = currentPilotStep(exp);
+  const next = nextRunLabel(exp);
+  if (!step) return { stepId: 'done', text: 'Every step is done. Save one takeaway from what you found, or take it to a real task.' };
+  const text: Record<string, string> = {
+    problem: 'Describe one real task and at least one check you can answer yes or no.',
+    baseline: 'Write how you do this task today. That is condition A.',
+    improved: 'Write the one thing you will change, what you expect, and the exact prompt you will use in every run.',
+    run: next ? `Copy the prompt into your own Claude Code and run condition ${next}. Change nothing else between runs.` : 'Run the remaining conditions in your own Claude Code.',
+    evidence: next ? `Record what happened in the run you just did. Next suggested run: condition ${next}.` : 'Record what happened in each run, including failed ones.',
+    evaluate: 'Read the comparison, then write what this result cannot show.',
+    reflect: 'Write what you conclude and how sure you are, in your own words.',
+    next: 'Write one change to try next, or a decision to stop.',
+  };
+  return { stepId: step.id, text: text[step.id] ?? step.detail };
+}
+
 /** The first step that is not done; null when every step is done. */
 export function currentPilotStep(exp: Experiment): PilotStep | null {
   return pilotSteps(exp).find((s) => !s.done) ?? null;

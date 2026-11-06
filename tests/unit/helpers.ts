@@ -13,6 +13,8 @@ export function perfectAnswer(item: Item): unknown {
     case 'keywords': return natural(item.groups);
     case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, natural(f.groups)]));
     case 'flaglines': return item.targets.map((t) => t.line);
+    case 'case': return Object.fromEntries(item.parts.map((p) => [p.id, p.correct]));
+    case 'construct': return item.reference;
     case 'reflect': return Object.fromEntries(item.rubric.map((_, i) => [String(i), true]));
     case 'external': return undefined;
   }
@@ -33,6 +35,8 @@ export function wrongAnswer(item: Item): unknown {
     case 'keywords': return 'no idea';
     case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, 'no idea']));
     case 'flaglines': return [];
+    case 'case': return Object.fromEntries(item.parts.map((p) => [p.id, p.options.find((o) => o.id !== p.correct)!.id]));
+    case 'construct': return '{}';
     default: return undefined;
   }
 }

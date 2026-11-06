@@ -138,3 +138,31 @@ describe('the run sheet tells the learner what to copy, keep constant and save',
     expect(md).toMatch(/Forge does not run Claude, install anything or read your project/);
   });
 });
+
+describe('Round 6: pilot feedback and the next-action line', () => {
+  it('nextActionText names one concrete action for the first unfinished step', async () => {
+    const { nextActionText } = await import('@/domain/pilot/pilot');
+    const a = nextActionText(build());
+    expect(a.text.length).toBeGreaterThan(20);
+    expect(a.stepId).toBe('run');
+    expect(a.text).toMatch(/Copy the prompt into your own Claude Code and run condition/);
+  });
+
+  it('feedback is optional, defaults safely, and older experiments without it still parse', async () => {
+    const { PilotMetaSchema, PilotFeedbackSchema } = await import('@/domain/experiments/model');
+    expect(PilotMetaSchema.parse({ starter: 'skill', startedAt: T }).feedback).toBeNull();
+    const fb = PilotFeedbackSchema.parse({ savedAt: T });
+    expect(fb.judgmentChanged).toBe('unsure');
+    expect(fb.wouldRepeat).toBe('maybe');
+    const e = build();
+    const { feedback: _f, ...old } = e.pilot!;
+    expect(ExperimentSchema.parse({ ...e, pilot: old }).pilot!.feedback).toBeNull();
+  });
+
+  it('feedback is never a measurement: it does not change the comparison or the pilot steps', () => {
+    const e = build();
+    const withFb = { ...e, pilot: { ...e.pilot!, feedback: { confusing: 'x', unnecessaryEffort: 'y', judgmentChanged: 'yes' as const, improve: 'z', wouldRepeat: 'yes' as const, savedAt: T } } };
+    expect(JSON.stringify(compareExperiment(withFb))).toBe(JSON.stringify(compareExperiment(e)));
+    expect(pilotSteps(withFb).map((s) => s.done)).toEqual(pilotSteps(e).map((s) => s.done));
+  });
+});

@@ -117,3 +117,12 @@ A deterministic scoring rule: due reviews first; then curriculum order, prerequi
 - **Challenges**: four non-game problems; practice runs never raise a competency level.
 - **Pathways and library**: the last step of every pathway is a takeaway; a takeaway's confidence label is raised only by the learner and only if its references can support it (evaluated on fixtures needs a Lab report or a challenge run; applied to real work needs a completed transfer task).
 - **Refused**: auto-running Claude, installing Skills, hidden analytics, treating a checkbox as mastery.
+
+
+## Round 6: learning integrity, adaptive mastery and real-world practice
+
+- **Assessments that cannot be passed by formatting.** Answer length, option wording and option position are no longer reliable cues; the remaining one (the right option tends to be the shortest) is documented and capped.
+- **Judgment formats.** Scenarios change one constraint and flip the answers; diagnoses give a flawed artifact and ask for the failure, cause, principle and safest correction; constructions ask the learner to build a small, reviewable design. A deterministic check can say a required part is missing, never that a design is good, and says so.
+- **Adaptive practice with reasons.** Confident-and-wrong answers and repeated beliefs lead to foundation review; guided-only evidence leads to an independent assessment; only repeated independent, unseen, strong results with no calibration problem lead to harder or cross-topic work; real-work transfer is suggested only after strong evidence and only until one is completed. Clicking through lessons never raises difficulty.
+- **Pilot.** One plain next action at a time, optional local feedback, and a checklist for the five things only a human can do.
+- **Refused again:** treating suggestions, practice runs or feedback as mastery evidence; presenting a planned topic as available.

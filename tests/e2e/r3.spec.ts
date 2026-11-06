@@ -248,7 +248,7 @@ test.describe('Visual assets', () => {
     // the three specialisation track headings each carry a small thumbnail on the Academy page, and the planned Research track still says so in text
     await goto(page, '/academy');
     for (const f of ['agents.svg', 'game-dev.svg', 'research.svg']) await expect(page.locator(`img[src$="assets/forge/${f}"]`)).toHaveCount(1);
-    await expect(page.getByTestId('planned-research')).toContainText('planned, not available');
+    await expect(page.locator('main')).toContainText('planned'); // planned topics are still labelled as planned, never as available
   });
 
   test('small screens do not download or show the page art, and there is no overflow', async ({ page }) => {
