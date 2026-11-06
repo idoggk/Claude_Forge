@@ -62,3 +62,39 @@ Known small risk: the docs change quickly. Lesson text that quotes commands says
 - **Diagnostic** (`src/content/diagnostic.ts`): one question per competency; bump `DIAGNOSTIC.version` if grading content changes (old results stay on record).
 - **Loop missions** (`src/content/missions/*`, fixtures in `src/fixtures/<mission>/`): to add a mission, write the fixture as pure TS (the same file is imported by the app for ground truth and shipped raw in the pack), register dev and held-out fixture ids in `src/fixtures/index.ts`, and define the mission (cases, checklist, verdict options, labels, starter Skill). `tests/unit/loop-missions.test.ts` runs every registered mission through the full lifecycle; each mission also needs its own fixture test: ground-truth margins, pack CLI output equal to the in-app computation, no answers or causes in packs, dev/held-out disjoint, and a starter Skill that is valid but deliberately imperfect.
 - **Honesty rules for fixtures**: no FPS or timing claim anywhere (the perf fixture counts work; the integration fixture counts operations); fabricated material is labelled as fabricated; held-out packs never contain dev material and vice versa.
+
+## Round 3 content and source log (read 2026-11-05)
+
+**Read through an automated fetch-and-summarise step (nothing cloned, installed or executed):** `openai/openai-agents-python`, `langchain-ai/langgraph`, `Aider-AI/aider`, `anthropics/claude-code-action`, `modelcontextprotocol/modelcontextprotocol` (GitHub pages); the Claude Agent SDK overview and the Claude models overview (official docs); and five Anthropic engineering articles (building effective agents, effective context engineering, demystifying evals, writing tools for agents, the multi-agent research system), plus Claude Code's MCP, permissions, hooks, subagents, memory and workflows documentation used by the lessons.
+
+**Not reachable from the research environment (DNS failure), so nothing from them is used:** `modelcontextprotocol.io`, `openai.github.io`, `genai.owasp.org`, `ai.google.dev`. They are in `src/content/sources/registry.json` with status `unreachable`; a unit test enforces that no catalog entry uses them.
+
+**Unknown on purpose:** release names and last-commit dates (not shown on any GitHub page read), the Pricing page of the models overview (prices appear only as displayed that day on the overview), the quickstart/reference pages of the Agent SDK, and the MCP rendered documentation.
+
+**Authoring rules added in Round 3**
+- Option `why` text must be a real explanation (>= 12 characters); "Correct." alone is not acceptable feedback.
+- A `fields` item must be paired with a `reflect` rubric, and its keyword groups must be satisfiable by natural wording.
+- Fabricated traces, configs and pitches use `.example` domains and invented names; no real company, credential or person.
+- A lesson that teaches a tool may not recommend a tool by popularity; claims without a method are called unsupported, not false.
+- Catalog `capabilityIds` must exist on the Capability Map (tested).
+- Seeded playbooks must pass the same reliability checklist Lesson 15 grades (tested), and always start as `planned`.
+
+## Round 4 content and source log (read 2026-11-05)
+
+**Why there was a gap.** `modelcontextprotocol.io`, `genai.owasp.org`, `ai.google.dev` and `openai.github.io` returned "CONNECT tunnel failed, response 403" through the session proxy: the environment's network allowlist, not the sites. They were allowed (and `aistudio.google.com`, where the Gemini docs redirect) and then read. Fetched pages are third-party and untrusted; some contain install commands (npx, `curl | bash`, pip). Forge does not run or reproduce them, and a unit test asserts the new entries carry no install methods.
+
+**Read and added (all `official-docs-read`, `verifiedAt` 2026-11-05):**
+- MCP: What is MCP? (introduction), the specification landing page (dated revision 2026-07-28), Security best practices (confused deputy, token passthrough, SSRF, local server compromise and scope minimization read closely; the rest by heading only).
+- OWASP: the 2025 Top 10 listing (teasers only) and LLM01 Prompt Injection (read in full).
+- Gemini API: Function calling and Structured outputs (the ai.google.dev addresses redirect to aistudio.google.com).
+- OpenAI Agents SDK documentation (landing page; the Tools page was fetched but not read closely).
+
+**Unknown on purpose:** publication dates and licences of these pages; supported schema subsets and failure behaviour for Gemini structured outputs; pricing, quotas and model availability anywhere; the full text of nine of the ten OWASP risks; the remaining MCP security sections. Each entry's `limitations` and `missingChecks` list these.
+
+**Lessons L19-L24** cite verified Anthropic pages; L19 and L21 also cite the third-party pages above, marked as such in the lesson's sources list.
+
+**Authoring rules added in Round 4**
+- Inert samples: attack-like text in a lesson is fabricated, uses `.example` hosts, and is never a working payload.
+- A lesson that uses a fixture says what the fixture does not simulate (the retrieval fixture does not simulate embeddings, reranking or a language model).
+- A source is `read` only if a person (or this process) read the page; a registry record that cannot be reached stays `unreachable` with `retriedAt`. The checker never changes that status.
+- Transfer-task guidance is placeholder text, never pre-filled content.

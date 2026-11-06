@@ -2,9 +2,12 @@ import { z } from 'zod';
 import { ALL_STORES, getDb, type StoreName } from './db';
 import {
   AnnotationSchema, ArsenalSchema, AttemptSchema, CompetencyRecordSchema, FieldEvidenceSchema, LessonProgressSchema,
-  MetaSchema, PreferencesSchema, ProfileSchema, ReviewRecordSchema, SkillDraftSchema, ExperimentSchema, EvidenceSchema, DiagnosticRecordSchema,
+  MetaSchema, PreferencesSchema, ProfileSchema, ReviewRecordSchema, SkillDraftSchema, ExperimentSchema, EvidenceSchema, DiagnosticRecordSchema, ActivityRunSchema,
 } from './schemas';
 import { LoopRunSchema } from '@/domain/loop/model';
+import { LearningGoalSchema } from '@/domain/goals/model';
+import { PlaybookSchema } from '@/domain/playbook/model';
+import { TransferTaskSchema } from '@/domain/transfer/model';
 import { nowIso } from '@/lib/clock';
 import { recomputeCompetencies } from './repo';
 
@@ -27,6 +30,10 @@ const SCHEMAS: Record<StoreName, z.ZodType> = {
   fieldEvidence: FieldEvidenceSchema,
   loops: LoopRunSchema,
   diagnostics: DiagnosticRecordSchema,
+  goals: LearningGoalSchema,
+  playbooks: PlaybookSchema,
+  activityRuns: ActivityRunSchema,
+  transferTasks: TransferTaskSchema,
   meta: MetaSchema,
 };
 
@@ -164,6 +171,6 @@ export async function applyImport(valid: BackupData, mode: ImportMode): Promise<
 
 export async function hasAnyUserData(): Promise<boolean> {
   const db = getDb();
-  const counts = await Promise.all(['attempts', 'customSkills', 'experiments', 'arsenal', 'fieldEvidence', 'annotations', 'loops', 'diagnostics'].map((t) => db.table(t).count()));
+  const counts = await Promise.all(['attempts', 'customSkills', 'experiments', 'arsenal', 'fieldEvidence', 'annotations', 'loops', 'diagnostics', 'goals', 'playbooks', 'activityRuns'].map((t) => db.table(t).count()));
   return counts.some((c) => c > 0);
 }

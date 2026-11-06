@@ -1,36 +1,60 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Callout, SelectField, TextArea, TextInput, useToast } from '@/components/ui';
-import { CONDITION_KIND_LABELS, ExperimentSchema, METRICS, type ConditionKind, type MetricId } from '@/domain/experiments/model';
+import { CONDITION_KIND_LABELS, EXPERIMENT_TYPES, EXPERIMENT_TYPE_LABELS, ExperimentSchema, METRICS, isBaselineKind, type ConditionKind, type ExperimentType, type MetricId } from '@/domain/experiments/model';
+import { getLabTemplate } from '@/content/lab/templates';
 import { FIXTURES, fixtureHash, getFixture } from '@/fixtures';
-import { saveExperiment } from '@/persistence/repo';
-import { useSkills } from '@/app/hooks';
+import { linkExperimentToStep, saveExperiment } from '@/persistence/repo';
+import { usePlaybooks, useSkills } from '@/app/hooks';
 import { newId } from '@/lib/ids';
 import { nowIso } from '@/lib/clock';
 
 interface CondDraft { label: string; kind: ConditionKind; skillName: string; skillVersion: string; difference: string }
 
-export function NewExperimentForm({ onCancel }: { onCancel: () => void }) {
+const SKILLISH: ConditionKind[] = ['skill', 'custom-revised', 'alternative'];
+
+export function NewExperimentForm({ onCancel, templateId, forStep }: { onCancel: () => void; templateId?: string; forStep?: { playbookId: string; stepId: string } }) {
   const nav = useNavigate();
   const toast = useToast();
   const { data: skills } = useSkills();
-  const [fixtureId, setFixtureId] = useState(FIXTURES[0]!.id as string);
+  const { data: playbooks } = usePlaybooks();
+  const targetPb = forStep ? playbooks?.find((p) => p.id === forStep.playbookId) : undefined;
+  const targetStep = targetPb?.steps.find((x) => x.id === forStep?.stepId);
+  const tpl = templateId ? getLabTemplate(templateId) : undefined;
+  const [type, setType] = useState<ExperimentType>(tpl?.experimentType ?? 'skill');
+  const [subject, setSubject] = useState(tpl?.subject ?? '');
+  // Non-Skill experiments rarely use the bundled game fixtures, so they start from "my own task".
+  const [fixtureId, setFixtureId] = useState<string>(tpl && tpl.experimentType !== 'skill' ? 'custom' : (FIXTURES[0]!.id as string));
   const fx = getFixture(fixtureId);
-  const [title, setTitle] = useState('');
-  const [problem, setProblem] = useState('');
+  const [title, setTitle] = useState(tpl?.title ?? '');
+  const [problem, setProblem] = useState(tpl?.problem ?? '');
   const [hypothesis, setHypothesis] = useState('');
-  const [criteria, setCriteria] = useState((FIXTURES[0]!.successCriteria).join('\n'));
-  const [prompt, setPrompt] = useState(FIXTURES[0]!.prompt);
-  const [runs, setRuns] = useState(3);
-  const [measures, setMeasures] = useState<MetricId[]>(FIXTURES[0]!.suggestedMeasures);
+  const [criteria, setCriteria] = useState((tpl ? tpl.successCriteria : FIXTURES[0]!.successCriteria).join('\n'));
+  const [prompt, setPrompt] = useState(tpl && tpl.experimentType !== 'skill' ? '' : FIXTURES[0]!.prompt);
+  const [runs, setRuns] = useState(tpl?.plannedRuns ?? 3);
+  const [measures, setMeasures] = useState<MetricId[]>((tpl?.plannedMeasures as MetricId[] | undefined) ?? FIXTURES[0]!.suggestedMeasures);
   const [env, setEnv] = useState({ claudeCodeVersion: '', model: '', settings: '', os: '', notes: '' });
-  const [conds, setConds] = useState<CondDraft[]>([
-    { label: 'A', kind: 'no-skill', skillName: '', skillVersion: '', difference: 'Baseline: no Skill available' },
-    { label: 'B', kind: 'skill', skillName: '', skillVersion: '', difference: '' },
-  ]);
+  const [conds, setConds] = useState<CondDraft[]>(
+    tpl
+      ? tpl.conditions.map((c, i) => ({ label: String.fromCharCode(65 + i), kind: c.kind, skillName: '', skillVersion: '', difference: c.difference || (isBaselineKind(c.kind) ? 'Baseline: the current way of doing it' : '') }))
+      : [
+          { label: 'A', kind: 'no-skill', skillName: '', skillVersion: '', difference: 'Baseline: no Skill available' },
+          { label: 'B', kind: 'skill', skillName: '', skillVersion: '', difference: '' },
+        ],
+  );
   const [customLabel, setCustomLabel] = useState('');
   const [errs, setErrs] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+  // Started from a playbook step: carry the step's own gate in as the success criterion, once.
+  if (targetStep && targetPb && !prefilled) {
+    setPrefilled(true);
+    if (!title) setTitle(`Does step "${targetStep.title}" meet its gate?`.slice(0, 200));
+    if (!problem) setProblem(`Playbook "${targetPb.title}", step "${targetStep.title}": ${targetStep.instruction}`.slice(0, 1000));
+    if (targetStep.verification.trim()) setCriteria(targetStep.verification.trim());
+    if (!subject) setSubject(`Does "${targetStep.title}" do what the playbook says it does?`.slice(0, 400));
+    if (targetStep.prompt.trim()) setPrompt(targetStep.prompt);
+  }
 
   const pickFixture = (id: string) => {
     setFixtureId(id);
@@ -44,7 +68,7 @@ export function NewExperimentForm({ onCancel }: { onCancel: () => void }) {
     if (!title.trim()) problems.push('Give the experiment a title.');
     if (!hypothesis.trim()) problems.push('Write a hypothesis before any runs - what do you expect, and what would change your mind?');
     if (conds.length < 2) problems.push('Add at least two conditions.');
-    conds.forEach((c) => { if (c.kind !== 'no-skill' && !c.difference.trim()) problems.push(`Condition ${c.label}: state exactly what differs from the baseline.`); if ((c.kind === 'skill' || c.kind === 'custom-revised' || c.kind === 'alternative') && !c.skillName.trim()) problems.push(`Condition ${c.label}: name the Skill or technique.`); });
+    conds.forEach((c) => { if (!isBaselineKind(c.kind) && !c.difference.trim()) problems.push(`Condition ${c.label}: state exactly what differs from the baseline.`); if (type === 'skill' && SKILLISH.includes(c.kind) && !c.skillName.trim()) problems.push(`Condition ${c.label}: name the Skill or technique.`); });
     if (new Set(conds.map((c) => c.label.trim())).size !== conds.length) problems.push('Condition labels must be unique.');
     if (fixtureId === 'custom' && !customLabel.trim()) problems.push('Describe your custom fixture.');
     if (problems.length) { setErrs(problems); return; }
@@ -54,7 +78,7 @@ export function NewExperimentForm({ onCancel }: { onCancel: () => void }) {
       const now = nowIso();
       const hash = fx ? await fixtureHash(fx.id) : null;
       const exp = ExperimentSchema.parse({
-        id: newId('exp'), title: title.trim(), problem, hypothesis,
+        id: newId('exp'), title: title.trim(), experimentType: type, subject: subject.trim(), problem, hypothesis,
         fixture: fx ? { id: fx.id, label: fx.label, version: fx.version, hash } : { id: 'custom', label: customLabel.trim(), version: '', hash: null },
         successCriteria: criteria.split('\n').map((s) => s.trim()).filter(Boolean),
         prompt, environment: env, plannedMeasures: measures, plannedRuns: runs,
@@ -62,7 +86,10 @@ export function NewExperimentForm({ onCancel }: { onCancel: () => void }) {
         runs: [], status: 'draft', createdAt: now, updatedAt: now,
       });
       await saveExperiment(exp);
-      toast('Experiment created');
+      if (forStep && targetStep) {
+        const r = await linkExperimentToStep(forStep.playbookId, forStep.stepId, exp.id, fx?.checklist.length || null);
+        toast(r.ok ? 'Experiment created and linked to the playbook step (not yet judged)' : `Experiment created. ${r.reason}`);
+      } else toast('Experiment created');
       nav(`/battle-lab/${exp.id}`);
     } catch (e) {
       setErrs([(e as Error).message]);
@@ -73,7 +100,15 @@ export function NewExperimentForm({ onCancel }: { onCancel: () => void }) {
     <Card className="mb-6" aria-labelledby="new-exp-h">
       <h2 id="new-exp-h" className="text-xl font-semibold">New experiment</h2>
       <p className="mt-1 text-sm text-muted">Decide everything below <strong>before</strong> the first run. Forge locks the rubric when you record the first run.</p>
+      {forStep && targetPb && targetStep && <div className="mt-3"><Callout tone="info" title="This experiment will be linked to a playbook step">Step “{targetStep.title}” of “{targetPb.title}”. Linking records the experiment as evidence for that step. It does not verify the step: you will write acceptance criteria and a judgement afterwards, and the link goes stale if either side changes.</Callout></div>}
+      {forStep && playbooks && !targetStep && <div className="mt-3"><Callout tone="warn" title="That playbook step was not found">The experiment will be created without a link. Open the playbook and link it from the step.</Callout></div>}
       <form className="mt-4 space-y-5" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+        <div className="grid gap-4 md:grid-cols-2">
+          <SelectField label="What are you comparing?" value={type} onChange={(e) => setType(e.target.value as ExperimentType)} hint="Skills, prompts, workflows, agent setups, tool configurations or models. Forge never runs any of them: you supply the results." data-testid="exp-type">
+            {EXPERIMENT_TYPES.map((t) => <option key={t} value={t}>{EXPERIMENT_TYPE_LABELS[t]}</option>)}
+          </SelectField>
+          <TextInput label="The question in one sentence" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={400} placeholder="Does X beat Y on task Z?" data-testid="exp-subject" />
+        </div>
         <TextInput label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Does skill X help on the merge-cascade fixture?" data-testid="exp-title" />
         <div className="grid gap-4 md:grid-cols-2">
           <SelectField label="Fixture" value={fixtureId} onChange={(e) => pickFixture(e.target.value)} hint={fx?.summary ?? 'Describe your own fixture below. Without a fixture hash you cannot show every condition used identical files.'} data-testid="exp-fixture">
@@ -94,9 +129,9 @@ export function NewExperimentForm({ onCancel }: { onCancel: () => void }) {
             <div key={i} className="grid gap-3 rounded-lg border border-line p-3 md:grid-cols-2" data-testid={`cond-${i}`}>
               <TextInput label="Label" value={c.label} onChange={(e) => setCond(i, { label: e.target.value })} maxLength={40} />
               <SelectField label="Kind" value={c.kind} onChange={(e) => setCond(i, { kind: e.target.value as ConditionKind })}>{(Object.keys(CONDITION_KIND_LABELS) as ConditionKind[]).map((k) => <option key={k} value={k}>{CONDITION_KIND_LABELS[k]}</option>)}</SelectField>
-              {c.kind !== 'no-skill' && (
+              {!isBaselineKind(c.kind) && (
                 <>
-                  <TextInput label="Skill / technique name" value={c.skillName} onChange={(e) => setCond(i, { skillName: e.target.value })} list="my-skills" data-testid={`cond-skill-${i}`} hint="Match your Workshop Skill's name to link it to the capstone." />
+                  <TextInput label={type === 'skill' ? 'Skill / technique name' : 'Name of the thing being tested (optional)'} value={c.skillName} onChange={(e) => setCond(i, { skillName: e.target.value })} list="my-skills" data-testid={`cond-skill-${i}`} hint="Match your Workshop Skill's name to link it to the capstone." />
                   <TextInput label="Skill version / revision" value={c.skillVersion} onChange={(e) => setCond(i, { skillVersion: e.target.value })} placeholder="commit, release or snapshot label" />
                   <div className="md:col-span-2"><TextInput label="Exactly what differs from the baseline" value={c.difference} onChange={(e) => setCond(i, { difference: e.target.value })} data-testid={`cond-diff-${i}`} /></div>
                 </>

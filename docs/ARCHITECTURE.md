@@ -44,7 +44,33 @@ Design rules that the tests enforce: a loop is **two real Battle Lab experiments
 
 Hash routing + `base: './'` means the same build works at a domain root, under `/<repo>/` on GitHub Pages, or from any static folder, with no rewrite rules. Feature areas are lazy-loaded.
 
-## Data model (IndexedDB `claude-forge`, schema version 4)
+## Round 3 additions
+
+- **Curriculum taxonomy** (`domain/curriculum/competencies.ts`): 17 competencies, 12 tracks (each topic maps to a lesson or is PLANNED), 13 Personal Mastery Profile areas (an area with no competencies is planned and shows no level). Lesson `track` values were remapped to the twelve slugs; attempts store only `lessonId`, so no stored data changed.
+- **Capability Map** (`domain/capability`, `content/capability/map.ts`): a typed graph (nodes with outcomes, judgment question, use/avoid/risks, lessons, catalog entries, playbook and lab templates, typed relations). Unit tests enforce *no dead-end cards* and that every reference resolves.
+- **Goals** (`domain/goals`): steer the recommender by resolving capabilities to lessons. A goal can be declared achieved by the learner (with a note) and never creates evidence.
+- **Playbooks** (`domain/playbook`): documentation only. Import resets other people's verification claims; export is Markdown or JSON. Version history keeps the previous content on request (max 30).
+- **Opportunity Finder** (`content/finder`, `domain/finder`): practice runs stored in `activityRuns`; they feed the recommender as hints and the profile as practice counts, and never change a competency level.
+- **Generalised AI Lab**: experiments gain `experimentType` and `subject`; condition kinds gain `baseline`, `prompt`, `workflow`, `agent`, `tool-config`, `model`, `other`; `isBaselineKind` replaces `kind === 'no-skill'`. Forge still never runs anything.
+- **Catalog generalised**: ten entity types; `capabilityIds` link entries to the map; star counts only "as displayed" with a date.
+- **Source registry** (`content/sources/registry.json`, `scripts/check-sources.mjs`, `.github/workflows/source-check.yml`): see *Living discovery* below.
+- **Item kinds**: `fields` (several labelled written answers, each checked for required ideas) and Segment `prediction` (prediction before explanation, never graded or stored).
+
+### Living discovery (low-cost)
+
+The registry lists every external page the ecosystem knowledge rests on, with status `read`, `unreachable` or `lead` and the date. `scripts/check-sources.mjs` sends one GET per source (1/s, 15 s timeout), records HTTP status, redirects and a hash of the first 2 MB, and prints what changed. With `--write` it updates `last-check.json` only. The optional weekly workflow runs it, and if the status data changed it opens a **draft pull request** for a person to review. It never edits the catalog, the registry or any lesson, never executes or installs anything it downloads, and a changed hash means *re-read this page*, not *the catalog is wrong*. Not yet run in GitHub Actions.
+
+## Round 4 additions
+
+- **Advanced competencies** (`domain/curriculum/competencies.ts`): six new competencies (`advanced: true`) for lessons L19-L24. They are excluded from the foundation diagnostic (still 17 questions) and map into the prompting, research and AI-system-design profile areas.
+- **Retrieval fixture** (`domain/retrieval/search.ts`, `content/fixtures/retrieval.ts`, `features/academy/widgets/retrieval.tsx`): a deterministic BM25 over a fictional corpus. No embedding API, no vector database, no network. It does not simulate embeddings, reranking or a model.
+- **Playbook evidence** (`domain/playbook/evidence.ts`): an `EvidenceLink` joins ONE step to ONE AI Lab experiment and stores the playbook content version, a fingerprint of the step, a snapshot of the experiment (conditions, per-measure n/mean/min/max, sufficiency, fixture hash), provenance, the learner's own criteria, claimed outcome, judgement, note and limitations. Fingerprints (`hash53`, non-cryptographic) cover only what can change the meaning: step wording and links, experiment conditions, runs, fixture and rubric lock (not free-text notes). `linkCurrency` returns `current` or one of four stale states; stale links are ignored by `stepEvidence`, and `reviewEvidenceLink` refuses to judge them until `reassessEvidenceLink` takes a new snapshot (the old judgement moves to history). A step is `supported` only when a link is current, suitable (non-synthetic, baseline, >= 2 runs with data per condition, criteria, a judgement with a note, limitations) and judged `supports`. **Maturity is computed**, never chosen: Draft / Ready to test / Partially evaluated / Evaluated on fixtures / Applied to real work; real-work results come only from the learner's own reports and never replace fixture evaluation. A step marked verified records `verifiedFingerprint`; an edit makes the verification `verification-outdated`. Evaluation summaries are frozen, versioned Markdown (Observed evidence / Interpretation / Limitations / Next experiment).
+- **Evidence writes go through the repository**: `savePlaybook` takes `evidenceLinks` and `evaluations` from the stored record, so an editor draft opened before a link was made cannot erase it; `contentVersion` rises only when playbook CONTENT changes. Imported playbook JSON is parsed as `PlaybookContent`, so imports never carry evidence, evaluations or verified steps.
+- **Transfer tasks** (`domain/transfer`, `features/transfer`, `content/transfer/prompts.ts`): a record the learner writes. `completionProblems` requires verification criteria, observations, at least one evidence note and a reflection. Guidance is placeholder text only. A completed task can add a self-reported result to a playbook (`recordPlaybookRealWorldResult`), which does not change the playbook version.
+- **AI Lab** (`domain/experiments`): `Run` gains `attempt` (completed / failed / abandoned), `skillVersion`, `fixtureVersion`, `context`. `compare.ts` adds sample SD, per-condition failed/abandoned counts and validity notes (mixed versions, mixed fixture versions, different contexts, unequal failure rates). `importer.ts` analyses pasted text (recognised test-runner summaries become `Parsed`; statements such as "all tests pass" become `Inferred` and are never applied) and builds a NEW experiment from an exported record (fresh ids, `user-imported` provenance, loop links and locks dropped, derived comparison ignored) only after the UI has shown a preview. `report.ts` separates Observed results / Interpretation / Limitations / Next experiment.
+- **Source check** (`scripts/source-check-lib.mjs`, `scripts/check-sources.mjs`, `.github/workflows/source-check.yml`): pure, unit-tested helpers; curated public https URLs only (no addresses, ports, credentials or private names; at most 100); 1 request per second; at most 2 MB read per response; off-host redirects flagged; `last-check.json` validated before a second, write-permitted job opens a **draft** PR. See *Living discovery* above.
+
+## Data model (IndexedDB `claude-forge`, schema version 6)
 
 `profile · preferences · lessonProgress · attempts · competencies · reviews · annotations · arsenal · customSkills · experiments · evidence · fieldEvidence (v2) · loops (v3) · diagnostics (v4) · meta`
 
@@ -53,6 +79,10 @@ Hash routing + `base: './'` means the same build works at a domain root, under `
 - **Attempts are append-only** and carry the lesson version, hints used, confidence, per-item results and per-concept results, so competency can be recomputed from history at any time.
 - **Competency records** are a cache of `evaluateCompetencies()` plus a change history; they are recomputed inside the same transaction as the attempt write.
 - **Idempotency.** `submitAttempt` is a single transaction that returns the existing attempt when the ID already exists.
+
+- **v5 (Round 3)** adds `goals`, `playbooks`, `activityRuns` and defaults `experimentType: 'skill'` and `subject: ''` on every existing experiment. Purely additive; covered by a migration test that builds a real v4 database, upgrades it and checks every record, and by an import test with an R2 backup file that has none of the new stores.
+
+- **v6 (Round 4)** adds `transferTasks` and backfills playbooks: `contentVersion: 1`, empty `evidenceLinks` and `evaluations`, and `verifiedFingerprint` on steps (a step already marked verified is fingerprinted against its current wording, so existing verifications stay valid). The upgrade does no network or non-Dexie work. Tested by building a real v5 database containing an R3-shaped playbook, upgrading it and checking every record. New `Run` fields are defaulted by the Zod schema, so older experiments and backups parse unchanged.
 
 ### Backup and import (`persistence/backup.ts`)
 

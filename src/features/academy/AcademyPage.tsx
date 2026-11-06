@@ -4,10 +4,18 @@ import { COMPETENCY_BY_ID, TRACKS } from '@/domain/curriculum/competencies';
 import { lessonStatus, prerequisitesMet, type LessonStatus } from '@/domain/mastery/recommend';
 import { dueReviews } from '@/domain/mastery/review';
 import { todayKey } from '@/lib/clock';
-import { Badge, Callout, Card, LinkButton, PageHeader, Spinner } from '@/components/ui';
+import { Badge, Callout, Card, Illustration, LinkButton, PageHeader, Spinner, type ForgeArt } from '@/components/ui';
 import { useLearning } from '@/app/hooks';
 import { DIAGNOSTIC } from '@/content/diagnostic';
 import { latestHint } from '@/domain/mastery/diagnostic';
+
+/** The three specialisation tracks that have supplied artwork. Art says nothing about availability: planned tracks say so in text. */
+const TRACK_ART: Partial<Record<string, ForgeArt>> = { agents: 'agents', 'game-dev': 'game-dev', research: 'research' };
+
+const TRACK_SHORT: Record<string, string> = {
+  fundamentals: 'Fundamentals', prompting: 'Prompting and context', 'claude-code': 'Claude Code', agents: 'Agents', 'mcp-tools': 'MCP and tools', automation: 'Automation', engineering: 'Engineering practice',
+  'game-dev': 'Game development', research: 'Research', ecosystem: 'Ecosystem', 'safety-eval': 'Safety and evaluation', advanced: 'Advanced systems',
+};
 
 const STATUS: Record<LessonStatus, { label: string; tone: 'neutral' | 'accent' | 'warn' | 'ok' }> = {
   'not-started': { label: 'Not started', tone: 'neutral' },
@@ -22,9 +30,12 @@ export default function AcademyPage() {
   const due = dueReviews(l.reviews, todayKey());
   const passed = LESSONS.filter((x) => lessonStatus(x, l.attempts, l.progress) === 'passed').length;
 
+  const available = LESSONS.length;
+  const plannedTopics = TRACKS.reduce((n, t) => n + t.topics.filter((x) => !x.lessonId).length, 0);
+
   return (
     <div>
-      <PageHeader eyebrow="Academy" title="Five tracks, ten lessons" subtitle={`${passed} of ${LESSONS.length} lessons passed. Each lesson: learn → practice (guided) → assess (independent) → apply to real work.`} />
+      <PageHeader art="academy" eyebrow="Learn" title="Twelve tracks, one goal: use AI well" subtitle={`${passed} of ${available} available lessons passed. Each lesson: learn → practice (guided) → assess (independent) → apply to real work. ${plannedTopics} further topics are planned and clearly marked: nothing is shown as available until a lesson exists.`} actions={<><LinkButton to="/academy/opportunity-finder" variant="secondary" data-testid="open-finder">AI Opportunity Finder</LinkButton><LinkButton to="/explore" variant="secondary">Capability map</LinkButton></>} />
       {(() => {
         const hint = latestHint(l.diagnostics);
         return (
@@ -42,13 +53,28 @@ export default function AcademyPage() {
           </Callout>
         </div>
       )}
+      <nav aria-label="Jump to a track" className="mb-6 flex flex-wrap gap-2" data-testid="track-jump">
+        {TRACKS.map((t) => {
+          const n = LESSONS.filter((x) => x.track === t.id).length;
+          return <a key={t.id} href={`#track-${t.id}`} onClick={(e) => { e.preventDefault(); document.getElementById(`track-${t.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} className="transition-forge inline-flex min-h-9 items-center gap-2 rounded-lg border border-line px-3 text-sm hover:bg-surface2">{t.order}. {TRACK_SHORT[t.id] ?? t.title} <Badge tone={n > 0 ? 'ok' : 'neutral'}>{n > 0 ? `${n} lesson${n === 1 ? '' : 's'}` : 'planned'}</Badge></a>;
+        })}
+      </nav>
       <div className="space-y-8">
         {TRACKS.map((t) => {
-          const lessons = LESSONS.filter((x) => x.track === t.id);
+          const lessons = LESSONS.filter((x) => x.track === t.id).sort((a, b) => a.order - b.order);
+          const alsoIn = LESSONS.filter((x) => x.track !== t.id && x.alsoIn?.includes(t.id));
+          const planned = t.topics.filter((x) => !x.lessonId);
           return (
-            <section key={t.id} aria-labelledby={`track-${t.id}`}>
-              <h2 id={`track-${t.id}`} className="text-xl font-semibold"><span className="mr-2 text-accent-text">Track {t.id}</span>{t.title}</h2>
-              <p className="mt-1 max-w-prose text-muted">{t.summary}</p>
+            <section key={t.id} aria-labelledby={`track-${t.id}`} data-testid={`track-${t.id}`}>
+              <div className="flex items-start gap-5">
+                <div className="min-w-0 flex-1">
+                  <h2 id={`track-${t.id}`} className="text-xl font-semibold"><span className="mr-2 text-accent-text">Track {t.order}</span>{t.title}</h2>
+                  <p className="mt-1 max-w-prose text-muted">{t.summary}</p>
+                  <p className="mt-1 max-w-prose text-sm"><strong>After this track:</strong> <span className="text-muted">{t.outcome}</span></p>
+                </div>
+                {TRACK_ART[t.id] && <div className="hidden w-40 shrink-0 md:block" aria-hidden="true"><Illustration name={TRACK_ART[t.id]!} /></div>}
+              </div>
+              {lessons.length === 0 && <p className="mt-3 rounded-lg border border-dashed border-line p-3 text-sm text-muted" data-testid={`planned-${t.id}`}>No lesson in this track is available yet. The topics below are planned, not available.</p>}
               <ul className="mt-3 grid gap-3 md:grid-cols-2">
                 {lessons.map((x) => {
                   const st = lessonStatus(x, l.attempts, l.progress);
@@ -71,10 +97,11 @@ export default function AcademyPage() {
                   );
                 })}
               </ul>
-              {t.plannedTopics.length > 0 && (
+              {alsoIn.length > 0 && <p className="mt-2 text-sm text-muted">Also relevant here: {alsoIn.map((x, i) => <span key={x.id}>{i > 0 && ', '}<Link className="text-accent-text underline" to={`/academy/lesson/${x.id}`}>{x.title}</Link></span>)}.</p>}
+              {planned.length > 0 && (
                 <details className="mt-3 rounded-lg border border-dashed border-line p-3 text-sm text-muted">
-                  <summary className="cursor-pointer font-semibold">Planned for later releases (not available yet)</summary>
-                  <ul className="mt-2 list-disc pl-5">{t.plannedTopics.map((p) => <li key={p}>{p}</li>)}</ul>
+                  <summary className="cursor-pointer font-semibold">{planned.length} planned topic{planned.length === 1 ? '' : 's'} (not available yet)</summary>
+                  <ul className="mt-2 list-disc pl-5">{planned.map((p) => <li key={p.title}>{p.title} <Badge>planned</Badge></li>)}</ul>
                 </details>
               )}
             </section>

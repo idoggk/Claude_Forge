@@ -2,18 +2,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, Callout, Card, ConfirmButton, EmptyState, LinkButton, PageHeader, SafeLink, SelectField, Spinner, TabPanel, Tabs, TextArea, TextInput, useToast } from '@/components/ui';
 import { DEMO_EXPERIMENT, DEMO_ID } from '@/domain/experiments/demo';
-import { ExperimentSchema, type Evidence, type Experiment, type Run } from '@/domain/experiments/model';
+import { ATTEMPT_LABELS, ExperimentSchema, type Evidence, type Experiment, type Run } from '@/domain/experiments/model';
 import { compareExperiment } from '@/domain/experiments/compare';
 import { buildExperimentReport, exportExperimentJson } from '@/domain/experiments/report';
 import { addEvidence, deleteEvidence, saveExperiment } from '@/persistence/repo';
 import { getDb } from '@/persistence/db';
 import { useLive } from '@/persistence/useLive';
 import { buildFixturePack, getFixture } from '@/fixtures';
+import { EXPERIMENT_TYPE_LABELS } from '@/domain/experiments/model';
 import { downloadBlob, downloadText } from '@/lib/download';
 import { newId } from '@/lib/ids';
 import { nowIso } from '@/lib/clock';
 import { ComparisonView } from './ComparisonView';
 import { RunForm, type RunFormResult } from './RunForm';
+import { PlaybookLinksCard } from './PlaybookLinksCard';
 
 type TabId = 'setup' | 'record' | 'compare' | 'report';
 
@@ -33,7 +35,7 @@ export default function ExperimentPage() {
 
   const seededTotal = useMemo(() => (exp ? getFixture(exp.fixture.id)?.checklist.length || null : null), [exp]);
   if (!isDemo && loading) return <Spinner label="Opening the experiment" />;
-  if (!exp) return <EmptyState title="Experiment not found" action={<LinkButton to="/battle-lab" variant="primary">Back to the Battle Lab</LinkButton>}>It may have been deleted.</EmptyState>;
+  if (!exp) return <EmptyState title="Experiment not found" action={<LinkButton to="/battle-lab" variant="primary">Back to the AI Lab</LinkButton>}>It may have been deleted.</EmptyState>;
   if (!draft) return <Spinner />;
 
   const readOnly = isDemo;
@@ -58,7 +60,7 @@ export default function ExperimentPage() {
   const createFromDemo = async () => {
     const now = nowIso();
     const idMap = new Map(DEMO_EXPERIMENT.conditions.map((c) => [c.id, newId('cond')]));
-    const e = ExperimentSchema.parse({ ...DEMO_EXPERIMENT, id: newId('exp'), title: 'My experiment (from the demo structure)', synthetic: false, runs: [], rubricLockedAt: null, status: 'draft', observations: '', conclusion: '', limitations: '', hypothesis: '', fixture: { ...DEMO_EXPERIMENT.fixture, hash: null }, conditions: DEMO_EXPERIMENT.conditions.map((c) => ({ ...c, id: idMap.get(c.id)! })), createdAt: now, updatedAt: now });
+    const e = ExperimentSchema.parse({ ...DEMO_EXPERIMENT, id: newId('exp'), title: 'My experiment (from the demo structure)', subject: '', synthetic: false, runs: [], rubricLockedAt: null, status: 'draft', observations: '', conclusion: '', limitations: '', hypothesis: '', fixture: { ...DEMO_EXPERIMENT.fixture, hash: null }, conditions: DEMO_EXPERIMENT.conditions.map((c) => ({ ...c, id: idMap.get(c.id)! })), createdAt: now, updatedAt: now });
     await saveExperiment(e);
     toast('Editable copy created - no runs or data were copied');
     nav(`/battle-lab/${e.id}`);
@@ -76,9 +78,9 @@ export default function ExperimentPage() {
         <div className="mb-4" data-testid="loop-experiment-banner"><Callout tone="info" title={`Part of a Skill Improvement Loop (${exp.phase === 'heldout' ? 'held-out set' : 'development set'})`}>Runs for this experiment are recorded in the loop, where each one is tied to a proposal and graded against the simulation. They cannot be edited here{exp.runsLockedAt ? ' - these runs are locked because the ground truth was revealed' : ''}. <LinkButton to={`/loop/${exp.loopId}`} size="sm" variant="primary" className="mt-2">Open the loop</LinkButton></Callout></div>
       )}
       <PageHeader
-        eyebrow="Battle Lab"
+        eyebrow="AI Lab"
         title={exp.title}
-        subtitle={<>{exp.fixture.label} · {exp.conditions.length} conditions · {exp.runs.length} runs recorded</>}
+        subtitle={<>{EXPERIMENT_TYPE_LABELS[exp.experimentType]}{exp.subject ? `: ${exp.subject}` : ''} · {exp.fixture.label} · {exp.conditions.length} conditions · {exp.runs.length} runs recorded</>}
         actions={readOnly ? <Button variant="primary" onClick={() => void createFromDemo()} data-testid="clone-demo">Create my own from this structure</Button> : <><Badge tone={exp.status === 'concluded' ? 'ok' : 'accent'}>{exp.status}</Badge><LinkButton to="/battle-lab" variant="ghost" size="sm">All experiments</LinkButton></>}
       />
       <Tabs<TabId> label="Experiment sections" value={tab} onChange={setTab} tabs={[{ id: 'setup', label: 'Setup' }, { id: 'record', label: 'Record runs', badge: <Badge>{exp.runs.length}</Badge> }, { id: 'compare', label: 'Compare' }, { id: 'report', label: 'Report & export' }]} />
@@ -101,6 +103,7 @@ export default function ExperimentPage() {
               {fx && !readOnly && <><p className="mt-2 text-sm text-muted">{fx.objectiveHow}</p><Button className="mt-2" size="sm" icon="download" onClick={async () => { const p = await buildFixturePack(fx.id); downloadBlob(p.blob, p.filename); }} data-testid="download-pack">Download fixture pack (ZIP)</Button></>}
               <p className="mt-2 text-xs text-muted">Rubric {exp.rubricLockedAt ? `locked ${new Date(exp.rubricLockedAt).toLocaleString()} (first run recorded)` : 'will lock when the first run is recorded'}.</p>
             </Card>
+            {!readOnly && <PlaybookLinksCard exp={exp} seededTotal={seededTotal} />}
             <Card>
               <h2 className="font-semibold">Conditions</h2>
               <ul className="mt-2 space-y-2 text-sm">{exp.conditions.map((c) => <li key={c.id} className="rounded-lg border border-line p-2"><strong>{c.label}</strong> · {c.kind} {c.skillName && <>· {c.skillName} {c.skillVersion && `(${c.skillVersion})`}</>}<span className="block text-muted">Differs: {c.difference || 'baseline'}</span></li>)}</ul>
@@ -136,7 +139,8 @@ export default function ExperimentPage() {
                     const evs = ev.filter((x) => x.runId === r.id);
                     return (
                       <Card as="li" key={r.id}>
-                        <p className="font-semibold">{c?.label} · run {r.index}</p>
+                        <p className="font-semibold">{c?.label} · run {r.index} {r.attempt !== 'completed' && <Badge tone="warn">{ATTEMPT_LABELS[r.attempt]}</Badge>}</p>
+                        {(r.skillVersion || r.fixtureVersion || r.context) && <p className="text-xs text-muted">{[r.skillVersion && `version ${r.skillVersion}`, r.fixtureVersion && `fixture v${r.fixtureVersion}`, r.context && `context: ${r.context}`].filter(Boolean).join(' · ')}</p>}
                         <p className="text-sm text-muted">Tests: {r.testsPassed !== null && r.testsTotal !== null ? `${r.testsPassed}/${r.testsTotal} (${r.testsProvenance})` : 'unknown'} · Success: {r.successMet === null ? 'not assessed' : r.successMet ? 'yes' : 'no'} · Runtime: {r.metrics.runtimeSec?.value ?? 'unknown'} · Effort: {r.metrics.developerEffortMin?.value ?? 'unknown'} · Rubric assessed: {Object.values(r.rubric).filter((v) => v !== null && v !== undefined).length}/4</p>
                         {r.observations && <p className="mt-1 text-sm">{r.observations}</p>}
                         {evs.length > 0 && <ul className="mt-1 text-xs text-muted">{evs.map((e) => <li key={e.id} className="flex items-center gap-2"><Badge tone="teal">{e.kind}</Badge>{e.name} · {e.provenance} · {e.size} bytes <ConfirmButton label="Remove" confirmLabel="Remove evidence" onConfirm={() => deleteEvidence(e.id)} /></li>)}</ul>}
@@ -175,7 +179,7 @@ export default function ExperimentPage() {
             <Button icon="download" onClick={() => { downloadText(report, `experiment-report.md`, 'text/markdown'); toast('Report exported (Markdown)'); }} data-testid="export-report">Export Markdown report</Button>
           </div>
           <pre tabIndex={0} className="code-scroll max-h-[32rem] rounded-lg border border-line bg-surface2 p-3 text-xs" data-testid="report-preview"><code>{report}</code></pre>
-          <p className="text-xs text-muted">Method background: <SafeLink href="https://code.claude.com/docs/en/skills">Claude Code Skills docs</SafeLink> describe the skill-creator benchmark and <code>claude plugin eval</code> for tool-assisted comparisons.</p>
+          <p className="text-xs text-muted">Method background: <SafeLink href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic - Demystifying evals for AI agents</SafeLink>. For Skills specifically, the Claude Code Skills documentation also describes the skill-creator plugin's benchmark mode: <SafeLink href="https://code.claude.com/docs/en/skills">Claude Code docs - Skills</SafeLink>. Forge does not run any of them.</p>
         </div>
       </TabPanel>
     </div>

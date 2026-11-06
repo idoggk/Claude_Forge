@@ -15,9 +15,37 @@ export type CompetencyId =
   | 'economy-analysis'
   | 'experiment-design'
   | 'multi-agent-review'
-  | 'production-skills';
+  | 'production-skills'
+  // Round 3: broader AI mastery
+  | 'approach-selection'
+  | 'context-engineering'
+  | 'agent-failure-analysis'
+  | 'mcp-integration'
+  | 'workflow-design'
+  | 'efficient-ai-development'
+  | 'tool-evaluation'
+  // Round 4: advanced AI engineering
+  | 'structured-tool-contracts'
+  | 'few-shot-design'
+  | 'prompt-injection-defense'
+  | 'retrieval-design'
+  | 'eval-harness-design'
+  | 'long-running-context';
 
-export type TrackId = 'A' | 'B' | 'C' | 'D' | 'E';
+/** The twelve learning tracks. Each lists the topics it will cover; only topics with a lesson are available. */
+export type TrackId =
+  | 'fundamentals'
+  | 'prompting'
+  | 'claude-code'
+  | 'agents'
+  | 'mcp-tools'
+  | 'automation'
+  | 'engineering'
+  | 'game-dev'
+  | 'research'
+  | 'ecosystem'
+  | 'safety-eval'
+  | 'advanced';
 
 export interface Competency {
   id: CompetencyId;
@@ -27,14 +55,25 @@ export interface Competency {
   outcomes: number[];
   /** Safety-critical competencies must show a clean critical-item record to reach level 3. */
   safetyCritical: boolean;
+  /** Advanced competencies are not part of the placement diagnostic (it only probes the foundations). */
+  advanced?: boolean;
+}
+
+export interface TrackTopic {
+  title: string;
+  /** Present only when a lesson actually covers the topic. A topic without a lesson is PLANNED, never shown as available. */
+  lessonId?: string;
 }
 
 export interface Track {
   id: TrackId;
+  /** 1-based order shown in the Academy. */
+  order: number;
   title: string;
   summary: string;
-  /** Topics planned for later releases. They are listed for transparency and are NOT available. */
-  plannedTopics: string[];
+  /** What a learner can do after the track, in terms of judgment rather than tool names. */
+  outcome: string;
+  topics: TrackTopic[];
 }
 
 export interface SourceRef {
@@ -49,6 +88,11 @@ export interface Segment {
   title: string;
   /** Markdown. Raw HTML is never rendered. */
   body: string;
+  /**
+   * Prediction before explanation: the learner commits to an answer first, then the explanation is revealed.
+   * Never graded and never stored: it exists to make the learner think before reading.
+   */
+  prediction?: { prompt: string; options: Option[]; correct: string };
 }
 
 export interface Option {
@@ -118,12 +162,23 @@ export interface FlagLinesItem extends BaseItem {
   lines: string[];
   targets: { line: number; severity: 'critical' | 'major' | 'minor'; why: string }[];
 }
+/**
+ * Structured written answer: several labelled fields, each checked deterministically for the ideas it must contain.
+ * Used where the learner must IMPROVE something (for example a vague AI task) rather than choose an option.
+ * Keyword checks are narrow by design; pair this item with a `reflect` rubric for the qualities they cannot judge.
+ */
+export interface FieldsItem extends BaseItem {
+  kind: 'fields';
+  /** The material being improved, shown above the fields. Markdown. */
+  brief: string;
+  fields: { id: string; label: string; help: string; groups: { label: string; anyOf: string[] }[]; minGroups?: number; placeholder?: string }[];
+}
 export interface ReflectItem extends BaseItem {
   kind: 'reflect';
   /** Self-assessment checklist. Never counted toward the numeric score. */
   rubric: string[];
 }
-export type ExternalCheckId = 'workshop-first-skill' | 'workshop-capstone-skill' | 'battle-lab-experiment';
+export type ExternalCheckId = 'workshop-first-skill' | 'workshop-capstone-skill' | 'battle-lab-experiment' | 'playbook-workflow' | 'lab-repeated-runs' | 'lab-evaluation-harness';
 export interface ExternalItem extends BaseItem {
   kind: 'external';
   check: ExternalCheckId;
@@ -136,6 +191,7 @@ export type Item =
   | OrderItem
   | NumericItem
   | KeywordsItem
+  | FieldsItem
   | FlagLinesItem
   | ReflectItem
   | ExternalItem;
@@ -150,7 +206,8 @@ export type WidgetId =
   | 'economy-lab'
   | 'experiment-demo'
   | 'review-board'
-  | 'capstone-brief';
+  | 'capstone-brief'
+  | 'retrieval-lab';
 
 export interface ActivitySpec {
   title: string;
@@ -178,6 +235,8 @@ export interface Lesson {
   prerequisites: string[];
   competencies: CompetencyId[];
   effortMinutes: number;
+  /** Other tracks this lesson also belongs to (the primary one is `track`). */
+  alsoIn?: TrackId[];
   /** 0 = general, 3 = directly about game development. Used by the recommender. */
   gameRelevance: 0 | 1 | 2 | 3;
   interestTags: InterestTag[];
@@ -194,7 +253,7 @@ export interface Lesson {
   sources: SourceRef[];
 }
 
-export type InterestTag = 'game-dev' | 'security' | 'authoring' | 'experiments' | 'orchestration' | 'foundations';
+export type InterestTag = 'game-dev' | 'security' | 'authoring' | 'experiments' | 'orchestration' | 'foundations' | 'ai-judgment' | 'context' | 'automation';
 
 export const INTEREST_LABELS: Record<InterestTag, string> = {
   foundations: 'Claude Code foundations',
@@ -203,4 +262,7 @@ export const INTEREST_LABELS: Record<InterestTag, string> = {
   experiments: 'Measuring what works',
   'game-dev': 'Game development workflows',
   orchestration: 'Multi-agent orchestration',
+  'ai-judgment': 'Choosing the right AI approach',
+  context: 'Context and prompt engineering',
+  automation: 'Workflows and automation',
 };

@@ -9,6 +9,7 @@ export function perfectAnswer(item: Item): unknown {
     case 'order': return item.steps.map((s) => s.id);
     case 'numeric': return typeof item.answer === 'function' ? item.answer() : item.answer;
     case 'keywords': return item.groups.map((g) => g.anyOf[0]).join(' and ');
+    case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, f.groups.map((g) => g.anyOf[0]).join(' and ')]));
     case 'flaglines': return item.targets.map((t) => t.line);
     case 'reflect': return Object.fromEntries(item.rubric.map((_, i) => [String(i), true]));
     case 'external': return undefined;
@@ -28,6 +29,7 @@ export function wrongAnswer(item: Item): unknown {
     case 'order': return [...item.steps].reverse().map((s) => s.id);
     case 'numeric': return 987654;
     case 'keywords': return 'no idea';
+    case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, 'no idea']));
     case 'flaglines': return [];
     default: return undefined;
   }

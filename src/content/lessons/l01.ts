@@ -4,7 +4,7 @@ import { o, DOCS } from './helpers';
 export const L01: Lesson = {
   id: 'L01-skill-or-tool',
   version: 1,
-  track: 'A',
+  track: 'claude-code',
   order: 1,
   title: 'Skill or Tool?',
   subtitle: 'Choose the right Claude Code mechanism before you build anything',

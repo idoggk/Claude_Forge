@@ -37,6 +37,10 @@ export interface RecommendInput {
   diagnostic?: { gaps: string[]; solid: string[]; takenAt: string } | null;
   /** Misconceptions the learner recently fell for, with the lesson whose content they came from. */
   misconceptionHits?: { id: string; lessonId: string }[];
+  /** Active learning goals, resolved to the lessons that teach the goal's capabilities. A goal steers priority; it is never evidence. */
+  goalLessons?: { lessonId: string; goalTitle: string; capabilityTitle: string }[];
+  /** Concepts missed in standalone practice (for example the Opportunity Finder), with a lesson that covers them. */
+  practiceGaps?: { lessonId: string; label: string }[];
   /** Skill Improvement Loop: the lessons it builds on and how many loops exist. Offered once the prerequisites are passed. */
   loop?: { prerequisites: string[]; started: number } | null;
 }
@@ -120,7 +124,9 @@ export function recommend(input: RecommendInput): { primary: Recommendation; alt
     // A failed prerequisite concept raises the priority of lessons that depend on it.
     const dependents = lessons.filter((l) => l.prerequisites.includes(lesson.id) && lessonStatus(l, attempts, progress) !== 'passed');
     if (dependents.length > 0) {
-      score += 6 * dependents.length;
+      // Capped: with 24 lessons a foundational lesson such as Context Engineering is a prerequisite of many later ones, and an
+      // uncapped bonus would let that outrank the next lesson in the learner's own track.
+      score += 6 * Math.min(3, dependents.length);
       reasons.push(`It is required before: ${dependents.map((d) => d.title).join(', ')}.`);
     }
 
@@ -142,12 +148,36 @@ export function recommend(input: RecommendInput): { primary: Recommendation; alt
     } else if (input.diagnostic && lesson.competencies.every((c) => input.diagnostic!.solid.includes(c))) {
       reasons.push('Your diagnostic answers here were correct; the assessment will confirm it.');
     }
+    // A belief the learner recently acted on in ANOTHER lesson, when this lesson is the one that teaches the competency
+    // it belongs to (for example choosing an injected instruction in a tool-use question points at the injection lesson).
+    const taught = (input.misconceptionHits ?? []).filter((h) => {
+      const m = getMisconception(h.id);
+      return m && h.lessonId !== lesson.id && lesson.competencies.includes(m.competency);
+    });
+    if (taught.length > 0) {
+      score += 14;
+      const m = getMisconception(taught[0]!.id)!;
+      reasons.push(`You recently chose an answer reflecting “${m.belief}” in a different lesson; this lesson teaches ${COMPETENCY_BY_ID[m.competency]?.title ?? m.competency} directly.`);
+    }
     // Recent misconceptions from this lesson's own content.
     const mine = (input.misconceptionHits ?? []).filter((h) => h.lessonId === lesson.id);
     if (mine.length > 0) {
       score += 10;
       const m = getMisconception(mine[0]!.id);
       if (m) reasons.push(`You recently chose an answer reflecting “${m.belief}” - this lesson addresses it.`);
+    }
+
+    // Learning goals (the learner's own stated intention).
+    const goals = (input.goalLessons ?? []).filter((g) => g.lessonId === lesson.id);
+    if (goals.length > 0) {
+      const titles = [...new Set(goals.map((g) => g.goalTitle))];
+      score += 30 * Math.min(2, titles.length);
+      reasons.push(`Supports your goal ${titles.map((t) => `"${t}"`).join(' and ')} (capability: ${[...new Set(goals.map((g) => g.capabilityTitle))].join(', ')}). A goal raises priority; only your assessments and field notes show what you can do.`);
+    }
+    const gaps = (input.practiceGaps ?? []).filter((g) => g.lessonId === lesson.id);
+    if (gaps.length > 0) {
+      score += 10;
+      reasons.push(`Your recent practice run missed: ${[...new Set(gaps.map((g) => g.label))].slice(0, 3).join('; ')}. This lesson covers it. Practice runs never change your levels.`);
     }
 
     candidates.push({ kind, lessonId: lesson.id, title: lesson.title, score, reasons, status });
@@ -177,7 +207,7 @@ export function recommend(input: RecommendInput): { primary: Recommendation; alt
         lessonId: null,
         title: 'All current lessons passed',
         score: 0,
-        reasons: ['You have passed every lesson in this release. Run an experiment in the Battle Lab or log real-work evidence in Growth to reach Field-proven.'],
+        reasons: ['You have passed every lesson in this release. Run an experiment in the AI Lab or log real-work evidence in Growth to reach Field-proven.'],
       },
       alternatives: [],
     };

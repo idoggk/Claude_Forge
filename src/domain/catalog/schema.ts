@@ -17,7 +17,14 @@ export const TIER_LABELS: Record<Tier, { label: string; description: string }> =
   custom: { label: 'Custom · proposed', description: 'A Skill idea for you to author in the Workshop. There is no source to install.' },
 };
 
-export const COMPONENT_TYPES = ['skill', 'plugin', 'mcp', 'agent', 'hook', 'marketplace', 'other'] as const;
+/**
+ * What kind of thing an entry is. Round 3 widened this from Claude Code components to the wider AI ecosystem.
+ * `agent`, `hook`, `marketplace` and `other` are kept so records from earlier versions still validate.
+ */
+export const COMPONENT_TYPES = [
+  'skill', 'plugin', 'mcp', 'agent-framework', 'ai-coding-tool', 'model', 'automation-tool', 'research-tool', 'technique', 'workflow-pattern', 'developer-integration',
+  'agent', 'hook', 'marketplace', 'other',
+] as const;
 export const ComponentTypeSchema = z.enum(COMPONENT_TYPES);
 export type ComponentType = z.infer<typeof ComponentTypeSchema>;
 
@@ -76,6 +83,8 @@ export const CatalogEntrySchema = z
     missingChecks: z.array(z.string()),
     notableComponents: z.array(z.object({ name: z.string(), description: z.string() })).default([]),
     alternatives: z.array(z.string()).default([]),
+    /** Capability Map nodes this entry helps with (ids from src/content/capability/map.ts). */
+    capabilityIds: z.array(z.string()).default([]),
     relatedLessons: z.array(z.string()).default([]),
     tags: z.array(z.string()),
     technologies: z.array(z.string()),

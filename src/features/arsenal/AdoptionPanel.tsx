@@ -20,7 +20,7 @@ export const STATUS_HELP: Record<ArsenalStatus, string> = {
 export function masteryGate(rec: { observedUsefulness: number | null; experimentIds: string[] }): string[] {
   const missing: string[] = [];
   if (rec.observedUsefulness === null) missing.push('record your observed usefulness (1-5)');
-  if (rec.experimentIds.length === 0) missing.push('link at least one Battle Lab experiment');
+  if (rec.experimentIds.length === 0) missing.push('link at least one AI Lab experiment');
   return missing;
 }
 
@@ -109,7 +109,7 @@ export function AdoptionPanel({ entryId, heading = 'Your adoption', local = fals
 
           <fieldset className="rounded-lg border border-line p-3">
             <legend className="px-1 text-sm font-semibold">Linked experiments</legend>
-            {experiments.length === 0 ? <p className="text-sm text-muted">No experiments yet. Create one in the Battle Lab to back up your rating.</p> : (
+            {experiments.length === 0 ? <p className="text-sm text-muted">No experiments yet. Create one in the AI Lab to back up your rating.</p> : (
               <ul className="space-y-1">{experiments.map((x) => (
                 <li key={x.id}><label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm"><input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={rec.experimentIds.includes(x.id)} onChange={(e) => void patch({ experimentIds: e.target.checked ? [...rec.experimentIds, x.id] : rec.experimentIds.filter((i) => i !== x.id) })} />{x.title}{x.synthetic && <Badge tone="warn">synthetic</Badge>}</label></li>
               ))}</ul>

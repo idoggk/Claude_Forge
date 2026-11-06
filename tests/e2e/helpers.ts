@@ -60,6 +60,9 @@ export async function answerItems(page: Page, items: Item[], opts: { wrong?: boo
       case 'keywords':
         await box.getByLabel('Your answer').fill(opts.wrong ? 'no idea' : it.groups.map((g) => g.anyOf[0]).join(' and '));
         break;
+      case 'fields':
+        for (const f of it.fields) await box.getByLabel(f.label, { exact: true }).fill(opts.wrong ? 'no idea' : f.groups.map((g) => g.anyOf[0]).join(' and '));
+        break;
       case 'flaglines': {
         const lines = opts.wrong ? [] : it.targets.map((t) => t.line);
         for (const n of lines) await box.getByRole('button', { name: new RegExp(`^${n}(\\s|$)`) }).click();

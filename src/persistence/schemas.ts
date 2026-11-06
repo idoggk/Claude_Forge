@@ -4,7 +4,7 @@ import { ExperimentSchema, EvidenceSchema } from '@/domain/experiments/model';
 
 const iso = z.string().min(1);
 
-export const InterestSchema = z.enum(['game-dev', 'security', 'authoring', 'experiments', 'orchestration', 'foundations']);
+export const InterestSchema = z.enum(['game-dev', 'security', 'authoring', 'experiments', 'orchestration', 'foundations', 'ai-judgment', 'context', 'automation']);
 
 export const ProfileSchema = z.object({
   id: z.literal('me'),
@@ -182,3 +182,18 @@ export const DiagnosticRecordSchema = z.object({
   misconceptions: z.array(z.string()).default([]),
 });
 export type DiagnosticRecord = z.infer<typeof DiagnosticRecordSchema>;
+
+/**
+ * A recorded run of a standalone practice activity (for example the Opportunity Finder). Activity runs are practice
+ * evidence: they feed recommendations and the mastery profile, but never raise a competency level by themselves.
+ */
+export const ActivityRunSchema = z.object({
+  id: z.string().min(1),
+  activityId: z.string().min(1),
+  activityVersion: z.number().int().min(1),
+  takenAt: z.string(),
+  answers: z.record(z.string(), z.unknown()).default({}),
+  results: z.array(z.object({ itemId: z.string(), concept: z.string(), correct: z.boolean(), score: z.number().min(0).max(1) })).default([]),
+  score: z.number().min(0).max(1),
+});
+export type ActivityRun = z.infer<typeof ActivityRunSchema>;

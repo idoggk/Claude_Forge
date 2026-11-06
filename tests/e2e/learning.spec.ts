@@ -5,7 +5,7 @@ test.describe('Learning', () => {
   test('1. first-time user opens the app and is guided to onboarding', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/#\/onboarding/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Claude Skills');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('using AI');
     await expect(page.getByText('does not sync between devices', { exact: false })).toBeVisible();
   });
 

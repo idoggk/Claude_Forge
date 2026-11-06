@@ -24,6 +24,13 @@ const Growth = lazy(() => import('@/features/growth/GrowthPage'));
 const Settings = lazy(() => import('@/features/settings/SettingsPage'));
 const Search = lazy(() => import('@/features/search/SearchPage'));
 const More = lazy(() => import('@/features/more/MorePage'));
+const OpportunityFinder = lazy(() => import('@/features/academy/OpportunityFinderPage'));
+const Explore = lazy(() => import('@/features/explore/ExplorePage'));
+const CapabilityPage = lazy(() => import('@/features/explore/CapabilityPage'));
+const Playbooks = lazy(() => import('@/features/playbooks/PlaybooksPage'));
+const PlaybookEditor = lazy(() => import('@/features/playbooks/PlaybookEditor'));
+const Transfer = lazy(() => import('@/features/transfer/TransferPage'));
+const TransferEditor = lazy(() => import('@/features/transfer/TransferEditor'));
 
 function NotFound() {
   return (
@@ -45,8 +52,15 @@ export function App() {
                 <Route path="onboarding" element={<Onboarding />} />
                 <Route path="academy" element={<Academy />} />
                 <Route path="academy/diagnostic" element={<DiagnosticPage />} />
+                <Route path="academy/opportunity-finder" element={<OpportunityFinder />} />
                 <Route path="academy/review/:lessonId" element={<ReviewPage />} />
                 <Route path="academy/lesson/:lessonId" element={<LessonPage />} />
+                <Route path="explore" element={<Explore />} />
+                <Route path="explore/:capabilityId" element={<CapabilityPage />} />
+                <Route path="playbooks" element={<Playbooks />} />
+                <Route path="playbooks/:playbookId" element={<PlaybookEditor />} />
+                <Route path="transfer" element={<Transfer />} />
+                <Route path="transfer/:taskId" element={<TransferEditor />} />
                 <Route path="discovery" element={<Discovery />} />
                 <Route path="discovery/:entryId" element={<EntryPage />} />
                 <Route path="workshop" element={<Workshop />} />

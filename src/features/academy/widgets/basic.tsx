@@ -163,7 +163,7 @@ export function CapstoneBrief(_: W) {
       <Card>
         <h3 className="font-semibold">Pick a target, then build to the checklist</h3>
         <p className="mt-1 text-sm text-muted">Proposed targets (not installable - you author them): <Link className="underline" to="/discovery/custom-merge-chain-debugger">merge-chain-debugger</Link>, <Link className="underline" to="/discovery/custom-economy-sim-reviewer">economy-sim-reviewer</Link>, <Link className="underline" to="/discovery/custom-handoff-gatekeeper">handoff-gatekeeper</Link>. The experiment must have a condition whose &ldquo;Skill name&rdquo; matches your Skill&apos;s name.</p>
-        <div className="mt-2 flex flex-wrap gap-2"><LinkButton to="/workshop" icon="hammer">Workshop</LinkButton><LinkButton to="/battle-lab" icon="flask">Battle Lab</LinkButton></div>
+        <div className="mt-2 flex flex-wrap gap-2"><LinkButton to="/workshop" icon="hammer">Workshop</LinkButton><LinkButton to="/battle-lab" icon="flask">AI Lab</LinkButton></div>
       </Card>
       <LiveChecklist check="workshop-capstone-skill" title="Production checklist - verified from your saved data" />
     </div>

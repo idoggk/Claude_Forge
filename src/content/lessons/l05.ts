@@ -4,7 +4,7 @@ import { o, DOCS } from './helpers';
 export const L05: Lesson = {
   id: 'L05-first-custom-skill',
   version: 1,
-  track: 'C',
+  track: 'claude-code',
   order: 5,
   title: 'Your First Custom Skill',
   subtitle: 'Author, validate, export and test a real Skill',

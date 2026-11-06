@@ -2,12 +2,12 @@
   "name": "claude-forge",
   "private": true,
   "version": "0.1.0",
-  "description": "Claude Forge \u2014 a static, offline-capable academy for mastering Claude Code Skills.",
+  "description": "Claude Forge — a static, offline-capable academy for mastering Claude Code Skills.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 4173 --strictPort",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,6 +23,7 @@
     "react-dom": "^19.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.5",
+    "remark-gfm": "^4.0.1",
     "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },

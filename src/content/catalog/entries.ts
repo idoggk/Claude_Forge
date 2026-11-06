@@ -1,4 +1,5 @@
 import { CatalogEntrySchema, type CatalogEntry } from '@/domain/catalog/schema';
+import { RAW_R3, LEGACY_CAPABILITY_LINKS, VERIFIED_R3 } from './entries-r3';
 
 /**
  * Curated catalog snapshot.
@@ -86,7 +87,7 @@ const raw: unknown[] = [
     license: { spdx: null, status: 'unknown', evidence: 'The plugin\'s licence was not checked.' },
     observedSignals: { stars: null, asOf: null },
     security: { reviewStatus: 'metadata-only', concerns: ['Plugin contents were not inspected.', 'Plugins run with your user privileges (Anthropic plugin docs).'], notes: 'Official origin per the docs; still review what it adds via the /plugin details pane.' },
-    relevance: { gameDev: 2, note: 'Directly supports the measure-then-adopt loop used in the Battle Lab.' },
+    relevance: { gameDev: 2, note: 'Directly supports the measure-then-adopt loop used in the AI Lab.' },
     limitations: ['Facts come from the documentation page, not from the plugin source.', 'Its benchmark numbers are produced by its own runs - treat them like any other self-run measurement.'],
     missingChecks: ['Inspect the plugin repository', 'Licence', 'Plugin version and last update', 'Context cost shown in the /plugin details pane'],
     notableComponents: [],
@@ -106,11 +107,11 @@ const raw: unknown[] = [
     sourceUrl: 'https://github.com/obra/superpowers',
     purpose: 'Per its About text: "An agentic skills framework & software development methodology that works." A bundle of workflow Skills covering brainstorming, planning, TDD, debugging, review and parallel agents.',
     problemSolved: 'You want a ready-made, opinionated development workflow (plan → implement with tests → review → verify) instead of writing every process Skill yourself.',
-    whenToUse: ['Comparing a systematic debugging or TDD workflow against your current prompts in a Battle Lab experiment', 'Studying how a large Skill set divides responsibilities (planning, review, verification)', 'Learning patterns for subagent-driven development and git worktrees'],
+    whenToUse: ['Comparing a systematic debugging or TDD workflow against your current prompts in an AI Lab experiment', 'Studying how a large Skill set divides responsibilities (planning, review, verification)', 'Learning patterns for subagent-driven development and git worktrees'],
     whenNotToUse: ['As an assumed improvement: its effectiveness for your project is unmeasured until you run an experiment', 'Before reviewing any hooks or session-start behaviour it installs'],
     howItWorks: 'A plugin that provides Skills the README lists by name, such as brainstorming, writing-plans, test-driven-development, systematic-debugging, verification-before-completion, using-git-worktrees, subagent-driven-development, requesting-code-review and writing-skills.',
     workflows: ['Systematic debugging (four-phase root-cause process per README)', 'Test-driven development (red-green-refactor)', 'Plan → implement → two-stage review with subagents', 'Isolated git worktree per task'],
-    practicalExample: 'Run the merge-cascade fixture with and without the debugging Skill (Battle Lab), 3 runs each, and compare tests passed and effort with the Skill version recorded.',
+    practicalExample: 'Run the merge-cascade fixture with and without the debugging Skill (AI Lab), 3 runs each, and compare tests passed and effort with the Skill version recorded.',
     install: {
       status: 'verified-from-source',
       note: 'Two Claude Code routes are quoted from the README. Whether the official-marketplace listing matches the repository\'s current contents was not verified.',
@@ -135,7 +136,7 @@ const raw: unknown[] = [
       ],
       notes: 'Popularity is not a security review. Read the hooks and any scripts before installing.',
     },
-    relevance: { gameDev: 3, note: 'Its debugging, TDD, worktree and subagent Skills map onto Tracks D and E. Whether they improve results on your project is exactly what the Battle Lab is for.' },
+    relevance: { gameDev: 3, note: 'Its debugging, TDD, worktree and subagent Skills map onto Tracks D and E. Whether they improve results on your project is exactly what the AI Lab is for.' },
     limitations: ['Not inspected beyond the README summary.', 'No measured evidence of effectiveness is recorded here.'],
     missingChecks: ['Read SKILL.md of systematic-debugging and test-driven-development', 'Hooks inventory and session-start behaviour on Claude Code', 'Latest commit date', 'Confirm the official-marketplace listing'],
     notableComponents: [
@@ -212,7 +213,7 @@ const raw: unknown[] = [
     whenNotToUse: ['For Phaser canvas or game-loop code: the Skills described are about React/Next.js and web UI', 'deploy-to-vercel / vercel-optimize if you host on GitHub Pages instead of Vercel'],
     howItWorks: 'A collection of Skills. The README installs them with the third-party "skills" command-line tool rather than a Claude Code plugin marketplace.',
     workflows: ['React performance review', 'UI accessibility and UX review', 'Component composition review'],
-    practicalExample: 'Run web-design-guidelines against one screen of your React shell, then use Battle Lab to compare its findings with a plain "review this for accessibility" prompt.',
+    practicalExample: 'Run web-design-guidelines against one screen of your React shell, then use AI Lab to compare its findings with a plain "review this for accessibility" prompt.',
     install: {
       status: 'verified-from-source',
       note: 'Command quoted from the README. It runs a third-party npm CLI ("skills") whose behaviour was NOT inspected.',
@@ -469,10 +470,11 @@ const raw: unknown[] = [
   },
 ];
 
-export const CATALOG: CatalogEntry[] = CatalogEntrySchema.array().parse(raw);
+const legacy = (raw as { id: string }[]).map((e) => ({ ...e, capabilityIds: LEGACY_CAPABILITY_LINKS[e.id] ?? [] }));
+export const CATALOG: CatalogEntry[] = CatalogEntrySchema.array().parse([...legacy, ...RAW_R3]);
 
 export function getEntry(id: string): CatalogEntry | undefined {
   return CATALOG.find((e) => e.id === id);
 }
 
-export const CATALOG_SNAPSHOT_DATE = VERIFIED;
+export const CATALOG_SNAPSHOT_DATE = VERIFIED_R3 > VERIFIED ? VERIFIED_R3 : VERIFIED;

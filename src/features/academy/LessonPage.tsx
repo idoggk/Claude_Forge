@@ -12,6 +12,7 @@ import { formatDateKey } from '@/lib/clock';
 import { getDb } from '@/persistence/db';
 import { ExerciseRunner } from './ExerciseRunner';
 import { WIDGETS } from './widgets';
+import { PredictionGate } from './PredictionGate';
 import type { Lesson } from '@/domain/curriculum/types';
 
 type Stage = 'learn' | 'practice' | 'assess' | 'apply';
@@ -81,7 +82,7 @@ export default function LessonPage() {
   return (
     <article>
       <PageHeader
-        eyebrow={`Track ${track.id} · ${track.title}`}
+        eyebrow={`Track ${track.order} · ${track.title}`}
         title={lesson.title}
         subtitle={lesson.subtitle}
         actions={<><Badge>{lesson.effortMinutes} min</Badge><Badge tone="teal">v{lesson.version}</Badge></>}
@@ -123,7 +124,7 @@ export default function LessonPage() {
           {lesson.segments.map((s, i) => (
             <Card key={s.id}>
               <h2 className="mb-2 text-lg font-semibold"><span className="mr-2 text-accent-text">{i + 1}.</span>{s.title}</h2>
-              <Markdown>{s.body}</Markdown>
+              {s.prediction ? <PredictionGate prediction={s.prediction} segmentId={s.id}><Markdown>{s.body}</Markdown></PredictionGate> : <Markdown>{s.body}</Markdown>}
             </Card>
           ))}
           <Card>
@@ -231,6 +232,7 @@ export default function LessonPage() {
             <textarea id="apply-note" rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="What will you try on a real project? What happened?" className="mt-2 w-full rounded-lg border border-line bg-surface2 p-3 focus:border-accent" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Button onClick={async () => { await touchLesson(lesson, { appliedNote: note }); toast('Notes saved'); }}>Save notes</Button>
+              <LinkButton to={`/transfer?source=lesson&id=${encodeURIComponent(lesson.id)}`} variant="primary" data-testid="lesson-transfer">Plan a real-world transfer task</LinkButton>
               <LinkButton to="/growth" variant="ghost">Log field evidence in Growth</LinkButton>
             </div>
             <p className="mt-3 text-sm text-muted">{lesson.application.fieldPrompt}</p>

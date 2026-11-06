@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type {
+  ActivityRun,
   Annotation,
   ArsenalRecord,
   Attempt,
@@ -15,16 +16,20 @@ import type {
 import type { SkillDraft } from '@/domain/skills/model';
 import type { Evidence, Experiment } from '@/domain/experiments/model';
 import type { LoopRun } from '@/domain/loop/model';
+import type { LearningGoal } from '@/domain/goals/model';
+import type { TransferTask } from '@/domain/transfer/model';
+import { stepFingerprint } from '@/domain/playbook/evidence';
+import type { Playbook } from '@/domain/playbook/model';
 
 export const DB_NAME = 'claude-forge';
 /** Bump when stores or record shapes change, and add a numbered `version()` block with an upgrade. */
-export const DB_VERSION = 4;
+export const DB_VERSION = 6;
 
 /**
  * Stores (all local to this browser profile):
  *  profile · preferences · lessonProgress · attempts · competencies · reviews ·
  *  annotations (catalog notes) · arsenal · customSkills · experiments · evidence ·
- *  fieldEvidence (v2) · loops (v3) · diagnostics (v4) · meta
+ *  fieldEvidence (v2) · loops (v3) · diagnostics (v4) · goals, playbooks, activityRuns (v5) · transferTasks (v6) · meta
  */
 export class ForgeDB extends Dexie {
   profile!: Table<Profile, string>;
@@ -41,6 +46,10 @@ export class ForgeDB extends Dexie {
   fieldEvidence!: Table<FieldEvidence, string>;
   loops!: Table<LoopRun, string>;
   diagnostics!: Table<DiagnosticRecord, string>;
+  goals!: Table<LearningGoal, string>;
+  playbooks!: Table<Playbook, string>;
+  activityRuns!: Table<ActivityRun, string>;
+  transferTasks!: Table<TransferTask, string>;
   meta!: Table<MetaRecord, string>;
 
   constructor(name: string = DB_NAME) {
@@ -106,6 +115,43 @@ export class ForgeDB extends Dexie {
     // v4 - adds `diagnostics` (placement diagnostic results). Purely additive: no existing record changes, and
     // diagnostics never feed competency levels.
     this.version(4).stores({ diagnostics: 'id, takenAt' });
+
+    // v5 - adds `goals` (learning goals), `playbooks` (AI workflow playbooks) and `activityRuns` (standalone practice
+    // activities). Experiments gain `experimentType` ('skill' for every existing one) and `subject`. No record is
+    // removed or rewritten otherwise, and every existing experiment keeps working as a Skill experiment.
+    this.version(5)
+      .stores({ goals: 'id, status, updatedAt', playbooks: 'id, updatedAt', activityRuns: 'id, activityId, takenAt' })
+      .upgrade(async (tx) => {
+        await tx
+          .table('experiments')
+          .toCollection()
+          .modify((e: Record<string, unknown>) => {
+            if (e.experimentType === undefined) e.experimentType = 'skill';
+            if (e.subject === undefined) e.subject = '';
+          });
+      });
+
+    // v6 (Round 4) - adds `transferTasks` (real-world application records). Playbooks gain `contentVersion`,
+    // `evidenceLinks` and `evaluations`, and every step gains `verifiedFingerprint`. A step that was ALREADY marked
+    // verified keeps that status: its fingerprint is set to its current wording, so only LATER edits invalidate it.
+    // Nothing is removed or rewritten otherwise. The upgrade does no network or non-database work.
+    this.version(6)
+      .stores({ transferTasks: 'id, status, updatedAt' })
+      .upgrade(async (tx) => {
+        await tx
+          .table('playbooks')
+          .toCollection()
+          .modify((pb: Record<string, unknown>) => {
+            if (typeof pb.contentVersion !== 'number') pb.contentVersion = 1;
+            if (!Array.isArray(pb.evidenceLinks)) pb.evidenceLinks = [];
+            if (!Array.isArray(pb.evaluations)) pb.evaluations = [];
+            if (Array.isArray(pb.steps)) {
+              for (const s of pb.steps as Record<string, unknown>[]) {
+                if (s.verifiedFingerprint === undefined) s.verifiedFingerprint = s.status === 'verified' ? stepFingerprint(s as never) : null;
+              }
+            }
+          });
+      });
   }
 }
 
@@ -136,6 +182,10 @@ export const ALL_STORES = [
   'fieldEvidence',
   'loops',
   'diagnostics',
+  'goals',
+  'playbooks',
+  'activityRuns',
+  'transferTasks',
   'meta',
 ] as const;
 export type StoreName = (typeof ALL_STORES)[number];

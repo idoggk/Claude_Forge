@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Icon, type IconName, cx } from '@/components/ui';
+import { Icon, artUrl, type IconName, cx } from '@/components/ui';
 import { useData } from '../providers/DataProvider';
 import { ErrorBoundary } from '../ErrorBoundary';
 
@@ -12,20 +12,46 @@ interface NavItem {
   testId: string;
 }
 
-export const PRIMARY_NAV: NavItem[] = [
-  { to: '/', label: 'Mission Control', icon: 'home', end: true, testId: 'nav-mission' },
-  { to: '/academy', label: 'Academy', icon: 'book', testId: 'nav-academy' },
-  { to: '/loop', label: 'Improvement Loop', icon: 'target', testId: 'nav-loop' },
-  { to: '/discovery', label: 'Discovery Hub', icon: 'compass', testId: 'nav-discovery' },
-  { to: '/battle-lab', label: 'Battle Lab', icon: 'flask', testId: 'nav-battle-lab' },
-  { to: '/workshop', label: 'Skill Workshop', icon: 'hammer', testId: 'nav-workshop' },
-  { to: '/arsenal', label: 'Arsenal & Growth', icon: 'shield', testId: 'nav-arsenal' },
+interface NavGroup {
+  /** Visible heading; omitted for the first group (Home). */
+  heading?: string;
+  items: NavItem[];
+}
+
+/** Six areas keep the sidebar short: Home, Learn, Explore, Lab, Build, My System. Test ids are stable across versions. */
+export const NAV_GROUPS: NavGroup[] = [
+  { items: [{ to: '/', label: 'Mission Control', icon: 'home', end: true, testId: 'nav-mission' }] },
+  {
+    heading: 'Learn',
+    items: [
+      { to: '/academy', label: 'Academy', icon: 'book', testId: 'nav-academy' },
+      { to: '/loop', label: 'Improvement Loop', icon: 'target', testId: 'nav-loop' },
+    ],
+  },
+  {
+    heading: 'Explore',
+    items: [
+      { to: '/explore', label: 'Capability Map', icon: 'compass', testId: 'nav-explore' },
+      { to: '/discovery', label: 'Discovery Hub', icon: 'search', testId: 'nav-discovery' },
+    ],
+  },
+  { heading: 'Lab', items: [{ to: '/battle-lab', label: 'AI Lab', icon: 'flask', testId: 'nav-battle-lab' }] },
+  {
+    heading: 'Build',
+    items: [
+      { to: '/workshop', label: 'Skill Workshop', icon: 'hammer', testId: 'nav-workshop' },
+      { to: '/playbooks', label: 'Workflow Playbooks', icon: 'flag', testId: 'nav-playbooks' },
+      { to: '/transfer', label: 'Real-world tasks', icon: 'target', testId: 'nav-transfer' },
+    ],
+  },
+  { heading: 'My System', items: [{ to: '/arsenal', label: 'Arsenal & Growth', icon: 'shield', testId: 'nav-arsenal' }] },
 ];
+export const PRIMARY_NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 const MOBILE_NAV: NavItem[] = [
   { to: '/', label: 'Mission', icon: 'home', end: true, testId: 'mnav-mission' },
-  { to: '/academy', label: 'Academy', icon: 'book', testId: 'mnav-academy' },
-  { to: '/loop', label: 'Loop', icon: 'target', testId: 'mnav-loop' },
+  { to: '/academy', label: 'Learn', icon: 'book', testId: 'mnav-academy' },
+  { to: '/explore', label: 'Explore', icon: 'compass', testId: 'mnav-explore' },
   { to: '/battle-lab', label: 'Lab', icon: 'flask', testId: 'mnav-battle-lab' },
   { to: '/more', label: 'More', icon: 'more', testId: 'mnav-more' },
 ];
@@ -82,12 +108,19 @@ export function Shell() {
           <img src="./icon.svg" alt="" width={32} height={32} className="rounded-lg" />
           <span className="font-display text-xl font-semibold">Claude Forge</span>
         </Link>
-        <nav aria-label="Primary" className="flex-1 space-y-1 px-3">
-          {PRIMARY_NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} data-testid={n.testId}>
-              <Icon name={n.icon} />
-              {n.label}
-            </NavLink>
+        <nav aria-label="Primary" className="flex-1 overflow-y-auto px-3">
+          {NAV_GROUPS.map((g, gi) => (
+            <div key={g.heading ?? 'home'} className={gi === 0 ? '' : 'mt-3'}>
+              {g.heading && <p className="px-3 pb-1 text-[0.7rem] font-semibold uppercase tracking-wider text-muted" aria-hidden="true">{g.heading}</p>}
+              <div className="space-y-1">
+                {g.items.map((n) => (
+                  <NavLink key={n.to} to={n.to} end={n.end} className={linkCls} data-testid={n.testId}>
+                    <Icon name={n.icon} />
+                    {n.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="space-y-1 border-t border-line p-3">
@@ -97,7 +130,8 @@ export function Shell() {
         </div>
       </aside>
 
-      <div className="min-w-0">
+      <div className="relative isolate min-w-0">
+        <div aria-hidden="true" className="forge-contours pointer-events-none absolute inset-x-0 top-0 -z-10 h-96" style={{ backgroundImage: `url(${artUrl('background-contours')})` }} />
         <header className="safe-top sticky top-0 z-30 flex items-center gap-3 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur lg:px-8">
           <Link to="/" className="flex items-center gap-2 lg:hidden" aria-label="Claude Forge home">
             <img src="./icon.svg" alt="" width={28} height={28} className="rounded-md" />

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Metrics the Battle Lab knows about. `direction` says which way is better. */
+/** Metrics the AI Lab knows about. `direction` says which way is better. */
 export const METRICS = [
   { id: 'testsPassedRatio', label: 'Tests passed (ratio)', unit: 'ratio', direction: 'higher', kind: 'objective', help: 'Derived from passed/total test counts you record or import. Self-reported unless imported from a test report file.' },
   { id: 'successRate', label: 'Success criterion met', unit: 'ratio', direction: 'higher', kind: 'objective', help: 'Share of runs where you judged the success criterion met (yes/no per run).' },
@@ -59,7 +59,12 @@ export const RUBRIC_CRITERIA = [
 export type CriterionId = (typeof RUBRIC_CRITERIA)[number]['id'];
 export const CRITERION_IDS = RUBRIC_CRITERIA.map((c) => c.id) as CriterionId[];
 
-export const ConditionKindSchema = z.enum(['no-skill', 'skill', 'alternative', 'custom-revised']);
+/**
+ * What a condition is. The first four are the original Skill-centred kinds and are kept exactly as stored.
+ * The rest generalise the Lab: a baseline need not be "no Skill", and a condition can be a prompt, a workflow,
+ * an agent setup, a tool configuration or a model.
+ */
+export const ConditionKindSchema = z.enum(['no-skill', 'skill', 'alternative', 'custom-revised', 'baseline', 'prompt', 'workflow', 'agent', 'tool-config', 'model', 'other']);
 export type ConditionKind = z.infer<typeof ConditionKindSchema>;
 
 export const CONDITION_KIND_LABELS: Record<ConditionKind, string> = {
@@ -67,7 +72,31 @@ export const CONDITION_KIND_LABELS: Record<ConditionKind, string> = {
   skill: 'Claude with a selected Skill',
   alternative: 'Alternative Skill or technique',
   'custom-revised': 'Custom revised Skill',
+  baseline: 'Baseline (the current way of doing it)',
+  prompt: 'A prompt or specification',
+  workflow: 'A workflow or playbook',
+  agent: 'An agent setup',
+  'tool-config': 'A tool or integration configuration',
+  model: 'A model (results you provide)',
+  other: 'Something else',
 };
+
+/** What the experiment compares. Existing experiments are all 'skill'. */
+export const EXPERIMENT_TYPES = ['skill', 'prompt', 'workflow', 'agent', 'tool-config', 'model', 'other'] as const;
+export const ExperimentTypeSchema = z.enum(EXPERIMENT_TYPES);
+export type ExperimentType = z.infer<typeof ExperimentTypeSchema>;
+export const EXPERIMENT_TYPE_LABELS: Record<ExperimentType, string> = {
+  skill: 'Skills',
+  prompt: 'Prompts or specifications',
+  workflow: 'Workflows',
+  agent: 'Agents',
+  'tool-config': 'Tool or integration configurations',
+  model: 'Models (you supply the results)',
+  other: 'Something else',
+};
+
+/** True for the conditions that serve as a baseline. */
+export const isBaselineKind = (k: ConditionKind): boolean => k === 'no-skill' || k === 'baseline';
 
 export const ConditionSchema = z.object({
   id: z.string().min(1),
@@ -112,8 +141,20 @@ export const RunSchema = z.object({
   /** Rubric level 0..3 per criterion, null = not assessed. Subjective, self-assessed. */
   rubric: z.record(z.string(), z.number().int().min(0).max(3).nullable()).default({}),
   observations: z.string().max(4000).default(''),
+  /**
+   * How this attempt ended. Failed and abandoned attempts are KEPT and counted: dropping them would make a condition look
+   * more reliable than it was. Their measurements stay unknown unless the learner recorded them.
+   */
+  attempt: z.enum(['completed', 'failed', 'abandoned']).default('completed'),
+  /** Workflow / Skill version actually used in THIS run (may differ from the condition's stated version). */
+  skillVersion: z.string().max(120).default(''),
+  /** Fixture version actually used in THIS run. */
+  fixtureVersion: z.string().max(40).default(''),
+  /** Execution context for THIS run: model, session, settings, or anything that differed. Free text. */
+  context: z.string().max(300).default(''),
 });
 export type Run = z.infer<typeof RunSchema>;
+export const ATTEMPT_LABELS = { completed: 'Completed', failed: 'Failed (kept)', abandoned: 'Abandoned (kept)' } as const;
 
 export const EvidenceSchema = z.object({
   id: z.string().min(1),
@@ -141,6 +182,10 @@ export const ExperimentSchema = z.object({
   id: z.string().min(1),
   schemaVersion: z.literal(1).default(1),
   title: z.string().min(1).max(200),
+  /** What is being compared. Every experiment from before Round 3 is a 'skill' experiment. */
+  experimentType: ExperimentTypeSchema.default('skill'),
+  /** One sentence: the thing being compared and the question it answers. */
+  subject: z.string().max(400).default(''),
   problem: z.string().max(3000).default(''),
   hypothesis: z.string().max(3000).default(''),
   fixture: FixtureRefSchema,

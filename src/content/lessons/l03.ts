@@ -8,7 +8,7 @@ export const DOJO_DESCRIPTION =
 export const L03: Lesson = {
   id: 'L03-trigger-dojo',
   version: 1,
-  track: 'C',
+  track: 'claude-code',
   order: 3,
   title: 'Trigger Dojo',
   subtitle: 'Write descriptions that fire for the right requests - and stay quiet for the wrong ones',

@@ -21,7 +21,8 @@ export const SAMPLE_B_LINES = [
 export const L04: Lesson = {
   id: 'L04-skill-autopsy',
   version: 1,
-  track: 'B',
+  track: 'safety-eval',
+  alsoIn: ['claude-code'],
   order: 4,
   title: 'Skill Autopsy',
   subtitle: 'Inspect a third-party Skill for trust and safety - without running it',

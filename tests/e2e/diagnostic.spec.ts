@@ -11,12 +11,12 @@ test.describe('Placement diagnostic and misconception feedback', () => {
     await page.getByTestId('open-diagnostic').click();
     await expect(page).toHaveURL(/#\/academy\/diagnostic/);
 
-    // all wrong: ten gaps, authored misconception feedback on the answers that carry one
+    // all wrong: a gap for every concept, authored misconception feedback on the answers that carry one
     await answerItems(page, DIAGNOSTIC.items, { wrong: true });
     await page.getByTestId('submit-answers').click();
     const result = page.getByTestId('diagnostic-result');
     await expect(result).toContainText('did not change your competency levels');
-    await expect(page.getByTestId('diagnostic-gaps').locator('li')).toHaveCount(10);
+    await expect(page.getByTestId('diagnostic-gaps').locator('li')).toHaveCount(DIAGNOSTIC.items.length);
     await expect(result).toContainText('Beliefs worth checking');
     await expect(page.locator('[data-testid^="misconception-"]').first()).toBeVisible();
 

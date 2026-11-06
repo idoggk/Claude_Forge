@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import { isSafeExternalUrl } from '@/lib/safeUrl';
 
@@ -30,7 +31,7 @@ const components: Components = {
 export function Markdown({ children, className = '' }: { children: string; className?: string }) {
   return (
     <div className={`prose-forge ${className}`}>
-      <ReactMarkdown components={components} skipHtml>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} skipHtml>
         {children}
       </ReactMarkdown>
     </div>

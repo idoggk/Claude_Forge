@@ -3,9 +3,12 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAt
 import { Link } from 'react-router-dom';
 import type { LinkProps } from 'react-router-dom';
 import { Icon, type IconName } from './Icon';
+import { Illustration, type ForgeArt } from './Illustration';
 import { isSafeExternalUrl } from '@/lib/safeUrl';
 
 export { Icon } from './Icon';
+export { Illustration, artUrl } from './Illustration';
+export type { ForgeArt };
 export type { IconName } from './Icon';
 export { Markdown } from './Markdown';
 
@@ -103,7 +106,7 @@ const TONE: Record<Tone, string> = {
 
 export function Badge({ tone = 'neutral', children, title }: { tone?: Tone; children: ReactNode; title?: string }) {
   return (
-    <span title={title} className={cx('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap', TONE[tone])}>
+    <span title={title} className={cx('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold leading-5 max-w-full break-words', TONE[tone])}>
       {children}
     </span>
   );
@@ -159,9 +162,9 @@ export function ProgressBar({ value, max = 100, label, tone = 'accent' }: { valu
   );
 }
 
-export function PageHeader({ title, subtitle, eyebrow, actions }: { title: string; subtitle?: ReactNode; eyebrow?: string; actions?: ReactNode }) {
-  return (
-    <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+export function PageHeader({ title, subtitle, eyebrow, actions, art }: { title: string; subtitle?: ReactNode; eyebrow?: string; actions?: ReactNode; art?: ForgeArt }) {
+  const header = (
+    <header className={cx('flex flex-wrap items-end justify-between gap-3', art ? 'min-w-0 flex-1' : 'mb-5')}>
       <div className="min-w-0">
         {eyebrow && <p className="text-xs font-semibold uppercase tracking-wider text-accent-text">{eyebrow}</p>}
         <h1 className="text-2xl font-semibold sm:text-3xl">{title}</h1>
@@ -169,6 +172,14 @@ export function PageHeader({ title, subtitle, eyebrow, actions }: { title: strin
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </header>
+  );
+  if (!art) return header;
+  // One decorative illustration per major screen: hidden on small screens so the heading and content stay first.
+  return (
+    <div className="mb-5 flex items-center gap-6">
+      {header}
+      <div className="hidden w-52 shrink-0 md:block lg:w-64" aria-hidden="true"><Illustration name={art} /></div>
+    </div>
   );
 }
 
