@@ -6,6 +6,9 @@ const ROUTES = [
   '/', '/academy', '/academy/lesson/L01-skill-or-tool', '/academy/lesson/L04-skill-autopsy', '/academy/lesson/L06-merge-chain-failure', '/academy/lesson/L07-economy-inflation',
   '/academy/lesson/L19-structured-outputs-tool-calling', '/academy/lesson/L22-retrieval-augmented-generation', '/playbooks', '/transfer', '/explore',
   '/loop', '/discovery', '/discovery/playwright-mcp', '/workshop', '/battle-lab', '/battle-lab/demo-merge-cascade', '/arsenal', '/growth', '/settings', '/search?q=skill', '/more',
+  // Round 5 and 6 surfaces
+  '/pilot', '/challenges', '/challenges/agent', '/pathways', '/pathways/trustworthy-research', '/library', '/library/new', '/practice', '/practice/mixed-injection-mcp',
+  '/academy/lesson/L25-agent-permissions-least-privilege', '/academy/lesson/L26-hooks-guardrails-deterministic-gates',
 ];
 
 for (const width of WIDTHS) {

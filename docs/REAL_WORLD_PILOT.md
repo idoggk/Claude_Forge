@@ -109,12 +109,15 @@ Use these rules rather than impressions.
 
 This protocol was written against the features that exist in the app and are covered by tests (Playbook evidence links and evaluation summaries, AI Lab attempts and import with preview, Real-world tasks). No part of it has been performed in a real project, and nothing here reports a result.
 
-## Round 5 update: what to do with the new tools (a human checklist)
+## Round 6: the human validation checklist
 
-None of this has been done yet. It is the shortest honest route to evidence that Forge helps on real work.
+None of this has been done. Do not record any of it as done in Forge or in a report until you have actually done it and have the output in front of you. Each item should take well under an hour.
 
-1. Open `#/pilot`, pick the starter that matches something you really do, and follow the eight steps. Run each condition at least twice (the guide proposes an ABBA order).
-2. If you use `claude -p --output-format json`, paste the output into the importer; check the preview (anything marked Inferred or Unknown is not a measurement) and keep secret redaction on.
-3. For a subjective output, open the experiment's **Blinded review** tab, lock the rubric, score, then reveal.
-4. Write one takeaway in `#/library` from the experiment; keep it a hypothesis or anecdotal unless a completed transfer task supports more.
-5. Note anything confusing; that note is the input for the next round.
+1. **Complete one guided AI experiment with real Claude Code.** Open `#/pilot`, pick the starter closest to something you really do, and follow the "Do this now" line. Run each condition at least three times in your own Claude Code in the suggested ABBA order, and record every run, including failed ones.
+2. **Perform one blinded review.** In the experiment's Blinded review tab, lock the rubric first, score the outputs without knowing which condition made them, then reveal.
+3. **Save one evidence-backed takeaway.** Use "Save a takeaway" at the end of the guide. Leave it as a hypothesis or anecdotal unless a completed transfer task supports more.
+4. **Apply one workflow to an actual project.** Start a transfer task from the experiment or a playbook, do the work, and write down what happened.
+5. **Record product friction.** Open "Tell the next version what got in your way" at the end of the guide and answer honestly, even if the answer is "nothing". It stays on your device.
+
+Things to notice while you do this, because code and browser tests cannot see them: where you stopped to think about what to do next, any term you had to look up, any step you skipped, and whether the Forge screen was open while you waited on Claude Code.
+

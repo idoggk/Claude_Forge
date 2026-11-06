@@ -4,9 +4,9 @@ import { Badge, Button, Callout, Card, ConfirmButton, CopyButton, EmptyState, Li
 import { getDb } from '@/persistence/db';
 import { useLive } from '@/persistence/useLive';
 import { addEvidence, saveExperiment } from '@/persistence/repo';
-import { ATTEMPT_LABELS, type Evidence, type Experiment, type Run } from '@/domain/experiments/model';
+import { ATTEMPT_LABELS, type Evidence, type Experiment, type PilotFeedback, type Run } from '@/domain/experiments/model';
 import { analyseEvidenceText, type TextAnalysis } from '@/domain/experiments/importer';
-import { PILOT_RUNS_PER_CONDITION, buildQuickRun, currentPilotStep, nextRunLabel, pilotComplete, pilotReading, pilotSteps, runCounts, runSheetMarkdown, suggestedRunOrder } from '@/domain/pilot/pilot';
+import { PILOT_RUNS_PER_CONDITION, buildQuickRun, currentPilotStep, nextActionText, nextRunLabel, pilotComplete, pilotReading, pilotSteps, runCounts, runSheetMarkdown, suggestedRunOrder } from '@/domain/pilot/pilot';
 import { getPilotStarter } from '@/content/pilot/starters';
 import { ComparisonView } from '@/features/battle-lab/ComparisonView';
 import { FoundInText } from '@/features/battle-lab/RunForm';
@@ -108,6 +108,26 @@ function QuickRun({ exp, next, onSaved }: { exp: Experiment; next: string | null
   );
 }
 
+function PilotFeedbackForm({ exp, onSave }: { exp: Experiment; onSave: (f: PilotFeedback) => Promise<void> }) {
+  const toast = useToast();
+  const saved = exp.pilot?.feedback ?? null;
+  const [f, setF] = useState<Omit<PilotFeedback, 'savedAt'>>({ confusing: saved?.confusing ?? '', unnecessaryEffort: saved?.unnecessaryEffort ?? '', judgmentChanged: saved?.judgmentChanged ?? 'unsure', improve: saved?.improve ?? '', wouldRepeat: saved?.wouldRepeat ?? 'maybe' });
+  return (
+    <details className="rounded-lg border border-line p-3" data-testid="pilot-feedback">
+      <summary className="min-h-11 cursor-pointer font-semibold">Tell the next version what got in your way{saved ? ' (saved)' : ' (optional)'}</summary>
+      <div className="mt-2 space-y-3">
+        <p className="text-xs text-muted">Your own opinion about this flow. It stays on this device inside this experiment, is never sent anywhere, and is not evidence about how well anything performed.</p>
+        <TextArea label="What was confusing?" rows={2} value={f.confusing} onChange={(e) => setF({ ...f, confusing: e.target.value })} data-testid="fb-confusing" />
+        <TextArea label="Which step took more effort than it should have?" rows={2} value={f.unnecessaryEffort} onChange={(e) => setF({ ...f, unnecessaryEffort: e.target.value })} data-testid="fb-effort" />
+        <Segmented label="Did the experiment change your judgment?" value={f.judgmentChanged} onChange={(v) => setF({ ...f, judgmentChanged: v })} options={[{ value: 'yes', label: 'Yes' }, { value: 'somewhat', label: 'Somewhat' }, { value: 'no', label: 'No' }, { value: 'unsure', label: 'Not sure' }]} />
+        <TextArea label="What would you improve?" rows={2} value={f.improve} onChange={(e) => setF({ ...f, improve: e.target.value })} data-testid="fb-improve" />
+        <Segmented label="Would you repeat this workflow?" value={f.wouldRepeat} onChange={(v) => setF({ ...f, wouldRepeat: v })} options={[{ value: 'yes', label: 'Yes' }, { value: 'maybe', label: 'Maybe' }, { value: 'no', label: 'No' }]} />
+        <Button onClick={async () => { await onSave({ ...f, savedAt: nowIso() }); toast('Feedback saved on this device'); }} data-testid="fb-save">Save feedback</Button>
+      </div>
+    </details>
+  );
+}
+
 export default function PilotGuide() {
   const { experimentId = '' } = useParams();
   const nav = useNavigate();
@@ -139,7 +159,9 @@ export default function PilotGuide() {
       <PageHeader eyebrow={`First experiment · ${st.title}`} title={exp.title} subtitle="Forge guides and records. You run the task in your own Claude Code, so nothing here is a result until you enter it." actions={<><LinkButton to="/pilot" variant="ghost" size="sm">All guided experiments</LinkButton><LinkButton to={`/battle-lab/${exp.id}`} variant="ghost" size="sm">Open in the Lab</LinkButton></>} />
       <div className="mb-4"><ProgressBar value={done} max={8} label={`${done} of 8 steps done`} /><p className="mt-1 text-sm text-muted" data-testid="pilot-progress">{done} of 8 steps done{current ? ` · next: ${current.title}` : ' · every step is done'}</p></div>
 
-      <div className="space-y-3">
+      <Callout tone="info" title="Do this now" role="status"><span data-testid="pilot-next-action">{nextActionText(exp).text}</span></Callout>
+
+      <div className="mt-4 space-y-3">
         {/* 1-3 */}
         <Card><details open={Boolean(current && current.n <= 3)}>{stepHead('problem')}
           <div className="mt-2 space-y-2 text-sm">
@@ -219,10 +241,12 @@ export default function PilotGuide() {
                   {exp.status === 'concluded' && <Badge tone="ok">Concluded</Badge>}
                   <LinkButton to={`/battle-lab/${exp.id}`} size="sm">Export the report</LinkButton>
                   <LinkButton to="/transfer" size="sm">Take it to real work</LinkButton>
+                  <LinkButton to={`/library/new?ref=lab-report&refId=${encodeURIComponent(exp.id)}&label=${encodeURIComponent(exp.title)}`} size="sm" data-testid="pilot-save-takeaway">Save a takeaway</LinkButton>
                   <Button size="sm" onClick={() => nav('/pilot')}>Start another</Button>
                 </div>
               </div>
             )}
+            <PilotFeedbackForm exp={exp} onSave={(f) => patch({ pilot: { ...exp.pilot!, feedback: f } })} />
           </div>
         </details></Card>
       </div>

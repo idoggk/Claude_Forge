@@ -185,6 +185,20 @@ export type FixtureRef = z.infer<typeof FixtureRefSchema>;
 
 /** Marks an experiment that was started from the guided "first experiment" flow. It adds guidance state only: the data is an ordinary experiment. */
 export const PILOT_STARTERS = ['skill', 'workflow', 'prompts'] as const;
+/**
+ * The learner's own feedback on the guided flow itself. It is opinion about the product and about what changed in their
+ * judgment. It is stored with the experiment, is never sent anywhere and is never performance evidence.
+ */
+export const PilotFeedbackSchema = z.object({
+  confusing: z.string().max(1500).default(''),
+  unnecessaryEffort: z.string().max(1500).default(''),
+  judgmentChanged: z.enum(['yes', 'somewhat', 'no', 'unsure']).default('unsure'),
+  improve: z.string().max(1500).default(''),
+  wouldRepeat: z.enum(['yes', 'maybe', 'no']).default('maybe'),
+  savedAt: z.string(),
+});
+export type PilotFeedback = z.infer<typeof PilotFeedbackSchema>;
+
 export const PilotMetaSchema = z.object({
   starter: z.enum(PILOT_STARTERS),
   /** The Skill, workflow or technique being tried, in the learner's words. */
@@ -195,6 +209,8 @@ export const PilotMetaSchema = z.object({
   playbookId: z.string().max(100).nullable().default(null),
   stepId: z.string().max(100).nullable().default(null),
   startedAt: z.string(),
+  /** Optional, written after the experiment. Subjective: not evidence of performance. */
+  feedback: PilotFeedbackSchema.nullable().default(null),
 });
 export type PilotMeta = z.infer<typeof PilotMetaSchema>;
 
