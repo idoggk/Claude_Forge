@@ -30,7 +30,10 @@ export type CompetencyId =
   | 'prompt-injection-defense'
   | 'retrieval-design'
   | 'eval-harness-design'
-  | 'long-running-context';
+  | 'long-running-context'
+  // Round 6: permissions and deterministic gates
+  | 'agent-permissions'
+  | 'deterministic-gates';
 
 /** The twelve learning tracks. Each lists the topics it will cover; only topics with a lesson are available. */
 export type TrackId =
@@ -178,6 +181,43 @@ export interface ReflectItem extends BaseItem {
   /** Self-assessment checklist. Never counted toward the numeric score. */
   rubric: string[];
 }
+/**
+ * A multi-part case: a realistic situation (a decision scenario) or a flawed artifact (an error diagnosis) followed by
+ * several linked choices. Each part is graded by option id. Credit is partial per part; the item is correct only when
+ * every part is. In a scenario the right option depends on the stated constraints, so pair a scenario with a sibling that
+ * changes one constraint and flips an answer.
+ */
+export interface CasePart { id: string; label: string; options: Option[]; correct: string }
+export interface CaseItem extends BaseItem {
+  kind: 'case';
+  format: 'scenario' | 'diagnosis';
+  /** The situation or context. Markdown. */
+  situation: string;
+  /** Scenario constraints, shown as a list. The correct choices must depend on them. */
+  constraints?: string[];
+  /** Diagnosis: the flawed prompt, plan, workflow or tool result, shown line by line as inert text. */
+  artifact?: string[];
+  parts: CasePart[];
+}
+/** A deterministic structural check on a learner-built artifact. It must be a pure function of the text. */
+export interface ConstructCheck { id: string; label: string; test: (draft: string) => boolean; why: string }
+/**
+ * Structured construction: the learner builds something small (a tool schema, a permission policy, a handoff contract).
+ * The checks are objective and structural. They cannot judge whether the result is GOOD, only whether it has the required
+ * parts, so a rubric is shown for the learner's own judgement and is never scored.
+ */
+export interface ConstructItem extends BaseItem {
+  kind: 'construct';
+  brief: string;
+  format: 'json' | 'text';
+  starter?: string;
+  placeholder?: string;
+  checks: ConstructCheck[];
+  /** Honest self-evaluation prompts: qualities no structural check can verify. Not scored. */
+  rubric: string[];
+  /** One reference solution. It must pass every check (a test enforces that), and it is shown after grading as an example, not the only answer. */
+  reference: string;
+}
 export type ExternalCheckId = 'workshop-first-skill' | 'workshop-capstone-skill' | 'battle-lab-experiment' | 'playbook-workflow' | 'lab-repeated-runs' | 'lab-evaluation-harness';
 export interface ExternalItem extends BaseItem {
   kind: 'external';
@@ -193,6 +233,8 @@ export type Item =
   | KeywordsItem
   | FieldsItem
   | FlagLinesItem
+  | CaseItem
+  | ConstructItem
   | ReflectItem
   | ExternalItem;
 

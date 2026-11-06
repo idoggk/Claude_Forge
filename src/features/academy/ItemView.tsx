@@ -31,6 +31,8 @@ const KIND_LABEL: Record<Item['kind'], string> = {
   keywords: 'Short answer (keyword-checked)',
   fields: 'Improve it - fill each field',
   flaglines: 'Flag the lines',
+  case: 'Work the case - answer each part',
+  construct: 'Build it (structure is checked)',
   reflect: 'Self-assessment',
   external: 'Verified from your saved work',
 };
@@ -43,7 +45,12 @@ export function initialValue(item: Item, seed: string): unknown {
 export function ItemView({ item, index, value, onChange, disabled, grade, hintsShown, onHint, external, seed, optionSeed }: ItemViewProps) {
   const graded = Boolean(grade);
   // Grading is by option id, never by position, so showing options in a different order per attempt is safe.
-  const shown: Item = useMemo(() => ((item.kind === 'single' || item.kind === 'multi') && optionSeed ? { ...item, options: seededOrder(item.options, `${optionSeed}:${item.id}`) } : item), [item, optionSeed]);
+  const shown: Item = useMemo(() => {
+    if (!optionSeed) return item;
+    if (item.kind === 'single' || item.kind === 'multi') return { ...item, options: seededOrder(item.options, `${optionSeed}:${item.id}`) };
+    if (item.kind === 'case') return { ...item, parts: item.parts.map((p) => ({ ...p, options: seededOrder(p.options, `${optionSeed}:${item.id}:${p.id}`) })) };
+    return item;
+  }, [item, optionSeed]);
   return (
     <fieldset className="rounded-xl border border-line bg-surface p-4 sm:p-5" data-testid={`item-${item.id}`}>
       <legend className="sr-only">Question {index + 1}</legend>
@@ -232,6 +239,56 @@ function Body({ item, value, onChange, disabled, grade, external, seed }: { item
         </div>
       );
     }
+    case 'case': {
+      const map = (value && typeof value === 'object' && !Array.isArray(value) ? value : {}) as Record<string, string>;
+      return (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-line bg-surface2 p-3 text-sm">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{item.format === 'diagnosis' ? 'The situation' : 'The scenario'}</p>
+            <Markdown>{item.situation}</Markdown>
+            {item.constraints && item.constraints.length > 0 && (
+              <>
+                <p className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-muted">Constraints</p>
+                <ul className="list-disc space-y-0.5 pl-5" data-testid={`constraints-${item.id}`}>{item.constraints.map((c) => <li key={c}>{c}</li>)}</ul>
+              </>
+            )}
+          </div>
+          {item.artifact && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">What went wrong (inert text, nothing runs)</p>
+              <CodeLines label="The flawed artifact" lines={item.artifact} />
+            </div>
+          )}
+          {item.parts.map((p) => (
+            <fieldset key={p.id} className="space-y-2" data-testid={`part-${item.id}-${p.id}`}>
+              <legend className="mb-1 text-sm font-semibold">{p.label}</legend>
+              {p.options.map((o) => (
+                <label key={o.id} className={cx('transition-forge flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border p-3', map[p.id] === o.id ? 'border-accent bg-surface2' : 'border-line hover:bg-surface2', disabled && 'cursor-default')}>
+                  <input type="radio" name={`${name}-${p.id}`} value={o.id} checked={map[p.id] === o.id} disabled={disabled} onChange={() => onChange({ ...map, [p.id]: o.id })} className="mt-1 h-4 w-4 accent-[var(--accent)]" />
+                  <span className="text-sm">{o.text}</span>
+                </label>
+              ))}
+            </fieldset>
+          ))}
+        </div>
+      );
+    }
+    case 'construct':
+      return (
+        <div className="space-y-2">
+          <div className="rounded-lg border border-line bg-surface2 p-3 text-sm"><Markdown>{item.brief}</Markdown></div>
+          <label htmlFor={name} className="block text-sm font-semibold">Your {item.format === 'json' ? 'JSON' : 'draft'}</label>
+          <textarea id={name} rows={12} disabled={disabled} spellCheck={false} value={typeof value === 'string' ? value : (item.starter ?? '')} onChange={(e) => onChange(e.target.value)} placeholder={item.placeholder} className="w-full rounded-lg border border-line bg-surface p-3 font-mono text-sm" />
+          <p className="text-xs text-muted">Only structure is checked, deterministically. It cannot tell you whether your design is good; use the rubric after grading to judge that yourself.</p>
+          {disabled && item.rubric.length > 0 && (
+            <div className="rounded-lg border border-line p-3 text-sm" data-testid={`rubric-${item.id}`}>
+              <p className="font-semibold">Judge it yourself (not scored)</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">{item.rubric.map((r) => <li key={r}>{r}</li>)}</ul>
+              <details className="mt-2"><summary className="min-h-11 cursor-pointer font-semibold">One reference solution (not the only valid one)</summary><pre className="mt-1 overflow-x-auto whitespace-pre-wrap rounded-lg bg-surface2 p-2 font-mono text-xs">{item.reference}</pre></details>
+            </div>
+          )}
+        </div>
+      );
     case 'reflect': {
       const checked = (value && typeof value === 'object' ? value : {}) as Record<string, boolean>;
       return (

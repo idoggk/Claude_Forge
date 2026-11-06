@@ -125,7 +125,8 @@ describe('lessons whose assessments changed carry a new version, and old attempt
   it('every lesson whose multiple-choice options were rewritten in Round 6 is at least one version above its Round 5 version', () => {
     // Round 5 versions: 14 lessons with written items were at 2, the other 10 at 1. Round 6 added one to every lesson.
     const writtenLessons = new Set(writtenItems(all).map((x) => x.lessonId));
-    for (const l of LESSONS) expect(l.version, l.id).toBeGreaterThanOrEqual(writtenLessons.has(l.id) ? 3 : 2);
+    const NEW_IN_ROUND_6 = /^L(2[5-9]|[3-9]\d)-/; // lessons written in Round 6 start at version 1
+    for (const l of LESSONS.filter((x) => !NEW_IN_ROUND_6.test(x.id))) expect(l.version, l.id).toBeGreaterThanOrEqual(writtenLessons.has(l.id) ? 3 : 2);
   });
 
   it('every lesson with a written-answer item is at version 2 or higher', () => {

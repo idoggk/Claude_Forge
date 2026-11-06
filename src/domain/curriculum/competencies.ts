@@ -26,6 +26,9 @@ export const COMPETENCIES: Competency[] = [
   { id: 'retrieval-design', title: 'Retrieval and evidence selection', summary: 'Understand chunking, lexical and semantic search, relevance, staleness and attribution; select evidence and reject the rest.', outcomes: [], safetyCritical: false, advanced: true },
   { id: 'eval-harness-design', title: 'Evaluation harness design', summary: 'Plan datasets, graders, held-out data and regression tests; detect leakage and invalid comparisons.', outcomes: [], safetyCritical: true, advanced: true },
   { id: 'long-running-context', title: 'Context for long-running agents', summary: 'Decide what to preserve, discard, summarise, revalidate and delegate across sessions, with verification checkpoints.', outcomes: [], safetyCritical: false, advanced: true },
+  // Round 6: permissions and deterministic gates
+  { id: 'agent-permissions', title: 'Agent permissions and least privilege', summary: 'Grant an agent only the read, write, execute and send access its task needs, place human approvals before irreversible actions, and handle credentials safely.', outcomes: [], safetyCritical: true, advanced: true },
+  { id: 'deterministic-gates', title: 'Hooks, guardrails and deterministic gates', summary: 'Tell a procedure from a policy, choose between a Skill, project instructions, a hook, a permission rule and a CI check, and design a gate that holds.', outcomes: [], safetyCritical: false, advanced: true },
 ];
 
 export const COMPETENCY_BY_ID: Record<CompetencyId, Competency> = Object.fromEntries(
@@ -51,12 +54,12 @@ export const COMPETENCY_AREAS: CompetencyArea[] = [
   { id: 'context-engineering', title: 'Context engineering', summary: 'Giving AI the right information, limits and checks.', competencyIds: ['context-engineering', 'long-running-context'] },
   { id: 'tool-selection', title: 'Tool selection', summary: 'Choosing the right mechanism, approach and tool - and rejecting unsupported claims.', competencyIds: ['approach-selection', 'mechanism-selection', 'tool-evaluation'] },
   { id: 'ai-coding', title: 'AI coding', summary: 'Claude Code mechanics, Skills and efficient AI-assisted development.', competencyIds: ['skill-anatomy', 'trigger-design', 'skill-authoring', 'production-skills', 'efficient-ai-development'] },
-  { id: 'agents', title: 'Agents', summary: 'Multi-agent judgment and understanding why agents fail.', competencyIds: ['multi-agent-review', 'agent-failure-analysis', 'long-running-context'] },
+  { id: 'agents', title: 'Agents', summary: 'Multi-agent judgment and understanding why agents fail.', competencyIds: ['multi-agent-review', 'agent-failure-analysis', 'long-running-context', 'agent-permissions', 'deterministic-gates'] },
   { id: 'mcp', title: 'MCP and integrations', summary: 'Connecting AI to external systems safely.', competencyIds: ['mcp-integration', 'structured-tool-contracts'] },
   { id: 'automation', title: 'Automation', summary: 'Reliable, repeatable AI workflows.', competencyIds: ['workflow-design'] },
   { id: 'research', title: 'Research', summary: 'Sourcing, verifying and synthesising with AI.', competencyIds: ['retrieval-design'] },
   { id: 'evaluation', title: 'Evaluation', summary: 'Comparing approaches with honest evidence.', competencyIds: ['experiment-design', 'eval-harness-design'] },
-  { id: 'security', title: 'Security', summary: 'Inspecting third-party Skills and integrations before trusting them.', competencyIds: ['skill-security', 'prompt-injection-defense'] },
+  { id: 'security', title: 'Security', summary: 'Inspecting third-party Skills and integrations before trusting them.', competencyIds: ['skill-security', 'prompt-injection-defense', 'agent-permissions'] },
   { id: 'game-development', title: 'Game development', summary: 'Debugging and economy analysis on One More Merge-style fixtures.', competencyIds: ['systematic-debugging', 'economy-analysis'] },
   { id: 'ai-system-design', title: 'AI system design', summary: 'RAG, memory, evaluation harnesses and AI application architecture.', competencyIds: ['retrieval-design', 'eval-harness-design'] },
 ];
@@ -103,7 +106,7 @@ export const TRACKS: Track[] = [
       { title: 'Your first custom Skill', lessonId: 'L05-first-custom-skill' },
       { title: 'A production-ready Skill', lessonId: 'L10-forge-production-skill' },
       { title: 'Efficient AI-assisted development', lessonId: 'L17-efficient-ai-development' },
-      { title: 'Subagents, plugins, hooks and permissions in depth' },
+      { title: 'Subagents, plugins, hooks and permissions in depth', lessonId: 'L26-hooks-guardrails-deterministic-gates' },
       { title: 'Git worktrees and parallel development' },
       { title: 'Session recovery and long-running tasks' },
     ],
@@ -118,7 +121,7 @@ export const TRACKS: Track[] = [
       { title: 'Agents versus workflows', lessonId: 'L11-choose-ai-approach' },
       { title: 'Planning, delegation and supervisor/worker patterns' },
       { title: 'Agent memory, state and checkpointing', lessonId: 'L24-long-running-agent-context' },
-      { title: 'Human approval gates and sandboxing' },
+      { title: 'Human approval gates and sandboxing', lessonId: 'L25-agent-permissions-least-privilege' },
       { title: 'Agent evaluation and observability' },
     ],
   },
@@ -206,7 +209,7 @@ export const TRACKS: Track[] = [
       { title: 'Inspecting a third-party Skill', lessonId: 'L04-skill-autopsy' },
       { title: 'Why agents fail; guardrails', lessonId: 'L13-why-agents-fail' },
       { title: 'Prompt injection and data exfiltration', lessonId: 'L21-prompt-injection-trust-boundaries' },
-      { title: 'Sandboxing and permission design' },
+      { title: 'Sandboxing and permission design', lessonId: 'L25-agent-permissions-least-privilege' },
       { title: 'Regression tests for AI behaviour', lessonId: 'L23-evaluation-harnesses' },
     ],
   },

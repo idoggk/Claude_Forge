@@ -47,6 +47,8 @@ function perfectAnswer(item: Item): unknown {
     case 'keywords': return natural(item.groups);
     case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, natural(f.groups)]));
     case 'flaglines': return item.targets.map((t) => t.line);
+    case 'case': return Object.fromEntries(item.parts.map((p) => [p.id, p.correct]));
+    case 'construct': return item.reference;
     case 'reflect': return Object.fromEntries(item.rubric.map((_, i) => [String(i), true]));
     case 'external': return undefined;
   }
@@ -59,9 +61,9 @@ describe('curriculum structure', () => {
       'L06-merge-chain-failure', 'L07-economy-inflation', 'L08-battle-lab', 'L09-reviewer-vs-builder', 'L10-forge-production-skill',
       'L11-choose-ai-approach', 'L12-context-engineering', 'L13-why-agents-fail', 'L14-mcp-or-not',
       'L15-reliable-ai-workflow', 'L16-ai-evaluation', 'L17-efficient-ai-development', 'L18-evaluate-an-ai-tool',
-      'L19-structured-outputs-tool-calling', 'L20-few-shot-prompting', 'L21-prompt-injection-trust-boundaries', 'L22-retrieval-augmented-generation', 'L23-evaluation-harnesses', 'L24-long-running-agent-context',
+      'L19-structured-outputs-tool-calling', 'L20-few-shot-prompting', 'L21-prompt-injection-trust-boundaries', 'L22-retrieval-augmented-generation', 'L23-evaluation-harnesses', 'L24-long-running-agent-context', 'L25-agent-permissions-least-privilege', 'L26-hooks-guardrails-deterministic-gates',
     ]);
-    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(24);
+    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(26);
   });
 
   it('every lesson has the required parts with real content (no placeholders)', () => {
@@ -160,6 +162,25 @@ describe('item integrity', () => {
             break;
           }
           case 'keywords': expect(item.groups.length, where).toBeGreaterThanOrEqual(2); break;
+          case 'case': {
+            expect(item.parts.length, where).toBeGreaterThanOrEqual(2);
+            for (const p of item.parts) {
+              expect(p.options.map((o) => o.id), `${where}/${p.id}`).toContain(p.correct);
+              expect(p.options.length, `${where}/${p.id}`).toBeGreaterThanOrEqual(3);
+              p.options.forEach((o) => expect(o.why.length, `${where}/${p.id}/${o.id}`).toBeGreaterThanOrEqual(12));
+            }
+            if (item.format === 'scenario') expect((item.constraints ?? []).length, `${where} states its constraints`).toBeGreaterThanOrEqual(3);
+            if (item.format === 'diagnosis') expect((item.artifact ?? []).length, `${where} shows its artifact`).toBeGreaterThanOrEqual(3);
+            break;
+          }
+          case 'construct': {
+            expect(item.checks.length, where).toBeGreaterThanOrEqual(4);
+            expect(item.rubric.length, where).toBeGreaterThanOrEqual(3);
+            expect(item.checks.every((c) => c.why.length >= 12), where).toBe(true);
+            expect(gradeItem(item, item.reference).correct, `${where}: the reference solution passes every check`).toBe(true);
+            expect(gradeItem(item, item.starter ?? '').correct, `${where}: the starter is not already a pass`).toBe(false);
+            break;
+          }
           default: break;
         }
       }
