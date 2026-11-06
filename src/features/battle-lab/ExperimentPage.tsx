@@ -16,9 +16,10 @@ import { nowIso } from '@/lib/clock';
 import { ComparisonView } from './ComparisonView';
 import { RunForm, type RunFormResult } from './RunForm';
 import { PlaybookLinksCard } from './PlaybookLinksCard';
+import { BlindedReviewPanel } from './BlindedReviewPanel';
 import { CLASSIFICATION_LABEL } from '@/domain/transcript/candidates';
 
-type TabId = 'setup' | 'record' | 'compare' | 'report';
+type TabId = 'setup' | 'record' | 'compare' | 'blinded' | 'report';
 
 export default function ExperimentPage() {
   const { experimentId = '' } = useParams();
@@ -84,7 +85,7 @@ export default function ExperimentPage() {
         subtitle={<>{EXPERIMENT_TYPE_LABELS[exp.experimentType]}{exp.subject ? `: ${exp.subject}` : ''} · {exp.fixture.label} · {exp.conditions.length} conditions · {exp.runs.length} runs recorded</>}
         actions={readOnly ? <Button variant="primary" onClick={() => void createFromDemo()} data-testid="clone-demo">Create my own from this structure</Button> : <><Badge tone={exp.status === 'concluded' ? 'ok' : 'accent'}>{exp.status}</Badge><LinkButton to="/battle-lab" variant="ghost" size="sm">All experiments</LinkButton></>}
       />
-      <Tabs<TabId> label="Experiment sections" value={tab} onChange={setTab} tabs={[{ id: 'setup', label: 'Setup' }, { id: 'record', label: 'Record runs', badge: <Badge>{exp.runs.length}</Badge> }, { id: 'compare', label: 'Compare' }, { id: 'report', label: 'Report & export' }]} />
+      <Tabs<TabId> label="Experiment sections" value={tab} onChange={setTab} tabs={[{ id: 'setup', label: 'Setup' }, { id: 'record', label: 'Record runs', badge: <Badge>{exp.runs.length}</Badge> }, { id: 'compare', label: 'Compare' }, ...(readOnly || inLoop ? [] : [{ id: 'blinded' as const, label: 'Blinded review', badge: exp.blindedReviews.length ? <Badge>{exp.blindedReviews.length}</Badge> : undefined }]), { id: 'report', label: 'Report & export' }]} />
 
       {/* ------------------------------- SETUP ------------------------------- */}
       <TabPanel id="setup" active={tab === 'setup'}>
@@ -169,6 +170,11 @@ export default function ExperimentPage() {
             {!setupLocked && <SelectField label="Status" value={exp.status} onChange={async (e) => { await persist({ ...exp, ...draft, status: e.target.value as Experiment['status'] }); toast('Status updated'); }}><option value="draft">Draft</option><option value="recording">Recording</option><option value="concluded">Concluded</option></SelectField>}
           </Card>
         </div>
+      </TabPanel>
+
+      {/* ------------------------------- BLINDED REVIEW ------------------------------- */}
+      <TabPanel id="blinded" active={tab === 'blinded'}>
+        <BlindedReviewPanel exp={exp} evidence={ev} />
       </TabPanel>
 
       {/* ------------------------------- REPORT ------------------------------- */}

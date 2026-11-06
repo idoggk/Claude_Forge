@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BlindedReviewSchema } from '../blinded/schema';
 
 /** Metrics the AI Lab knows about. `direction` says which way is better. */
 export const METRICS = [
@@ -234,6 +235,8 @@ export const ExperimentSchema = z.object({
   /** Set when this experiment belongs to a Skill Improvement Loop. */
   loopId: z.string().nullable().default(null),
   phase: z.enum(['dev', 'heldout']).nullable().default(null),
+  /** Blinded reviews of this experiment's outputs. Kept with the experiment so they travel with it in a backup. */
+  blindedReviews: z.array(BlindedReviewSchema).max(20).default([]),
   /** Present only for experiments created by the guided first-experiment flow. */
   pilot: PilotMetaSchema.nullable().default(null),
   /** Held-out runs are locked when the ground truth is revealed, so results cannot be edited afterwards. */

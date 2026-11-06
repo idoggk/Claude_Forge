@@ -202,3 +202,114 @@ test.describe('Round 5: transcript import', () => {
     await expect(page.getByTestId('run-list')).toContainText('A · run 1'); // the earlier run is untouched
   });
 });
+
+
+async function recordWithOutput(page: Page, label: 'A' | 'B', output: string) {
+  const qr = page.getByTestId('quick-run');
+  await qr.getByRole('radio', { name: new RegExp(`^${label}( \\(suggested next\\))?$`) }).click();
+  await qr.getByRole('radio', { name: 'Yes', exact: true }).click();
+  if (!(await qr.getByTestId('qr-paste').isVisible())) await qr.getByText('Attach the output (optional)').click();
+  await qr.getByTestId('qr-paste').fill(output);
+  await qr.getByTestId('qr-save').click();
+  await expect(page.getByTestId('pilot-runs')).toBeVisible();
+}
+
+test.describe('Round 5: blinded evaluation', () => {
+  test.beforeEach(async ({ page }) => { await startApp(page); });
+
+  test('rubric first, shuffled anonymous outputs, locked scores, a guess, then the reveal; persisted and exportable', async ({ page }) => {
+    await startPrompts(page);
+    await recordWithOutput(page, 'A', 'Fix rounding in invoice totals.');
+    await recordWithOutput(page, 'B', 'Using Few-shot examples: fix: round invoice totals to cents (house style).');
+    await recordWithOutput(page, 'B', 'fix: round invoice totals to two decimals.');
+    await recordWithOutput(page, 'A', 'fixed the totals thing');
+    await page.getByRole('link', { name: 'Open in the Lab' }).click();
+    await page.getByRole('tab', { name: /Blinded review/ }).click();
+    await page.getByTestId('new-blinded').click();
+    await expect(page.getByTestId('new-blinded-form')).toContainText('shows which condition each came from');
+    // a task-specific criterion needs its extremes written first
+    await page.getByText('Add a task-specific criterion').click();
+    await page.getByTestId('nb-c-label').fill('House style');
+    await page.getByTestId('nb-c-add').click();
+    await expect(page.getByRole('alert')).toContainText('worst (0) and best (3)');
+    await page.getByTestId('nb-c-worst').fill('Ignores the format');
+    await page.getByTestId('nb-c-best').fill('Matches the format exactly');
+    await page.getByTestId('nb-c-add').click();
+    await page.getByTestId('nb-create').click();
+
+    // setup: the rubric is shown, leaks are disclosed and can be masked, and nothing is scored yet
+    await expect(page.getByTestId('stage-setup')).toBeVisible();
+    await expect(page.getByTestId('blinded-exceptions')).toContainText('could reveal its source');
+    await expect(page.getByTestId('blinded-mask')).toBeChecked();
+    await page.getByTestId('blinded-start').click();
+
+    // scoring: labels are anonymous, no condition names or the technique name appear anywhere in the review
+    const stage = page.getByTestId('stage-scoring');
+    await expect(stage).toBeVisible();
+    await expect(page.getByTestId('blinded-review')).not.toContainText('Few-shot examples');
+    await expect(stage).toContainText('▮▮▮');
+    for (const n of [1, 2, 3, 4]) await expect(page.getByTestId(`item-Output ${n}`)).toBeVisible();
+    await expect(page.getByTestId('blinded-lock')).toBeDisabled();
+    await expect(page.getByTestId('blinded-progress')).toContainText('0 of 4');
+    for (const n of [1, 2, 3, 4]) {
+      for (const c of ['correctness', 'completeness', 'clarity']) await page.getByTestId(`score-Output-${n}-${c}-${n % 2 ? 2 : 3}`).click();
+      await page.getByTestId(`score-Output-${n}-${'custom'}-x`).count();
+    }
+    // the custom criterion has its own id; score every remaining radio group by role instead
+    for (const n of [1, 2, 3, 4]) {
+      const g = page.getByRole('radiogroup', { name: new RegExp(`^Output ${n} House style$`) });
+      await g.getByRole('radio', { name: '2', exact: true }).click();
+      await page.getByTestId(`reason-Output-${n}`).fill(`Reasoning for output ${n}: accurate enough.`);
+      await page.getByTestId(`reason-Output-${n}`).blur();
+    }
+    await expect(page.getByTestId('blinded-progress')).toContainText('4 of 4');
+    // exports before the reveal never name a condition
+    const [md] = await Promise.all([page.waitForEvent('download'), page.getByTestId('blinded-md').click()]);
+    const mdText = await readFile((await md.path())!, 'utf8');
+    expect(mdText).not.toMatch(/Few-shot examples|Current prompt|Revised prompt/);
+    const [js] = await Promise.all([page.waitForEvent('download'), page.getByTestId('blinded-json').click()]);
+    expect(await readFile((await js.path())!, 'utf8')).not.toMatch(/conditionId|runId|Few-shot examples/);
+    await page.getByTestId('blinded-lock').click();
+
+    // locked: the guess comes first and the reveal needs every guess
+    await expect(page.getByTestId('stage-locked')).toBeVisible();
+    await expect(page.getByTestId('blinded-review')).not.toContainText('Current prompt');
+    await expect(page.getByTestId('blinded-reveal')).toBeVisible();
+    await page.getByTestId('blinded-reveal').click();
+    await expect(page.getByTestId('stage-locked')).toBeVisible(); // refused: guesses missing
+    for (const n of [1, 2, 3, 4]) await page.getByTestId(`guess-Output-${n}`).selectOption('unsure');
+    await page.getByTestId('blinded-reveal').click();
+
+    // revealed: conditions, per-condition scores, a blinding verdict and limits
+    await expect(page.getByTestId('stage-revealed')).toBeVisible();
+    await expect(page.getByTestId('blinded-table')).toContainText('n=2');
+    await expect(page.getByTestId('blinding-verdict')).toContainText('marked can');
+    await expect(page.getByTestId('stage-revealed')).toContainText('subjective scores');
+
+    // it persists, and the reveal is final
+    await page.reload();
+    await page.getByRole('tab', { name: /Blinded review/ }).click();
+    await page.locator('[data-testid^="open-blinded-"]').first().click();
+    await expect(page.getByTestId('stage-revealed')).toBeVisible();
+    await expect(page.getByTestId('blinded-start')).toHaveCount(0);
+    const [md2] = await Promise.all([page.waitForEvent('download'), page.getByTestId('blinded-md').click()]);
+    const after = await readFile((await md2.path())!, 'utf8');
+    expect(after).toContain('## By condition (after the reveal)');
+    expect(after).toContain('## Limitations');
+  });
+
+  test('needs outputs from two conditions, and is accessible on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 850 });
+    await startPrompts(page);
+    await recordWithOutput(page, 'A', 'only one output so far');
+    await page.getByRole('link', { name: 'Open in the Lab' }).click();
+    await page.getByRole('tab', { name: /Blinded review/ }).click();
+    await expect(page.getByText('Nothing to review yet')).toBeVisible();
+    await expect(page.getByTestId('new-blinded')).toHaveCount(0);
+    await page.getByRole('tab', { name: 'Record runs' }).click();
+    await page.getByRole('link', { name: /All experiments/ }).count();
+    const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+    expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id} ${v.nodes.slice(0, 2).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
+    await expectNoHorizontalOverflow(page);
+  });
+});

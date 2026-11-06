@@ -159,6 +159,7 @@ export function previewExperimentImport(text: string, newId: (prefix: string) =>
   if (skipped) warnings.push(`${skipped} evidence item(s) did not validate and were left out.`);
   if (evidence.reduce((a, e) => a + e.size, 0) > 3 * 1024 * 1024) { evidence = evidence.slice(0, 20); warnings.push('The evidence was larger than 3 MB, so only the first 20 items were kept.'); }
   if ('derivedComparison' in r) warnings.push('The comparison in the file was ignored. Forge recomputes it from the imported runs.');
+  if (src.blindedReviews.length) warnings.push(`${src.blindedReviews.length} blinded review(s) in the file were not imported: they refer to the original experiment's conditions.`);
   if (src.loopId) warnings.push('This experiment came from a Skill Improvement Loop. It is imported as an ordinary experiment; loop links and locks are not carried over.');
   if (src.conclusion.trim()) warnings.push('The conclusion and observations are the file author’s words. Read them as claims, not as results.');
   warnings.push('Forge cannot verify any imported value. Test counts and measurements are labelled user-imported.');
@@ -170,6 +171,8 @@ export function previewExperimentImport(text: string, newId: (prefix: string) =>
     conditions: src.conditions.map((c) => ({ ...c, id: condMap.get(c.id)! })),
     runs,
     loopId: null,
+    pilot: null,
+    blindedReviews: [],
     phase: null,
     runsLockedAt: null,
     skillLinks: [],
