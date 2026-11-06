@@ -83,7 +83,7 @@ export default function ExperimentPage() {
         eyebrow="AI Lab"
         title={exp.title}
         subtitle={<>{EXPERIMENT_TYPE_LABELS[exp.experimentType]}{exp.subject ? `: ${exp.subject}` : ''} · {exp.fixture.label} · {exp.conditions.length} conditions · {exp.runs.length} runs recorded</>}
-        actions={readOnly ? <Button variant="primary" onClick={() => void createFromDemo()} data-testid="clone-demo">Create my own from this structure</Button> : <><Badge tone={exp.status === 'concluded' ? 'ok' : 'accent'}>{exp.status}</Badge><LinkButton to="/battle-lab" variant="ghost" size="sm">All experiments</LinkButton></>}
+        actions={readOnly ? <Button variant="primary" onClick={() => void createFromDemo()} data-testid="clone-demo">Create my own from this structure</Button> : <><LinkButton to={`/library/new?ref=lab-report&refId=${encodeURIComponent(exp.id)}&label=${encodeURIComponent(exp.title)}`} variant="secondary" size="sm" data-testid="exp-save-takeaway">Save a takeaway</LinkButton><Badge tone={exp.status === 'concluded' ? 'ok' : 'accent'}>{exp.status}</Badge><LinkButton to="/battle-lab" variant="ghost" size="sm">All experiments</LinkButton></>}
       />
       <Tabs<TabId> label="Experiment sections" value={tab} onChange={setTab} tabs={[{ id: 'setup', label: 'Setup' }, { id: 'record', label: 'Record runs', badge: <Badge>{exp.runs.length}</Badge> }, { id: 'compare', label: 'Compare' }, ...(readOnly || inLoop ? [] : [{ id: 'blinded' as const, label: 'Blinded review', badge: exp.blindedReviews.length ? <Badge>{exp.blindedReviews.length}</Badge> : undefined }]), { id: 'report', label: 'Report & export' }]} />
 

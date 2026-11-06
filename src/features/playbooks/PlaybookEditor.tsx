@@ -130,7 +130,7 @@ export default function PlaybookEditor() {
 
   return (
     <div data-testid="playbook-editor">
-      <PageHeader eyebrow="Playbook" title={draft.title || 'Untitled playbook'} subtitle="A design, not a run. Forge does not execute any step. Mark a step verified only after you have seen it work." actions={<LinkButton to="/playbooks" variant="ghost" size="sm">All playbooks</LinkButton>} />
+      <PageHeader eyebrow="Playbook" title={draft.title || 'Untitled playbook'} subtitle="A design, not a run. Forge does not execute any step. Mark a step verified only after you have seen it work." actions={<><LinkButton to={`/library/new?ref=playbook&refId=${encodeURIComponent(draft.id)}&label=${encodeURIComponent(draft.title)}`} variant="secondary" size="sm" data-testid="pb-save-takeaway">Save a takeaway</LinkButton><LinkButton to="/playbooks" variant="ghost" size="sm">All playbooks</LinkButton></>} />
       <div className="sticky top-14 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3">
         <Badge>{c.total} steps</Badge><Badge>{c.planned} planned</Badge><Badge tone={c.verified ? 'ok' : 'neutral'}>{c.verified} verified</Badge>
         <Badge tone={maturity.state === 'draft' || maturity.state === 'ready-to-test' ? 'neutral' : 'ok'} title={MATURITY_MEANING[maturity.state]}>{MATURITY_LABEL[maturity.state]}</Badge>

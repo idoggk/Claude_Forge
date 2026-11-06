@@ -44,8 +44,8 @@ describe('v4 -> v5 migration (R2 database upgraded by R3)', () => {
     const db = new ForgeDB(name);
     setDbForTesting(db);
     await db.open();
-    expect(DB_VERSION).toBe(6);
-    expect(db.verno).toBe(6);
+    expect(DB_VERSION).toBe(7);
+    expect(db.verno).toBe(7);
 
     const exp = await db.experiments.get('exp-old');
     expect(exp).toBeDefined();

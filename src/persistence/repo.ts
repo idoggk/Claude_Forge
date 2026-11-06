@@ -32,6 +32,7 @@ import { LearningGoalSchema, MAX_ACTIVE_GOALS, type LearningGoal } from '@/domai
 import { PlaybookSchema, type EvidenceLink, type Playbook, type PlaybookContent, type PlaybookEvaluation } from '@/domain/playbook/model';
 import { buildEvaluation, createEvidenceLink, linkCurrency, playbookContentFingerprint, reassessLink, reviewLink, stepFingerprint } from '@/domain/playbook/evidence';
 import { TransferTaskSchema, completionProblems, type TransferTask } from '@/domain/transfer/model';
+import { TakeawaySchema, confidenceProblems, type EvidenceContext, type Takeaway } from '@/domain/library/model';
 import { ActivityRunSchema, type ActivityRun } from './schemas';
 
 /* ---------------------------------- profile & prefs ---------------------------------- */
@@ -635,6 +636,49 @@ export async function recordActivityRun(run: Omit<ActivityRun, 'takenAt'>): Prom
   const rec = ActivityRunSchema.parse({ ...run, takenAt: nowIso() });
   await getDb().activityRuns.put(rec);
   return rec;
+}
+
+/* ---------------------------------------- takeaways (library) ---------------------------------------- */
+
+export async function evidenceContext(): Promise<EvidenceContext> {
+  const db = getDb();
+  const [transfers, experiments, runs] = await Promise.all([db.transferTasks.toArray(), db.experiments.toArray(), db.activityRuns.toArray()]);
+  return {
+    completedTransferIds: new Set(transfers.filter((t) => t.status === 'completed').map((t) => t.id)),
+    experimentIds: new Set(experiments.map((e) => e.id)),
+    // A challenge counts as evidence only once you have actually saved a run of it.
+    challengeIds: new Set(runs.filter((r) => r.activityId.startsWith('challenge:')).map((r) => r.activityId.slice('challenge:'.length))),
+  };
+}
+
+/**
+ * Save a takeaway. Its confidence level is never changed by Forge: a new level must be the one you chose, and it is
+ * accepted only if its references support it. Each change is appended to the takeaway's history.
+ */
+export async function saveTakeaway(t: Takeaway): Promise<{ ok: true; takeaway: Takeaway } | { ok: false; problems: string[] }> {
+  const db = getDb();
+  const ctx = await evidenceContext();
+  return db.transaction('rw', db.takeaways, async () => {
+    const parsed = TakeawaySchema.safeParse(t);
+    if (!parsed.success) return { ok: false as const, problems: parsed.error.issues.slice(0, 3).map((i) => `${i.path.join('.') || 'takeaway'}: ${i.message}`) };
+    const next = parsed.data;
+    const prev = await db.takeaways.get(next.id);
+    const rank = (c: Takeaway['confidence']) => ['hypothesis', 'anecdotal', 'evaluated-on-fixtures', 'applied-to-real-work'].indexOf(c);
+    const changed = !prev || prev.confidence !== next.confidence;
+    const lowered = !!prev && rank(next.confidence) < rank(prev.confidence); // lowering a claim is always allowed
+    const rejustified = !!prev && (prev.confidenceNote !== next.confidenceNote || prev.references.length !== next.references.length);
+    const problems = !lowered && (changed || rejustified) ? confidenceProblems(next, ctx) : [];
+    if (problems.length) return { ok: false as const, problems };
+    const now = nowIso();
+    const history = !prev ? [{ at: now, from: null, to: next.confidence, note: next.confidenceNote || 'Created' }] : changed ? [...prev.history, { at: now, from: prev.confidence, to: next.confidence, note: next.confidenceNote }].slice(-50) : prev.history;
+    const saved = TakeawaySchema.parse({ ...next, history, createdAt: prev?.createdAt ?? next.createdAt, updatedAt: now });
+    await db.takeaways.put(saved);
+    return { ok: true as const, takeaway: saved };
+  });
+}
+
+export async function deleteTakeaway(id: string): Promise<void> {
+  await getDb().takeaways.delete(id);
 }
 
 /* ------------------------------------------ reset ------------------------------------------ */

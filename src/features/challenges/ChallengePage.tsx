@@ -103,7 +103,7 @@ export default function ChallengePage() {
             <h3 className="mt-4 font-semibold">Questions</h3>
             <ul className="mt-1 space-y-2 text-sm">{questions.map((q) => { const g = result.answers.find((a) => a.id === q.id)!; return <li key={q.id}><Badge tone={g.correct ? 'ok' : 'warn'}>{g.correct ? 'Correct' : 'Not quite'}</Badge> {q.explain}</li>; })}</ul>
             <p className="mt-3 text-sm text-muted">This is practice. It is saved only on this device and never changes a competency level.</p>
-            <div className="mt-2"><Button size="sm" onClick={save} disabled={saved} data-testid="challenge-save">{saved ? 'Saved' : 'Save this run'}</Button></div>
+            <div className="mt-2 flex flex-wrap gap-2"><Button size="sm" onClick={save} disabled={saved} data-testid="challenge-save">{saved ? 'Saved' : 'Save this run'}</Button>{saved && <LinkButton size="sm" variant="secondary" to={`/library/new?ref=challenge&refId=${encodeURIComponent(def.id)}&label=${encodeURIComponent(def.title)}`} data-testid="challenge-takeaway">Write a takeaway from this</LinkButton>}</div>
           </Card>
         )}
 
