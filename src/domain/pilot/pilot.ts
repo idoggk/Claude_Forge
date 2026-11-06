@@ -151,6 +151,9 @@ export interface QuickRunInput {
   interventions: number | null;
   observations: string;
   context?: string;
+  /** From an import the learner chose to apply. Marked user-imported. */
+  tests?: { passed: number; total: number } | null;
+  runtimeSec?: number | null;
 }
 
 /** Build a Run from the few fields the guided flow asks for. Anything left blank is unknown, never zero. */
@@ -161,10 +164,12 @@ export function buildQuickRun(exp: Experiment, i: QuickRunInput, id: string, now
   put('reworkRounds', i.reworkRounds);
   put('developerEffortMin', i.effortMin);
   put('interventions', i.interventions);
+  if (i.runtimeSec !== undefined && i.runtimeSec !== null && Number.isFinite(i.runtimeSec) && i.runtimeSec >= 0) metrics.runtimeSec = { value: i.runtimeSec, provenance: 'user-imported' };
   const cond = exp.conditions.find((c) => c.id === i.conditionId);
   return RunSchema.parse({
     id, conditionId: i.conditionId, index, recordedAt: now,
     successMet: i.success === 'unknown' ? null : i.success === 'yes',
+    ...(i.tests ? { testsPassed: i.tests.passed, testsTotal: i.tests.total, testsProvenance: 'user-imported' } : {}),
     metrics, observations: i.observations.trim().slice(0, 4000), attempt: i.attempt,
     skillVersion: cond?.skillVersion ?? '', fixtureVersion: '', context: (i.context ?? '').slice(0, 300),
   });

@@ -16,6 +16,7 @@ import { nowIso } from '@/lib/clock';
 import { ComparisonView } from './ComparisonView';
 import { RunForm, type RunFormResult } from './RunForm';
 import { PlaybookLinksCard } from './PlaybookLinksCard';
+import { CLASSIFICATION_LABEL } from '@/domain/transcript/candidates';
 
 type TabId = 'setup' | 'record' | 'compare' | 'report';
 
@@ -143,7 +144,7 @@ export default function ExperimentPage() {
                         {(r.skillVersion || r.fixtureVersion || r.context) && <p className="text-xs text-muted">{[r.skillVersion && `version ${r.skillVersion}`, r.fixtureVersion && `fixture v${r.fixtureVersion}`, r.context && `context: ${r.context}`].filter(Boolean).join(' · ')}</p>}
                         <p className="text-sm text-muted">Tests: {r.testsPassed !== null && r.testsTotal !== null ? `${r.testsPassed}/${r.testsTotal} (${r.testsProvenance})` : 'unknown'} · Success: {r.successMet === null ? 'not assessed' : r.successMet ? 'yes' : 'no'} · Runtime: {r.metrics.runtimeSec?.value ?? 'unknown'} · Effort: {r.metrics.developerEffortMin?.value ?? 'unknown'} · Rubric assessed: {Object.values(r.rubric).filter((v) => v !== null && v !== undefined).length}/4</p>
                         {r.observations && <p className="mt-1 text-sm">{r.observations}</p>}
-                        {evs.length > 0 && <ul className="mt-1 text-xs text-muted">{evs.map((e) => <li key={e.id} className="flex items-center gap-2"><Badge tone="teal">{e.kind}</Badge>{e.name} · {e.provenance} · {e.size} bytes <ConfirmButton label="Remove" confirmLabel="Remove evidence" onConfirm={() => deleteEvidence(e.id)} /></li>)}</ul>}
+                        {evs.length > 0 && <ul className="mt-1 text-xs text-muted">{evs.map((e) => <li key={e.id} className="flex items-center gap-2"><Badge tone="teal">{e.kind}</Badge>{e.name} · {e.provenance}{e.classification ? ` · ${CLASSIFICATION_LABEL[e.classification]}` : ''} · {e.size} bytes <ConfirmButton label="Remove" confirmLabel="Remove evidence" onConfirm={() => deleteEvidence(e.id)} /></li>)}</ul>}
                         <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => { setEditing(r); window.scrollTo({ top: 0 }); }}>Edit</Button><ConfirmButton label="Delete run" confirmLabel="Delete run" onConfirm={async () => { await persist({ ...exp, runs: exp.runs.filter((x) => x.id !== r.id) }); toast('Run deleted'); }} /></div>
                       </Card>
                     );

@@ -160,12 +160,16 @@ export const EvidenceSchema = z.object({
   id: z.string().min(1),
   experimentId: z.string().min(1),
   runId: z.string().nullable(),
-  kind: z.enum(['pasted-output', 'file', 'test-report', 'note']),
+  kind: z.enum(['pasted-output', 'file', 'test-report', 'note', 'prompt', 'model-output', 'tool-result', 'tool-call', 'metadata']),
   name: z.string().max(200),
   mime: z.string().max(100).default('text/plain'),
   size: z.number().int().min(0),
   text: z.string().max(600_000),
   provenance: ProvenanceSchema,
+  /** How Forge came to hold this: set by the transcript importer; null for evidence added the older ways. */
+  classification: z.enum(['parsed-tool-result', 'parsed-tool-call', 'parsed-model-output', 'parsed-prompt', 'parsed-metadata', 'user-observation', 'inferred', 'unknown']).nullable().default(null),
+  /** Where it came from inside the import (format, tool name, turn). Small, plain strings only. */
+  meta: z.record(z.string().max(40), z.string().max(300)).default({}),
   addedAt: z.string(),
 });
 export type Evidence = z.infer<typeof EvidenceSchema>;

@@ -10,6 +10,8 @@ import { PILOT_RUNS_PER_CONDITION, buildQuickRun, currentPilotStep, nextRunLabel
 import { getPilotStarter } from '@/content/pilot/starters';
 import { ComparisonView } from '@/features/battle-lab/ComparisonView';
 import { FoundInText } from '@/features/battle-lab/RunForm';
+import { TranscriptImporter } from '@/features/battle-lab/TranscriptImporter';
+import type { ImportOutcome } from '@/domain/transcript/candidates';
 import { LESSONS } from '@/content/lessons';
 import { downloadText } from '@/lib/download';
 import { newId } from '@/lib/ids';
@@ -42,6 +44,8 @@ function QuickRun({ exp, next, onSaved }: { exp: Experiment; next: string | null
   const [notes, setNotes] = useState('');
   const [paste, setPaste] = useState('');
   const [err, setErr] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [imported, setImported] = useState<ImportOutcome | null>(null);
   const analysis: TextAnalysis | null = useMemo(() => (paste.trim() ? analyseEvidenceText(paste) : null), [paste]);
   const num = (s: string): number | null | 'bad' => (s.trim() === '' ? null : Number.isFinite(Number(s)) && Number(s) >= 0 ? Number(s) : 'bad');
 
@@ -50,13 +54,14 @@ function QuickRun({ exp, next, onSaved }: { exp: Experiment; next: string | null
     if (r === 'bad' || m === 'bad') return setErr('Corrections and minutes must be a number of 0 or more, or left blank for unknown.');
     setErr('');
     const now = nowIso();
-    const run = buildQuickRun(exp, { conditionId: cond, attempt, success, reworkRounds: r, effortMin: m, interventions: null, observations: notes }, newId('run'), now);
+    const run = buildQuickRun(exp, { conditionId: cond, attempt, success, reworkRounds: r, effortMin: m, interventions: null, observations: notes, tests: imported?.tests ?? null, runtimeSec: imported?.runtimeSec ?? null }, newId('run'), now);
     await saveExperiment({ ...exp, runs: [...exp.runs, run], rubricLockedAt: exp.rubricLockedAt ?? now, status: exp.status === 'draft' ? 'recording' : exp.status });
     if (paste.trim()) {
-      const ev: Evidence = { id: newId('ev'), experimentId: exp.id, runId: run.id, kind: 'pasted-output', name: 'Pasted output', mime: 'text/plain', size: new TextEncoder().encode(paste).length, text: paste.slice(0, 500_000), provenance: 'self-reported', addedAt: now };
+      const ev: Evidence = { id: newId('ev'), experimentId: exp.id, runId: run.id, kind: 'pasted-output', name: 'Pasted output', mime: 'text/plain', size: new TextEncoder().encode(paste).length, text: paste.slice(0, 500_000), provenance: 'self-reported', classification: null, meta: {}, addedAt: now };
       await addEvidence(ev);
     }
-    setAttempt('completed'); setSuccess('unknown'); setRework(''); setEffort(''); setNotes(''); setPaste('');
+    for (const e of imported?.evidence ?? []) await addEvidence({ ...e, experimentId: exp.id, runId: run.id });
+    setAttempt('completed'); setSuccess('unknown'); setRework(''); setEffort(''); setNotes(''); setPaste(''); setImported(null);
     toast('Run saved');
     onSaved();
   };
@@ -81,6 +86,20 @@ function QuickRun({ exp, next, onSaved }: { exp: Experiment; next: string | null
           <TextArea label="Paste Claude's output or your test output" rows={4} mono value={paste} onChange={(e) => setPaste(e.target.value)} data-testid="qr-paste" />
           {analysis && <FoundInText analysis={analysis} onUse={() => undefined} />}
           <p className="text-xs text-muted">Stored as text, never executed. Pasting does not change your counts: you enter those above.</p>
+          <div className="border-t border-line pt-2">
+            {importing ? (
+              <TranscriptImporter skillName={exp.pilot?.technique} onCancel={() => setImporting(false)} onConfirm={(o) => { setImported(o); setImporting(false); toast(`${o.evidence.length} item(s) ready to attach${o.redactedCount ? `; ${o.redactedCount} possible secret(s) replaced` : ''}. They are saved with the run.`); }} />
+            ) : (
+              <Button size="sm" onClick={() => setImporting(true)} data-testid="open-importer">Import a Claude Code transcript or result…</Button>
+            )}
+            {imported && (
+              <div className="mt-2 rounded-lg border border-line p-2 text-sm" data-testid="imported-summary">
+                <p><strong>Ready to save with this run:</strong> {imported.evidence.length} attachment(s) marked user-imported{imported.tests ? `; tests ${imported.tests.passed}/${imported.tests.total} (from an imported tool result)` : ''}{imported.runtimeSec !== null ? `; runtime ${imported.runtimeSec} s` : ''}.</p>
+                {imported.warnings.map((w) => <p key={w} className="text-xs text-muted">{w}</p>)}
+                <button type="button" className="mt-1 text-xs underline" onClick={() => setImported(null)}>Remove the import</button>
+              </div>
+            )}
+          </div>
         </div>
       </details>
       {err && <Callout tone="bad" role="alert" title="Check this">{err}</Callout>}
