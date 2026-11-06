@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { INTEREST_LABELS, type InterestTag } from '@/domain/curriculum/types';
-import { Button, Callout, Card, Illustration, PageHeader, SelectField, TextInput, useToast } from '@/components/ui';
+import { Button, Callout, Card, PageHeader, SelectField, TextInput, useToast } from '@/components/ui';
+import { HomeHero } from '@/features/mission/HomeHero';
+import { LearningPaths } from '@/features/mission/LearningPaths';
+import { LESSONS } from '@/content/lessons';
+import { MISSIONS } from '@/content/missions';
+import { TRACKS } from '@/domain/curriculum/competencies';
 import { saveProfile } from '@/persistence/repo';
 import { useData } from '@/app/providers/DataProvider';
 import { nowIso } from '@/lib/clock';
@@ -24,41 +29,58 @@ export default function OnboardingPage() {
     }
   }, [profile]);
 
+  const finish = async (to: string) => {
+    setBusy(true);
+    try {
+      const saved = await saveProfile({ displayName: name.trim(), interests, dailyMinutes: minutes, onboardedAt: profile?.onboardedAt ?? nowIso() });
+      setProfileOptimistic(saved);
+      toast(editing ? 'Profile saved' : 'All set - welcome');
+      nav(to);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const planned = TRACKS.reduce((a, t) => a + t.topics.filter((x) => !x.lessonId).length, 0);
+
   const toggle = (t: InterestTag) => setInterests((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
 
   return (
-    <div className="mx-auto max-w-2xl">
-      {!editing && <div className="mb-5" aria-hidden="true"><Illustration name="hero-forge" className="h-40 object-[center_45%] sm:h-64" /></div>}
-      <PageHeader
-        eyebrow={editing ? 'Your profile' : 'Welcome to Claude Forge'}
-        title={editing ? 'Tune your learning plan' : 'Become genuinely good at using AI'}
-        subtitle="A static, offline-capable academy. You learn by doing, we record what you can actually demonstrate, and nothing leaves your device."
-      />
-      {!editing && (
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
-          {[
-            ['Discover → Understand → Practice', 'Short lessons, then exercises that grade your answers with feedback on every wrong option.'],
-            ['Experiment → Apply → Measure', 'Compare workflows with an AI Lab that refuses to turn one lucky run into a conclusion.'],
-            ['Evidence, not impressions', 'Mastery changes only when you pass unseen assessments and log real-world application.'],
-          ].map(([t, d]) => (
-            <Card key={t}><h2 className="font-semibold">{t}</h2><p className="mt-1 text-sm text-muted">{d}</p></Card>
-          ))}
-        </div>
+    <div className={editing ? 'mx-auto max-w-2xl' : 'mx-auto max-w-5xl'}>
+      {!editing ? (
+        <>
+          <HomeHero
+            eyebrow="Welcome to Claude Forge"
+            title="Become genuinely good at using AI"
+            actions={
+              <>
+                <Button variant="primary" size="lg" disabled={busy} onClick={() => void finish('/academy/diagnostic')} data-testid="onboard-diagnostic">Take the 5-minute diagnostic</Button>
+                <Button size="lg" disabled={busy} onClick={() => void finish('/')} data-testid="onboard-start">Start without it</Button>
+              </>
+            }
+          >
+            <p>A personal academy, offline-capable and private to this device. You learn by doing, Claude Forge records what you can actually demonstrate, and your levels change only when you pass unseen assessments or log real work. {LESSONS.length} lessons exist today across {TRACKS.length} tracks; {planned} more topics are planned and marked as planned.</p>
+          </HomeHero>
+          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            {[
+              ['Discover → Understand → Practice', 'Short lessons, then exercises that grade your answers with feedback on every wrong option.'],
+              ['Experiment → Apply → Measure', 'Compare workflows with an AI Lab that refuses to turn one lucky run into a conclusion.'],
+              ['Evidence, not impressions', 'Mastery changes only when you pass unseen assessments and log real-world application.'],
+            ].map(([t, d]) => (
+              <Card key={t}><h2 className="font-semibold">{t}</h2><p className="mt-1 text-sm text-muted">{d}</p></Card>
+            ))}
+          </div>
+          <div className="mb-6"><LearningPaths returning={false} links={false} lessons={LESSONS} attempts={[]} progress={[]} missionCount={MISSIONS.length} /></div>
+          <h2 className="mb-2 text-xl font-semibold">Optional: tune your plan</h2>
+        </>
+      ) : (
+        <PageHeader eyebrow="Your profile" title="Tune your learning plan" subtitle="Your name, interests and daily time. Stored only on this device." />
       )}
-      <Card>
+      <Card className={editing ? '' : 'mx-auto max-w-2xl'}>
         <form
           className="space-y-5"
-          onSubmit={async (e) => {
+          onSubmit={(e) => {
             e.preventDefault();
-            setBusy(true);
-            try {
-              const saved = await saveProfile({ displayName: name.trim(), interests, dailyMinutes: minutes, onboardedAt: profile?.onboardedAt ?? nowIso() });
-              setProfileOptimistic(saved);
-              toast(editing ? 'Profile saved' : 'All set - welcome');
-              nav('/');
-            } finally {
-              setBusy(false);
-            }
+            void finish('/');
           }}
         >
           <TextInput label="What should we call you? (optional)" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} autoComplete="nickname" hint="Stored only on this device." />

@@ -22,3 +22,7 @@ Not used: the Discovery Hub catalog page, experiment/lesson/playbook editor page
 - The service worker precaches `public/assets/forge/*.svg` (see `scripts/sw-plugin.ts`) so the art also appears offline.
 - Each SVG has an opaque dark panel with rounded corners baked in. In the light theme it therefore appears as a dark framed picture; a 1 px token-coloured border ties it to the page. Text is never drawn over an illustration.
 - The SVGs were screened as untrusted data before use: no `<script>`, event handlers, `foreignObject`, external `href`/`url()` references, `<image>` or `<style>` elements.
+
+## Home art pack (`public/assets/forge-home/`)
+
+Seven decorative SVGs (no text, scripts or external references): `hero-forge-wide`, `track-ai-engineering`, `track-game-development`, `track-agents-automation`, `track-research`, `track-ai-lab`, `background-contours`. Rendered by `HomeImage` (alt="", aria-hidden, lazy, hidden below `md`), precached by `scripts/sw-plugin.ts`. Meaning is never carried by the art.

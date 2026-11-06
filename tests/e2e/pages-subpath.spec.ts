@@ -34,9 +34,9 @@ test('the build works from a GitHub Pages style sub-path: assets, routing, manif
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(`http://127.0.0.1:${PORT}${PREFIX}`);
   await expect(page).toHaveURL(/#\/onboarding/);
-  const hero = page.locator('img[src$="assets/forge/hero-forge.svg"]');
+  const hero = page.locator('img[src$="assets/forge-home/hero-forge-wide.svg"]');
   await expect.poll(async () => hero.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
-  expect(await hero.evaluate((i: HTMLImageElement) => i.currentSrc)).toContain(`${PREFIX}assets/forge/hero-forge.svg`);
+  expect(await hero.evaluate((i: HTMLImageElement) => i.currentSrc)).toContain(`${PREFIX}assets/forge-home/hero-forge-wide.svg`);
   await page.getByTestId('finish-onboarding').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Mission Control' })).toBeVisible();
   for (const [route, file] of [['/academy', 'academy.svg'], ['/explore', 'discovery.svg'], ['/battle-lab', 'battle-lab.svg'], ['/playbooks', 'workflows.svg'], ['/pilot', 'battle-lab.svg']] as const) {

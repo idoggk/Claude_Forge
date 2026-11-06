@@ -218,13 +218,13 @@ test.describe('Round 3: layout', () => {
 });
 
 test.describe('Visual assets', () => {
-  const ART_PAGES: [string, string][] = [['/', 'hero-forge.svg'], ['/explore', 'discovery.svg'], ['/academy', 'academy.svg'], ['/battle-lab', 'battle-lab.svg'], ['/playbooks', 'workflows.svg']];
+  const ART_PAGES: [string, string][] = [['/explore', 'discovery.svg'], ['/academy', 'academy.svg'], ['/battle-lab', 'battle-lab.svg'], ['/playbooks', 'workflows.svg']];
 
   test('illustrations are decorative: empty alt, hidden from assistive tech, correct paths, never on dense pages', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
     // welcome hero on first visit
-    const hero = page.locator('img[src$="assets/forge/hero-forge.svg"]');
+    const hero = page.locator('img[src$="assets/forge-home/hero-forge-wide.svg"]');
     await expect(hero).toHaveAttribute('alt', '');
     await expect(hero).toHaveAttribute('aria-hidden', 'true');
     await expect.poll(async () => hero.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);

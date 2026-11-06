@@ -19,8 +19,10 @@ export function forgeServiceWorker(): Plugin {
     generateBundle(_options, bundle) {
       const files = Object.keys(bundle).filter((f) => f !== 'sw.js');
       // Public (non-bundled) artwork is precached too, so illustrations also appear offline.
-      const artDir = join(process.cwd(), 'public', 'assets', 'forge');
-      const art = existsSync(artDir) ? readdirSync(artDir).filter((f) => f.endsWith('.svg')).map((f) => `assets/forge/${f}`) : [];
+      const art = ['forge', 'forge-home'].flatMap((pack) => {
+        const dir = join(process.cwd(), 'public', 'assets', pack);
+        return existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.svg')).map((f) => `assets/${pack}/${f}`) : [];
+      });
       const extra = ['./', 'manifest.webmanifest', 'icon.svg', ...art];
       const urls = Array.from(new Set([...extra, ...files])).sort();
       const hash = createHash('sha256').update(urls.join('|')).digest('hex').slice(0, 12);

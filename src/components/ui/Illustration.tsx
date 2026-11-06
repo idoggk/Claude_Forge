@@ -9,6 +9,10 @@ export type ForgeArt = 'hero-forge' | 'academy' | 'discovery' | 'battle-lab' | '
 
 export const artUrl = (name: ForgeArt): string => `${import.meta.env.BASE_URL}assets/forge/${name}.svg`;
 
+/** The home visual pack (public/assets/forge-home): a wide hero, four learning-path pictures, a lab picture and a backdrop. */
+export type HomeArt = 'hero-forge-wide' | 'track-ai-engineering' | 'track-game-development' | 'track-agents-automation' | 'track-research' | 'track-ai-lab' | 'background-contours';
+export const homeArtUrl = (name: HomeArt): string => `${import.meta.env.BASE_URL}assets/forge-home/${name}.svg`;
+
 export function Illustration({ name, className }: { name: ForgeArt; className?: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
@@ -26,4 +30,14 @@ export function Illustration({ name, className }: { name: ForgeArt; className?: 
       className={['forge-art block h-auto w-full rounded-xl border border-line object-cover', className].filter(Boolean).join(' ')}
     />
   );
+}
+
+/**
+ * A picture from the home pack. Decorative: empty alt, hidden from assistive technology, never focusable, lazy so a phone that
+ * hides it does not download it, and removed if it fails to load. `className` controls size and cropping.
+ */
+export function HomeImage({ name, className, width, height }: { name: HomeArt; className?: string; width: number; height: number }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return <img src={homeArtUrl(name)} alt="" aria-hidden="true" width={width} height={height} loading="lazy" decoding="async" draggable={false} tabIndex={-1} onError={() => setFailed(true)} className={['pointer-events-none select-none', className].filter(Boolean).join(' ')} />;
 }
