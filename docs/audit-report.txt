@@ -1,0 +1,12 @@
+items audited: 461 (choice items: 324, written items: 15)
+length leak: 2 of 240 single-answer items (0.8%)
+duplicate choices: 0
+absolute-word cue: wrong 23% vs right 14%
+answer revealed by another item: 0
+weak distractor feedback (< 4 words): 0
+empty feedback: 0
+malformed choices: 0
+near-duplicate prompts (parallel forms): 9
+review items repeating an assessment prompt: 0
+broken prerequisite links: 0
+lessons without sources: 2

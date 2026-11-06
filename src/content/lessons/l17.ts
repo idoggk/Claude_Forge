@@ -42,7 +42,7 @@ const LOG_B_TARGETS = [
 
 export const L17: Lesson = {
   id: 'L17-efficient-ai-development',
-  version: 2,
+  version: 3,
   track: 'engineering',
   alsoIn: ['claude-code'],
   order: 17,
@@ -189,8 +189,8 @@ Slices 3 and 4 touch different files and could run in parallel *after* slice 2 -
         prompt: 'A change touches 19 files and the model says it all works. What is the efficient next move?',
         options: [
           o('a', 'Have it run the tests, read the output and diff, and re-split the work into smaller slices if it fails', 'Correct: verify with evidence and keep slices small.'),
-          o('b', 'Accept it - the model sounded sure', 'Confidence is not evidence.', 'confident-trace-success'),
-          o('c', 'Ask it three times whether it is sure', 'The same author vouching again.'),
+          o('b', 'Accept the change - the model sounded sure and reported that everything works across all 19 files', 'Confidence is not evidence.', 'confident-trace-success'),
+          o('c', 'Ask it three times whether it is sure and accept the change if the answer stays the same', 'The same author vouching again.'),
         ],
         correct: 'a',
         explanation: 'Evidence and smaller slices.',
@@ -300,9 +300,9 @@ Slices 3 and 4 touch different files and could run in parallel *after* slice 2 -
         prompt: 'The model finishes a change and reports "all tests pass". What do you do before accepting it?',
         options: [
           o('a', 'Look for the actual test run and its output in the transcript (or run the tests yourself) and read the diff', 'Correct: the evidence, not the narration.'),
-          o('b', 'Accept it because the message was confident', 'Confidence is not evidence.', 'confident-trace-success'),
-          o('c', 'Accept it because the message was long and detailed', 'Length is not evidence.', 'confident-trace-success'),
-          o('d', 'Ask the model to confirm again', 'The same author vouching for itself.', 'confident-trace-success'),
+          o('b', 'Accept it because the message was confident and specific about what was changed and tested', 'Confidence is not evidence.', 'confident-trace-success'),
+          o('c', 'Accept it because the message was long and detailed, which shows the model checked its work', 'Length is not evidence.', 'confident-trace-success'),
+          o('d', 'Ask the model to confirm once more that the tests pass, and accept it if it says yes', 'The same author vouching for itself.', 'confident-trace-success'),
         ],
         correct: 'a',
         explanation: 'Verify with a run.',
@@ -314,7 +314,7 @@ Slices 3 and 4 touch different files and could run in parallel *after* slice 2 -
         prompt: 'Which habits keep an AI session efficient? Select all.',
         options: [
           o('a', 'Start a fresh session for an unrelated task', 'Old history competes with the new task.'),
-          o('b', 'Commit each working slice', 'A cheap undo.'),
+          o('b', 'Commit each working slice', 'Correct: fresh context, checkpoints and persistent instructions.'),
           o('c', 'Put durable conventions in CLAUDE.md instead of retyping them', 'Persistent context, loaded when needed.'),
           o('d', 'Keep one conversation going for everything so nothing is lost', 'A long mixed history is noise for the current task.'),
         ],
@@ -362,14 +362,14 @@ Slices 3 and 4 touch different files and could run in parallel *after* slice 2 -
     fieldPrompt: 'Log it under Growth → Field evidence when slicing and verifying caught a defect that a single big request would have buried.',
   },
   reviewItems: [
-    { id: 'l17-r1', kind: 'single', concept: 'efficient-ai-development', difficulty: 1, prompt: 'What is a good property of a slice of AI-assisted work?', options: [o('a', 'Small enough to review, with a check that can fail', 'Correct: it matches the practice taught in this lesson.'), o('b', 'As large as possible', 'Large changes are hard to verify.'), o('c', 'Free of tests', 'Tests are the acceptance check.')], correct: 'a', explanation: 'Small and checkable.' },
-    { id: 'l17-r2', kind: 'single', concept: 'efficient-ai-development', difficulty: 1, prompt: 'When is it best to start a fresh session?', options: [o('a', 'When you switch to an unrelated task', 'Correct: it matches the practice taught in this lesson.'), o('b', 'Never', 'Long mixed history competes with the task.'), o('c', 'Only after a failure', 'Context hygiene is not only for failures.')], correct: 'a', explanation: 'Reset context for unrelated work.' },
-    { id: 'l17-r3', kind: 'single', concept: 'efficient-ai-development', difficulty: 2, prompt: 'Which pair of tasks is the best fit for parallel sessions?', options: [o('a', 'Two modules with separate files and separate tests', 'Correct: independent.'), o('b', 'Two agents editing the same function', 'Parallel edits to the same function collide.', 'parallel-always-faster'), o('c', 'Two steps where the second needs the first\'s output', 'A dependent step has to wait for the first.', 'parallel-always-faster')], correct: 'a', explanation: 'Independence is the precondition for parallel work.' },
+    { id: 'l17-r1', kind: 'single', concept: 'efficient-ai-development', difficulty: 1, prompt: 'What is a good property of a slice of AI-assisted work?', options: [o('a', 'Small enough to review, with a check that can fail', 'Correct: it matches the practice taught in this lesson.'), o('b', 'As large as possible, so that the model has the full context and one review covers the whole change', 'Large changes are hard to verify.'), o('c', 'Free of tests, so that the slice can be completed quickly and the model is not slowed by running them', 'Tests are the acceptance check.')], correct: 'a', explanation: 'Small and checkable.' },
+    { id: 'l17-r2', kind: 'single', concept: 'efficient-ai-development', difficulty: 1, prompt: 'When is it best to start a fresh session?', options: [o('a', 'When you switch to an unrelated task', 'Correct: it matches the practice taught in this lesson.'), o('b', 'Never, because a session keeps all of the history that the model needs to continue the work well', 'Long mixed history competes with the task.'), o('c', 'Only after a failure, when the model has clearly lost track of what it was asked to do in the task', 'Context hygiene is not only for failures.')], correct: 'a', explanation: 'Reset context for unrelated work.' },
+    { id: 'l17-r3', kind: 'single', concept: 'efficient-ai-development', difficulty: 2, prompt: 'Which pair of tasks is the best fit for parallel sessions?', options: [o('a', 'Two modules with separate files and separate tests', 'Correct: independence is the precondition for parallel work.'), o('b', 'Two agents editing the same function', 'Parallel edits to the same function collide.', 'parallel-always-faster'), o('c', 'Two steps where the second needs the first\'s output', 'A dependent step has to wait for the first.', 'parallel-always-faster')], correct: 'a', explanation: 'Independence is the precondition for parallel work.' },
     { id: 'l17-r4', kind: 'multi', concept: 'efficient-ai-development', difficulty: 2, prompt: 'Select the evidence that a change works.', options: [o('a', 'The test command\'s real output', 'Correct: it matches the practice taught in this lesson.'), o('b', 'The diff, read by you', 'Correct: it matches the practice taught in this lesson.'), o('c', 'A new failing-then-passing test', 'Correct: it matches the practice taught in this lesson.'), o('d', 'The model saying "done"', 'That is the model\'s own claim, not observable evidence.', 'confident-trace-success')], correct: ['a', 'b', 'c'], explanation: 'Observable evidence.' },
-    { id: 'l17-r5', kind: 'single', concept: 'efficient-ai-development', difficulty: 2, prompt: 'Why commit after each working slice?', options: [o('a', 'It gives you a cheap undo if the next slice goes wrong', 'Correct: it matches the practice taught in this lesson.'), o('b', 'To make the history longer', 'Not the point.'), o('c', 'Because the model requires it', 'It does not.')], correct: 'a', explanation: 'Commit working slices so the next mistake is cheap to undo.' },
+    { id: 'l17-r5', kind: 'single', concept: 'efficient-ai-development', difficulty: 2, prompt: 'Why commit after each working slice?', options: [o('a', 'It gives you a cheap undo if the next slice goes wrong', 'Correct: it matches the practice taught in this lesson.'), o('b', 'To make the history longer and more detailed', 'A longer history is not the point; the benefit is that a bad slice can be undone cheaply.'), o('c', 'Because the model requires a commit after each slice before it will continue with the next one', 'The model does not require a commit between slices; it is a practice that protects you.')], correct: 'a', explanation: 'Commit working slices so the next mistake is cheap to undo.' },
     { id: 'l17-r6', kind: 'single', concept: 'efficient-ai-development', difficulty: 3, prompt: 'A slice keeps failing on the third attempt. What is the best response?', options: [o('a', 'Cut it smaller or sharpen its acceptance check', 'Correct: the slice is probably too big or vague.'), o('b', 'Ask for the same thing in capital letters', 'Emphasis adds no information.', 'longer-prompt-better'), o('c', 'Add more agents', 'More agents on a vague slice add noise.', 'parallel-always-faster')], correct: 'a', explanation: 'Repeated failure is a sizing or specification signal.' },
-    { id: 'l17-r7', kind: 'single', concept: 'efficient-ai-development', difficulty: 3, prompt: 'Where should you spend the most careful review attention?', options: [o('a', 'Data models, security boundaries and irreversible steps', 'Correct: where mistakes cost most.'), o('b', 'Whitespace', 'Low cost if wrong.'), o('c', 'Everything equally', 'Attention is finite.')], correct: 'a', explanation: 'Weight review by consequence.' },
-    { id: 'l17-r8', kind: 'single', concept: 'efficient-ai-development', difficulty: 3, prompt: 'Someone says "AI made us 40% faster" with no measurements. How do you treat it?', options: [o('a', 'As an unsupported claim; ask how it was measured and consider a small experiment of your own', 'Correct: it matches the practice taught in this lesson.'), o('b', 'As established fact', 'A specific number is not a method.', 'vendor-claim-is-evidence'), o('c', 'As proof if many people say it', 'Repetition is not measurement.', 'vendor-claim-is-evidence')], correct: 'a', explanation: 'Numbers need methods.' },
+    { id: 'l17-r7', kind: 'single', concept: 'efficient-ai-development', difficulty: 3, prompt: 'Where should you spend the most careful review attention?', options: [o('a', 'Data models, security boundaries and irreversible steps', 'Correct: where mistakes cost most.'), o('b', 'Whitespace and formatting, because a mistake there changes the way every file in the project reads', 'Low cost if wrong.'), o('c', 'Everything equally, since any line of generated code may contain a defect that a reader could miss', 'Review attention is finite, so spreading it equally under-reviews the places where mistakes cost most.')], correct: 'a', explanation: 'Weight review by consequence.' },
+    { id: 'l17-r8', kind: 'single', concept: 'efficient-ai-development', difficulty: 3, prompt: 'Someone says "AI made us 40% faster" with no measurements. How do you treat it?', options: [o('a', 'As an unsupported claim; ask how it was measured and consider a small experiment of your own', 'Correct: it matches the practice taught in this lesson.'), o('b', 'As an established fact, since a specific percentage must have come from some kind of measurement', 'A specific number is not a method.', 'vendor-claim-is-evidence'), o('c', 'As proof if many people say it, since a figure that is widely repeated has probably been checked', 'Repetition is not measurement.', 'vendor-claim-is-evidence')], correct: 'a', explanation: 'Numbers need methods.' },
   ],
   sources: [
     { ...DOCS.workflows, supports: 'Plan Mode, parallel sessions with git worktrees, and common development workflows in Claude Code.' },

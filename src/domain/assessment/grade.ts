@@ -372,6 +372,9 @@ export function seededOrder<T extends { id: string }>(items: T[], seed: string):
     let h = 2166136261;
     const s = seed + ':' + it.id;
     for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+    // FNV-1a alone leaves ids that differ only in their last character correlated; a murmur3 finaliser mixes every bit so
+    // each option is equally likely to land in each position across attempts.
+    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
     return { it, h: h >>> 0 };
   });
   keyed.sort((a, b) => a.h - b.h || a.it.id.localeCompare(b.it.id));
