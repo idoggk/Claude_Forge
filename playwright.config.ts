@@ -19,12 +19,11 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',
-    launchOptions: executablePath ? { executablePath, args: ['--no-sandbox'] } : { args: ['--no-sandbox'] },
   },
   projects: [
-    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
+    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, launchOptions: executablePath ? { executablePath, args: ['--no-sandbox'] } : { args: ['--no-sandbox'] } } }, // --no-sandbox is Chromium-only; WebKit rejects it
     // Optional WebKit smoke project. It is OFF unless PW_WEBKIT=1, because WebKit is not part of the default install.
-    // To try it: `npx playwright install webkit` then `npm run test:e2e:webkit`. Not run (or verified) in this project's CI.
+    // To try it: `npx playwright install webkit` then `npm run test:e2e:webkit`. Runs as the informational `webkit-smoke` CI job.
     ...(process.env.PW_WEBKIT ? [{ name: 'webkit', use: { ...devices['Desktop Safari'], viewport: { width: 1280, height: 800 } } }] : []),
   ],
   webServer: {
