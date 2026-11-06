@@ -9,7 +9,7 @@ import { answerItems, goto, startApp } from './helpers';
  * Automated checks catch a subset of problems; keyboard and screen-reader behaviour is covered by other tests
  * and should still be spot-checked by hand.
  */
-const ROUTES = ['/', '/explore', '/explore/reliable-workflows', '/playbooks', '/academy/opportunity-finder', '/academy/lesson/L12-context-engineering', '/loop', '/academy', '/academy/lesson/L01-skill-or-tool', '/academy/diagnostic', '/discovery', '/discovery/playwright-mcp', '/workshop', '/battle-lab', '/battle-lab/demo-merge-cascade', '/arsenal', '/growth', '/settings', '/more', '/search?q=skill'];
+const ROUTES = ['/', '/explore', '/explore/reliable-workflows', '/playbooks', '/academy/opportunity-finder', '/academy/lesson/L12-context-engineering', '/loop', '/academy', '/academy/lesson/L01-skill-or-tool', '/academy/diagnostic', '/discovery', '/discovery/playwright-mcp', '/workshop', '/battle-lab', '/battle-lab/demo-merge-cascade', '/transfer', '/academy/lesson/L19-structured-outputs-tool-calling', '/academy/lesson/L22-retrieval-augmented-generation', '/arsenal', '/growth', '/settings', '/more', '/search?q=skill'];
 
 async function audit(page: Page, label: string) {
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
@@ -34,7 +34,7 @@ for (const theme of ['dark', 'light'] as const) {
     await startApp(page);
     await goto(page, '/settings');
     await page.getByRole('radio', { name: theme === 'dark' ? 'Dark' : 'Light' }).click();
-    for (const id of ['L02-inside-skill-md', 'L04-skill-autopsy', 'L06-merge-chain-failure', 'L07-economy-inflation']) {
+    for (const id of ['L02-inside-skill-md', 'L04-skill-autopsy', 'L06-merge-chain-failure', 'L07-economy-inflation', 'L19-structured-outputs-tool-calling', 'L20-few-shot-prompting', 'L21-prompt-injection-trust-boundaries', 'L22-retrieval-augmented-generation', 'L23-evaluation-harnesses', 'L24-long-running-agent-context']) {
       await goto(page, `/academy/lesson/${id}`);
       for (const tab of [/2 · Practice/, /3 · Assess/, /4 · Apply/]) {
         await page.getByRole('tab', { name: tab }).click();

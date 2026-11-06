@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { LAB_TEMPLATES } from '@/content/lab/templates';
 import { EXPERIMENT_TYPE_LABELS } from '@/domain/experiments/model';
@@ -7,13 +7,17 @@ import { useExperiments } from '@/app/hooks';
 import { DEMO_ID } from '@/domain/experiments/demo';
 import { deleteExperiment } from '@/persistence/repo';
 import { NewExperimentForm } from './NewExperiment';
+import { ImportExperimentPanel } from './ImportExperimentPanel';
 
 export default function BattleLabPage() {
   const { data: experiments } = useExperiments();
   const [params] = useSearchParams();
   const [tplId, setTplId] = useState<string | undefined>(params.get('template') ?? undefined);
-  const [creating, setCreating] = useState(Boolean(params.get('template')));
+  const forStep = params.get('playbook') && params.get('step') ? { playbookId: params.get('playbook')!, stepId: params.get('step')! } : undefined;
+  const [creating, setCreating] = useState(Boolean(params.get('template') || forStep));
   const toast = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
   if (!experiments) return <Spinner label="Loading the AI Lab" />;
   return (
     <div>
@@ -22,10 +26,12 @@ export default function BattleLabPage() {
         eyebrow="AI Lab"
         title="Compare workflows with evidence"
         subtitle="Manual experiments you run in your own Claude Code and record here. Forge keeps the method honest; it does not run Claude and verifies none of your numbers."
-        actions={<><Button variant="primary" icon="plus" onClick={() => { setTplId(undefined); setCreating(true); }} data-testid="new-experiment">New experiment</Button><LinkButton to={`/battle-lab/${DEMO_ID}`} icon="flask" data-testid="open-demo">Synthetic demo</LinkButton></>}
+        actions={<><Button variant="primary" icon="plus" onClick={() => { setTplId(undefined); setCreating(true); }} data-testid="new-experiment">New experiment</Button><Button icon="upload" onClick={() => fileRef.current?.click()} data-testid="import-experiment">Import experiment JSON</Button><LinkButton to={`/battle-lab/${DEMO_ID}`} icon="flask" data-testid="open-demo">Synthetic demo</LinkButton></>}
       />
-      <div className="mb-5"><Callout tone="info" title="What this lab will and will not do">It will keep conditions, fixtures, prompts and rubrics fixed, show every value with its provenance, keep missing data as <em>unknown</em>, and say when evidence is too thin. It will not call Claude, generate results, or declare a Skill &ldquo;better&rdquo; from one run.</Callout></div>
-      {creating && <NewExperimentForm key={tplId ?? 'blank'} templateId={tplId} onCancel={() => setCreating(false)} />}
+      <input ref={fileRef} type="file" accept="application/json,.json" className="sr-only" aria-label="Import an exported experiment JSON file" data-testid="import-experiment-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setImportFile(f); }} />
+      {importFile && <ImportExperimentPanel key={`${importFile.name}-${importFile.lastModified}`} file={importFile} onClose={() => setImportFile(null)} />}
+      <div className="mb-5"><Callout tone="info" title="What this lab will and will not do">It will keep conditions, fixtures, prompts and rubrics fixed, show every value with its provenance, keep missing data as <em>unknown</em>, and say when evidence is too thin. It will not call Claude, generate results, or declare a Skill &ldquo;better&rdquo; from one run. Failed and abandoned attempts are kept and counted, and anything imported is previewed first and labelled <em>user-imported</em>.</Callout></div>
+      {creating && <NewExperimentForm key={tplId ?? 'blank'} templateId={tplId} forStep={forStep} onCancel={() => setCreating(false)} />}
       {!creating && (
         <section aria-labelledby="tpl-h" className="mb-6" data-testid="lab-templates">
           <h2 id="tpl-h" className="mb-1 text-lg font-semibold">Start from a template</h2>

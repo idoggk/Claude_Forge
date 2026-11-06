@@ -124,7 +124,9 @@ export function recommend(input: RecommendInput): { primary: Recommendation; alt
     // A failed prerequisite concept raises the priority of lessons that depend on it.
     const dependents = lessons.filter((l) => l.prerequisites.includes(lesson.id) && lessonStatus(l, attempts, progress) !== 'passed');
     if (dependents.length > 0) {
-      score += 6 * dependents.length;
+      // Capped: with 24 lessons a foundational lesson such as Context Engineering is a prerequisite of many later ones, and an
+      // uncapped bonus would let that outrank the next lesson in the learner's own track.
+      score += 6 * Math.min(3, dependents.length);
       reasons.push(`It is required before: ${dependents.map((d) => d.title).join(', ')}.`);
     }
 
@@ -145,6 +147,17 @@ export function recommend(input: RecommendInput): { primary: Recommendation; alt
       reasons.push(`Your placement diagnostic flagged ${gapsHere.map((c) => COMPETENCY_BY_ID[c]?.title ?? c).join(' and ')} - one question per concept, so a hint rather than a measurement.`);
     } else if (input.diagnostic && lesson.competencies.every((c) => input.diagnostic!.solid.includes(c))) {
       reasons.push('Your diagnostic answers here were correct; the assessment will confirm it.');
+    }
+    // A belief the learner recently acted on in ANOTHER lesson, when this lesson is the one that teaches the competency
+    // it belongs to (for example choosing an injected instruction in a tool-use question points at the injection lesson).
+    const taught = (input.misconceptionHits ?? []).filter((h) => {
+      const m = getMisconception(h.id);
+      return m && h.lessonId !== lesson.id && lesson.competencies.includes(m.competency);
+    });
+    if (taught.length > 0) {
+      score += 14;
+      const m = getMisconception(taught[0]!.id)!;
+      reasons.push(`You recently chose an answer reflecting “${m.belief}” in a different lesson; this lesson teaches ${COMPETENCY_BY_ID[m.competency]?.title ?? m.competency} directly.`);
     }
     // Recent misconceptions from this lesson's own content.
     const mine = (input.misconceptionHits ?? []).filter((h) => h.lessonId === lesson.id);

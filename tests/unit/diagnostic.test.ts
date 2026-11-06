@@ -6,7 +6,10 @@ import * as repo from '@/persistence/repo';
 import { DIAGNOSTIC } from '@/content/diagnostic';
 import { MISCONCEPTIONS } from '@/content/misconceptions';
 import { LESSONS } from '@/content/lessons';
-import { COMPETENCIES } from '@/domain/curriculum/competencies';
+import { COMPETENCIES as ALL_COMPETENCIES } from '@/domain/curriculum/competencies';
+
+/** The placement diagnostic probes the foundations; advanced competencies (Round 4) are taught but not placed. */
+const COMPETENCIES = ALL_COMPETENCIES.filter((c) => !c.advanced);
 import { gradeDiagnostic, latestHint } from '@/domain/mastery/diagnostic';
 import { recommend } from '@/domain/mastery/recommend';
 import { applyImport, exportAll, parseBackup, serializeBackup } from '@/persistence/backup';
@@ -127,8 +130,8 @@ describe('persistence: a diagnostic can never award mastery', () => {
     const db = new ForgeDB(name);
     setDbForTesting(db);
     await db.open();
-    expect(DB_VERSION).toBe(5);
-    expect(db.verno).toBe(5);
+    expect(DB_VERSION).toBe(6);
+    expect(db.verno).toBe(6);
     expect(await db.reviews.get('L01-skill-or-tool')).toMatchObject({ box: 2, lapses: 1, cycle: 3 });
     expect(await db.diagnostics.count()).toBe(0);
   });

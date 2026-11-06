@@ -232,6 +232,7 @@ export default function LessonPage() {
             <textarea id="apply-note" rows={4} value={note} onChange={(e) => setNote(e.target.value)} placeholder="What will you try on a real project? What happened?" className="mt-2 w-full rounded-lg border border-line bg-surface2 p-3 focus:border-accent" />
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Button onClick={async () => { await touchLesson(lesson, { appliedNote: note }); toast('Notes saved'); }}>Save notes</Button>
+              <LinkButton to={`/transfer?source=lesson&id=${encodeURIComponent(lesson.id)}`} variant="primary" data-testid="lesson-transfer">Plan a real-world transfer task</LinkButton>
               <LinkButton to="/growth" variant="ghost">Log field evidence in Growth</LinkButton>
             </div>
             <p className="mt-3 text-sm text-muted">{lesson.application.fieldPrompt}</p>

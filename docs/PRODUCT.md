@@ -97,3 +97,13 @@ A deterministic scoring rule: due reviews first; then curriculum order, prerequi
 **Mastery rules unchanged.** Level 3 still needs an unseen, hint-free attempt with no missed critical item; level 4 still needs self-reported field evidence. The Personal AI Mastery Profile is a *view* (state follows the weakest competency in an area). Practice runs and goals never change a level.
 
 **Recommendations stay explainable.** Due reviews first; then prerequisites, failed attempts, goals (+30 per goal, with the reason shown), practice gaps (+10), interests, diagnostic hints and game relevance. No AI coach.
+
+## Round 4: advanced mastery, evidence you can use, and transfer to real work
+
+**Six advanced lessons** (Structured Outputs and Tool Calling, Few-Shot Prompting, Prompt Injection and Trust Boundaries, Retrieval-Augmented Generation, Designing AI Evaluation Harnesses, Context Engineering for Long-Running Agents). Each: a realistic problem, a mental model, a worked example, a prediction before the explanation, practice with feedback on every wrong option, misconception correctives (why it is tempting, why it is wrong, a contrast, a corrective question), a separate independent assessment with deterministic grading, a practical application, verified sources and a versioned review pool. Inert samples only: no real payloads, no network, `.example` hosts. The recommender now also names a lesson when a misconception recorded elsewhere is taught there directly, with the reason shown.
+
+**What a playbook can now say about itself.** A step can cite AI Lab experiments. A link is not a verification: the learner writes acceptance criteria first, then a judgement and the limits. Evidence that no longer matches the step or the experiment is ignored until reassessed. The playbook's maturity is computed from that evidence and is explicit that fixture evaluation is not field proof. None of it raises a competency level.
+
+**Transfer.** A transfer task is the bridge from "I passed the assessment" to "I used it on real work". It is only complete with criteria, observations, evidence and a reflection, all in the learner's words, and it can be exported. Field evidence for Level 4 is still logged separately, by choice.
+
+**Assessment integrity.** Mastery still comes from unseen, hint-free attempts and the learner's own field evidence. Clicking through, the diagnostic, memorised answers, declared goals, playbook maturity and completed transfer tasks do not move a level; tests assert that for playbooks, evaluations and transfer tasks.

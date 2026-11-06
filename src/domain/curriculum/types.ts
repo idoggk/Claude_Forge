@@ -23,7 +23,14 @@ export type CompetencyId =
   | 'mcp-integration'
   | 'workflow-design'
   | 'efficient-ai-development'
-  | 'tool-evaluation';
+  | 'tool-evaluation'
+  // Round 4: advanced AI engineering
+  | 'structured-tool-contracts'
+  | 'few-shot-design'
+  | 'prompt-injection-defense'
+  | 'retrieval-design'
+  | 'eval-harness-design'
+  | 'long-running-context';
 
 /** The twelve learning tracks. Each lists the topics it will cover; only topics with a lesson are available. */
 export type TrackId =
@@ -48,6 +55,8 @@ export interface Competency {
   outcomes: number[];
   /** Safety-critical competencies must show a clean critical-item record to reach level 3. */
   safetyCritical: boolean;
+  /** Advanced competencies are not part of the placement diagnostic (it only probes the foundations). */
+  advanced?: boolean;
 }
 
 export interface TrackTopic {
@@ -169,7 +178,7 @@ export interface ReflectItem extends BaseItem {
   /** Self-assessment checklist. Never counted toward the numeric score. */
   rubric: string[];
 }
-export type ExternalCheckId = 'workshop-first-skill' | 'workshop-capstone-skill' | 'battle-lab-experiment' | 'playbook-workflow' | 'lab-repeated-runs';
+export type ExternalCheckId = 'workshop-first-skill' | 'workshop-capstone-skill' | 'battle-lab-experiment' | 'playbook-workflow' | 'lab-repeated-runs' | 'lab-evaluation-harness';
 export interface ExternalItem extends BaseItem {
   kind: 'external';
   check: ExternalCheckId;
@@ -197,7 +206,8 @@ export type WidgetId =
   | 'economy-lab'
   | 'experiment-demo'
   | 'review-board'
-  | 'capstone-brief';
+  | 'capstone-brief'
+  | 'retrieval-lab';
 
 export interface ActivitySpec {
   title: string;

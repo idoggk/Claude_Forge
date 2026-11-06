@@ -117,10 +117,33 @@ export function evaluateRepeatedRuns(experiments: Experiment[]): ExternalResult 
   );
 }
 
+/** Lesson 23: an AI Lab experiment that is built like an evaluation harness, not just a pair of anecdotes. */
+export function evaluateEvaluationHarness(experiments: Experiment[]): ExternalResult {
+  const real = experiments.filter((e) => !e.synthetic);
+  if (real.length === 0) return summarize([{ label: 'You have created an experiment (not the demo)', ok: false, note: 'Open the AI Lab and create one.' }]);
+  const known = (r: Experiment['runs'][number]) => ['testsPassedRatio', 'successRate', 'seededIssuesFound', 'developerEffortMin', 'runtimeSec', 'tokens', 'reworkRounds', 'interventions'].some((m) => runMetric(r, m as never, null) !== null);
+  return best(
+    real.map((e) => {
+      const per = e.conditions.map((c) => e.runs.filter((r) => r.conditionId === c.id));
+      return summarize([
+        { label: 'A hypothesis written before the runs', ok: e.hypothesis.trim().length >= 15, note: 'Say what you expect and why.' },
+        { label: 'Success criteria defined in advance', ok: e.successCriteria.some((c) => c.trim().length >= 5), note: 'List what counts as success before you look at results.' },
+        { label: 'Measures planned in advance', ok: e.plannedMeasures.length >= 1, note: 'Choose the measures before the first run.' },
+        { label: 'A baseline condition', ok: e.conditions.some((c) => isBaselineKind(c.kind)), note: 'Without a baseline you cannot attribute a difference.' },
+        { label: 'The same cases for every condition (a fixture, hashed or described)', ok: Boolean(e.fixture.hash) || (e.fixture.id === 'custom' && e.fixture.label.trim().length >= 10), note: 'Identify the cases: a fixture with a hash, or a described custom fixture.' },
+        { label: 'At least three runs per condition with a known measurement', ok: e.conditions.length >= 2 && per.every((r) => r.filter(known).length >= 3), note: `${per.map((r) => r.filter(known).length).join(' / ')} run(s) with data.` },
+        { label: 'The rubric locked before recording', ok: Boolean(e.rubricLockedAt), note: 'Recording the first run locks the rubric; do not change criteria afterwards.' },
+        { label: 'Limitations written down', ok: e.limitations.trim().length >= 20, note: 'Say what this evaluation cannot show.' },
+      ]);
+    }),
+  );
+}
+
 export function evaluateExternal(skills: SkillDraft[], experiments: Experiment[], evidence: Evidence[], playbooks: Playbook[] = []): ExternalResults {
   return {
     'playbook-workflow': evaluatePlaybook(playbooks),
     'lab-repeated-runs': evaluateRepeatedRuns(experiments),
+    'lab-evaluation-harness': evaluateEvaluationHarness(experiments),
     'workshop-first-skill': evaluateWorkshopSkill('first', skills, experiments),
     'workshop-capstone-skill': evaluateWorkshopSkill('capstone', skills, experiments),
     'battle-lab-experiment': evaluateExperiment(experiments, evidence),

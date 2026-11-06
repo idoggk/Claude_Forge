@@ -4,6 +4,7 @@ import { expectNoHorizontalOverflow, goto, startApp } from './helpers';
 const WIDTHS = [375, 390, 768, 1280, 1440];
 const ROUTES = [
   '/', '/academy', '/academy/lesson/L01-skill-or-tool', '/academy/lesson/L04-skill-autopsy', '/academy/lesson/L06-merge-chain-failure', '/academy/lesson/L07-economy-inflation',
+  '/academy/lesson/L19-structured-outputs-tool-calling', '/academy/lesson/L22-retrieval-augmented-generation', '/playbooks', '/transfer', '/explore',
   '/loop', '/discovery', '/discovery/playwright-mcp', '/workshop', '/battle-lab', '/battle-lab/demo-merge-cascade', '/arsenal', '/growth', '/settings', '/search?q=skill', '/more',
 ];
 

@@ -7,7 +7,7 @@ export const PLAYBOOK_FORMAT_VERSION = 1;
 const nowIso = () => new Date().toISOString();
 
 export function blankStep(id: string): Step {
-  return { id, title: 'New step', instruction: '', links: [], prompt: '', verification: '', failureHandling: '', humanApproval: false, status: 'planned', verifiedNote: '', verifiedAt: null };
+  return { id, title: 'New step', instruction: '', links: [], prompt: '', verification: '', failureHandling: '', humanApproval: false, status: 'planned', verifiedNote: '', verifiedAt: null, verifiedFingerprint: null };
 }
 
 export function newPlaybook(id: string, content?: Partial<PlaybookContent>, origin: Playbook['origin'] = { kind: 'blank', templateId: null }, now = nowIso()): Playbook {
@@ -28,7 +28,7 @@ export function fromTemplate(id: string, t: PlaybookContent & { templateId: stri
   const { templateId, ...content } = t as PlaybookContent & { templateId: string; description?: string; area?: string };
   const clean = PlaybookContentSchema.parse({
     ...content,
-    steps: content.steps.map((s) => ({ ...s, id: newStepId(), status: 'planned', verifiedNote: '', verifiedAt: null })),
+    steps: content.steps.map((s) => ({ ...s, id: newStepId(), status: 'planned', verifiedNote: '', verifiedAt: null, verifiedFingerprint: null })),
   });
   return newPlaybook(id, clean, { kind: 'template', templateId }, now);
 }
@@ -37,7 +37,7 @@ export function duplicatePlaybook(source: Playbook, id: string, newStepId: () =>
   const content = PlaybookContentSchema.parse({
     ...source,
     title: `${source.title} (copy)`.slice(0, 120),
-    steps: source.steps.map((s) => ({ ...s, id: newStepId(), status: 'planned', verifiedNote: '', verifiedAt: null })),
+    steps: source.steps.map((s) => ({ ...s, id: newStepId(), status: 'planned', verifiedNote: '', verifiedAt: null, verifiedFingerprint: null })),
   });
   return newPlaybook(id, content, { kind: 'duplicate', templateId: source.origin.templateId }, now);
 }
@@ -151,6 +151,6 @@ export function parsePlaybookJson(text: string, newId: string, newStepId: () => 
   const warnings: string[] = [];
   const claimed = parsed.data.steps.filter((s) => s.status === 'verified' || s.status === 'done').length;
   if (claimed > 0) warnings.push(`${claimed} step(s) were marked done or verified by the author. They are reset to "planned": that work is not yours until you do it.`);
-  const content = { ...parsed.data, steps: parsed.data.steps.map((s) => ({ ...s, id: newStepId(), status: 'planned' as const, verifiedNote: '', verifiedAt: null })) };
+  const content = { ...parsed.data, steps: parsed.data.steps.map((s) => ({ ...s, id: newStepId(), status: 'planned' as const, verifiedNote: '', verifiedAt: null, verifiedFingerprint: null })) };
   return { ok: true, playbook: newPlaybook(newId, content, { kind: 'imported', templateId: null }, now), warnings };
 }

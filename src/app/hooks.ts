@@ -54,3 +54,7 @@ export function usePlaybooks() {
 export function useActivityRuns() {
   return useLive(() => getDb().activityRuns.orderBy('takenAt').reverse().toArray());
 }
+
+export function useTransferTasks() {
+  return useLive(() => getDb().transferTasks.orderBy('updatedAt').reverse().toArray());
+}

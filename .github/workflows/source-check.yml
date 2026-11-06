@@ -1,35 +1,80 @@
 name: Source check (optional)
 
-# Weekly, read-only check that the pages behind Claude Forge's catalog still answer. It only updates
-# src/content/sources/last-check.json on a branch and opens a pull request for a person to review.
-# It never edits the catalog, lessons or registry, and it never runs anything it downloads.
-# NOTE: this workflow has not been run in GitHub Actions from this repository yet.
+# Weekly, read-only check that the pages behind Claude Forge's catalog still answer.
+#
+# Two jobs, so the one that talks to the network never holds a token that can write:
+#   check   (contents: read)  fetches the curated sources in src/content/sources/registry.json, one per second, at most
+#                             2 MB each, and uploads two small files as an artifact. Nothing else leaves this job.
+#   propose (contents: write, pull-requests: write)  downloads the artifact, REJECTS it unless it has exactly the
+#                             expected shape, and opens a DRAFT pull request that changes only last-check.json.
+#
+# It never edits the catalog, lessons or registry, never promotes a source from "unreachable" to "read", and never runs
+# anything it downloads. A person reviews the pull request and decides what, if anything, to re-read.
+#
+# NOTE: this workflow has not been run in GitHub Actions from this repository yet. Opening a pull request from a workflow
+# also needs the repository setting "Allow GitHub Actions to create and approve pull requests" (Settings, Actions, General).
+# Without it the propose job fails at the last step and the artifact is still available for download.
 
 on:
   schedule:
     - cron: '17 6 * * 1'
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
+
+concurrency:
+  group: source-check
+  cancel-in-progress: false
 
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check sources (report and write status data only)
+        run: |
+          mkdir -p out
+          node scripts/check-sources.mjs --write | tee out/source-check.txt
+          cp src/content/sources/last-check.json out/last-check.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-check
+          path: out/
+          retention-days: 14
+          if-no-files-found: error
+
+  propose:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check sources (report and write status data only)
-        run: node scripts/check-sources.mjs --write | tee source-check.txt
-      - name: Open a pull request if anything changed
+      - uses: actions/download-artifact@v4
+        with:
+          name: source-check
+          path: out/
+      - name: Reject anything that is not exactly the expected shape
+        run: node scripts/check-sources.mjs --validate out/last-check.json
+      - name: Open a draft pull request if the status data changed
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet -- src/content/sources/last-check.json; then
+          cp out/last-check.json src/content/sources/last-check.json
+          if git diff --quiet -- src/content/sources/last-check.json && [ -z "$(git ls-files --others --exclude-standard -- src/content/sources/last-check.json)" ]; then
             echo "No status change to review."
             exit 0
           fi
@@ -40,4 +85,4 @@ jobs:
           git add src/content/sources/last-check.json
           git commit -m "chore: update source status data"
           git push -u origin "$branch"
-          gh pr create --draft --title "Source check $(date +%Y-%m-%d)" --body-file source-check.txt
+          gh pr create --draft --title "Source check $(date +%Y-%m-%d)" --body-file out/source-check.txt

@@ -20,12 +20,13 @@ test.describe('Round 3: navigation and the Capability Map', () => {
     await startApp(page);
     await page.getByTestId('nav-explore').click();
     const all = await page.getByTestId('capability-count').textContent();
-    expect(all).toMatch(/19 of 19/);
+    const total = Number(all!.match(/of (\d+)/)![1]);
+    expect(total).toBeGreaterThanOrEqual(22);
     await page.getByTestId('outcome-automate-safely').click();
     await expect(page.getByTestId('outcome-description')).toBeVisible();
     const filtered = Number((await page.getByTestId('capability-count').textContent())!.match(/^(\d+)/)![1]);
     expect(filtered).toBeGreaterThan(0);
-    expect(filtered).toBeLessThan(19);
+    expect(filtered).toBeLessThan(total);
     // every card opens a page that leads somewhere real
     const hrefs = await page.getByTestId('capability-results').getByRole('link', { name: 'Open' }).evaluateAll((els) => els.map((e) => e.getAttribute('href')!));
     expect(hrefs.length).toBe(filtered);
@@ -106,7 +107,7 @@ test.describe('Round 3: Workflow Playbooks', () => {
     await page.getByTestId('step-0-verified-note').fill('Ran the script on last week\'s export and saw it validate.');
     await expect(page.getByRole('alert').filter({ hasText: 'what verified it' })).toHaveCount(0);
     await page.getByTestId('save-playbook').click();
-    await expect(page.getByText('Saved').first()).toBeVisible();
+    await expect(page.getByText('Saved', { exact: true }).first()).toBeVisible();
 
     // version history keeps the previous content
     await page.getByTestId('pb-title').fill('Release notes v2');

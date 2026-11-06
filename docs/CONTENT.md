@@ -78,3 +78,23 @@ Known small risk: the docs change quickly. Lesson text that quotes commands says
 - A lesson that teaches a tool may not recommend a tool by popularity; claims without a method are called unsupported, not false.
 - Catalog `capabilityIds` must exist on the Capability Map (tested).
 - Seeded playbooks must pass the same reliability checklist Lesson 15 grades (tested), and always start as `planned`.
+
+## Round 4 content and source log (read 2026-11-05)
+
+**Why there was a gap.** `modelcontextprotocol.io`, `genai.owasp.org`, `ai.google.dev` and `openai.github.io` returned "CONNECT tunnel failed, response 403" through the session proxy: the environment's network allowlist, not the sites. They were allowed (and `aistudio.google.com`, where the Gemini docs redirect) and then read. Fetched pages are third-party and untrusted; some contain install commands (npx, `curl | bash`, pip). Forge does not run or reproduce them, and a unit test asserts the new entries carry no install methods.
+
+**Read and added (all `official-docs-read`, `verifiedAt` 2026-11-05):**
+- MCP: What is MCP? (introduction), the specification landing page (dated revision 2026-07-28), Security best practices (confused deputy, token passthrough, SSRF, local server compromise and scope minimization read closely; the rest by heading only).
+- OWASP: the 2025 Top 10 listing (teasers only) and LLM01 Prompt Injection (read in full).
+- Gemini API: Function calling and Structured outputs (the ai.google.dev addresses redirect to aistudio.google.com).
+- OpenAI Agents SDK documentation (landing page; the Tools page was fetched but not read closely).
+
+**Unknown on purpose:** publication dates and licences of these pages; supported schema subsets and failure behaviour for Gemini structured outputs; pricing, quotas and model availability anywhere; the full text of nine of the ten OWASP risks; the remaining MCP security sections. Each entry's `limitations` and `missingChecks` list these.
+
+**Lessons L19-L24** cite verified Anthropic pages; L19 and L21 also cite the third-party pages above, marked as such in the lesson's sources list.
+
+**Authoring rules added in Round 4**
+- Inert samples: attack-like text in a lesson is fabricated, uses `.example` hosts, and is never a working payload.
+- A lesson that uses a fixture says what the fixture does not simulate (the retrieval fixture does not simulate embeddings, reranking or a language model).
+- A source is `read` only if a person (or this process) read the page; a registry record that cannot be reached stays `unreachable` with `retriedAt`. The checker never changes that status.
+- Transfer-task guidance is placeholder text, never pre-filled content.

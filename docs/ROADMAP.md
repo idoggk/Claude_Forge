@@ -20,3 +20,11 @@ Deliberately **not** in this release: accounts, cloud sync, community features, 
 3. **Make playbooks and the Lab talk to each other.** Link a playbook to an AI Lab experiment ("this workflow versus one big prompt") so a step can be marked verified *from* recorded runs; add transcript import so run data can be user-imported rather than typed.
 
 Still deliberately out: accounts, sync, executing playbooks, real Claude API calls, auto-installing anything.
+
+## After Round 4 (the next three priorities)
+
+1. **Run the pilot and fix what it shows.** Follow [REAL_WORLD_PILOT.md](REAL_WORLD_PILOT.md): one real Skill Improvement Loop, one real playbook with evidence, one non-game evaluation. Until this has happened, nothing about Round 3-4 workflows is known to help on real work. Run `source-check.yml` once (enable "Allow GitHub Actions to create and approve pull requests" first) and review the draft PR; enable GitHub Pages.
+2. **Blinded rubric scoring and transcript import.** Hide condition labels while scoring subjective outputs; accept a Claude Code transcript as user-imported run evidence (preview and confirmation, same labels). The Round 4 importer handles exported records and pasted text only.
+3. **Teach the next planned tracks and non-game fixtures.** 34 topics are still planned. The AI Lab fixtures are game-development files; add task-type templates and fixtures with objective checks for non-game work (extraction, triage, code review comments), then lessons for guardrails/hooks as gates and agent permission design.
+
+Round 4 items from earlier lists that are now done: connecting playbooks and the Lab; structured-outputs/tool-calling, few-shot, prompt-injection, RAG and evaluation-harness lessons; the MCP, OWASP, Gemini and OpenAI documentation entries.

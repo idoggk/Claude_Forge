@@ -124,7 +124,7 @@ test.describe('Battle Lab', () => {
     await expect(page.getByText('SYNTHETIC DEMONSTRATION - no Claude execution occurred')).toBeVisible();
     await expect(page.getByTestId('comparison')).toContainText('Limited: three or more runs');
     // A's runtime was timed for 2 of 3 runs: the missing one is reported as missing, not averaged in as zero
-    await expect(page.getByTestId('comparison')).toContainText('157.5 [140–175] n=2 · 1 missing');
+    await expect(page.getByTestId('comparison')).toContainText('157.5 [140–175] n=2 · sd 24.7 · 1 missing');
     await page.getByRole('tab', { name: 'Record runs' }).click();
     await expect(page.getByText('The demo is read-only')).toBeVisible();
     await page.getByTestId('clone-demo').click();

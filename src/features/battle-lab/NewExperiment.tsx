@@ -4,8 +4,8 @@ import { Button, Card, Callout, SelectField, TextArea, TextInput, useToast } fro
 import { CONDITION_KIND_LABELS, EXPERIMENT_TYPES, EXPERIMENT_TYPE_LABELS, ExperimentSchema, METRICS, isBaselineKind, type ConditionKind, type ExperimentType, type MetricId } from '@/domain/experiments/model';
 import { getLabTemplate } from '@/content/lab/templates';
 import { FIXTURES, fixtureHash, getFixture } from '@/fixtures';
-import { saveExperiment } from '@/persistence/repo';
-import { useSkills } from '@/app/hooks';
+import { linkExperimentToStep, saveExperiment } from '@/persistence/repo';
+import { usePlaybooks, useSkills } from '@/app/hooks';
 import { newId } from '@/lib/ids';
 import { nowIso } from '@/lib/clock';
 
@@ -13,10 +13,13 @@ interface CondDraft { label: string; kind: ConditionKind; skillName: string; ski
 
 const SKILLISH: ConditionKind[] = ['skill', 'custom-revised', 'alternative'];
 
-export function NewExperimentForm({ onCancel, templateId }: { onCancel: () => void; templateId?: string }) {
+export function NewExperimentForm({ onCancel, templateId, forStep }: { onCancel: () => void; templateId?: string; forStep?: { playbookId: string; stepId: string } }) {
   const nav = useNavigate();
   const toast = useToast();
   const { data: skills } = useSkills();
+  const { data: playbooks } = usePlaybooks();
+  const targetPb = forStep ? playbooks?.find((p) => p.id === forStep.playbookId) : undefined;
+  const targetStep = targetPb?.steps.find((x) => x.id === forStep?.stepId);
   const tpl = templateId ? getLabTemplate(templateId) : undefined;
   const [type, setType] = useState<ExperimentType>(tpl?.experimentType ?? 'skill');
   const [subject, setSubject] = useState(tpl?.subject ?? '');
@@ -42,6 +45,16 @@ export function NewExperimentForm({ onCancel, templateId }: { onCancel: () => vo
   const [customLabel, setCustomLabel] = useState('');
   const [errs, setErrs] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+  // Started from a playbook step: carry the step's own gate in as the success criterion, once.
+  if (targetStep && targetPb && !prefilled) {
+    setPrefilled(true);
+    if (!title) setTitle(`Does step "${targetStep.title}" meet its gate?`.slice(0, 200));
+    if (!problem) setProblem(`Playbook "${targetPb.title}", step "${targetStep.title}": ${targetStep.instruction}`.slice(0, 1000));
+    if (targetStep.verification.trim()) setCriteria(targetStep.verification.trim());
+    if (!subject) setSubject(`Does "${targetStep.title}" do what the playbook says it does?`.slice(0, 400));
+    if (targetStep.prompt.trim()) setPrompt(targetStep.prompt);
+  }
 
   const pickFixture = (id: string) => {
     setFixtureId(id);
@@ -73,7 +86,10 @@ export function NewExperimentForm({ onCancel, templateId }: { onCancel: () => vo
         runs: [], status: 'draft', createdAt: now, updatedAt: now,
       });
       await saveExperiment(exp);
-      toast('Experiment created');
+      if (forStep && targetStep) {
+        const r = await linkExperimentToStep(forStep.playbookId, forStep.stepId, exp.id, fx?.checklist.length || null);
+        toast(r.ok ? 'Experiment created and linked to the playbook step (not yet judged)' : `Experiment created. ${r.reason}`);
+      } else toast('Experiment created');
       nav(`/battle-lab/${exp.id}`);
     } catch (e) {
       setErrs([(e as Error).message]);
@@ -84,6 +100,8 @@ export function NewExperimentForm({ onCancel, templateId }: { onCancel: () => vo
     <Card className="mb-6" aria-labelledby="new-exp-h">
       <h2 id="new-exp-h" className="text-xl font-semibold">New experiment</h2>
       <p className="mt-1 text-sm text-muted">Decide everything below <strong>before</strong> the first run. Forge locks the rubric when you record the first run.</p>
+      {forStep && targetPb && targetStep && <div className="mt-3"><Callout tone="info" title="This experiment will be linked to a playbook step">Step “{targetStep.title}” of “{targetPb.title}”. Linking records the experiment as evidence for that step. It does not verify the step: you will write acceptance criteria and a judgement afterwards, and the link goes stale if either side changes.</Callout></div>}
+      {forStep && playbooks && !targetStep && <div className="mt-3"><Callout tone="warn" title="That playbook step was not found">The experiment will be created without a link. Open the playbook and link it from the step.</Callout></div>}
       <form className="mt-4 space-y-5" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <div className="grid gap-4 md:grid-cols-2">
           <SelectField label="What are you comparing?" value={type} onChange={(e) => setType(e.target.value as ExperimentType)} hint="Skills, prompts, workflows, agent setups, tool configurations or models. Forge never runs any of them: you supply the results." data-testid="exp-type">
