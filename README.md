@@ -91,6 +91,22 @@ docs/             ARCHITECTURE · PRODUCT · CONTENT · ROADMAP
 - [docs/ROADMAP.md](docs/ROADMAP.md) — what is deliberately not in this release.
 - [docs/HANDOFF.md](docs/HANDOFF.md) — the current state, what was verified, what was not, and what to do next.
 
+## Round 6 additions
+
+- **Assessment integrity.** The multiple-choice length leak (82% of single-answer items) is down to under 1%, every option has its own explanation, and a biased option shuffle was fixed. `npm run audit:content` reports the measures; see [docs/LEARNING_AUDIT.md](docs/LEARNING_AUDIT.md), including what is not fixed (the right option is now the shortest in 46% of items).
+- **New assessment formats.** Decision scenarios and error diagnoses (multi-part cases whose right answers depend on the stated constraints) and structured constructions (a small JSON design checked deterministically, with an unscored self-evaluation rubric).
+- **Four new modules (L25 to L28).** Agent permissions and least privilege; hooks, guardrails and deterministic gates; research reliability; real-world AI workflow architecture.
+- **Practice that fits you** (`#/practice`): suggestions from confidence against result, hints, independence, repeated mistakes and assessment version, each with why, what it trains, your evidence and what would count as improvement; plus five mixed-topic exercises. Practice never raises a level.
+- **Pilot readiness.** A plain "Do this now" line in the guided experiment, a local, optional feedback form (opinion, never evidence), and a human validation checklist in [docs/REAL_WORLD_PILOT.md](docs/REAL_WORLD_PILOT.md).
+
+## Round 6 limitations (read these)
+
+- Nothing was run with a real Claude Code session, a real project or a real device. The pilot is unrun.
+- The live GitHub Pages site could not be reached from the build sandbox (the network allowlist blocks the host), so its loading, routing, offline behaviour and PWA caching were not inspected there; only the sub-path build served locally was checked.
+- WebKit ran only as an informational CI job on a Linux runner. Real iPhone Safari has not been tested.
+- Adaptive suggestions are deterministic rules over the learner's records, not AI personalisation, and they rest on small samples.
+- Case and construct items check structure and stated choices, not whether a real design is good.
+
 ## Round 5 additions
 
 - **Home** redesigned: a first-time view (what Forge is, one diagnostic or first lesson, four learning paths) and a returning view (status with denominators, continue, review queue, goals, competency count). Art is decorative only.

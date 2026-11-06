@@ -1,4 +1,4 @@
-# Claude Forge — handoff summary (state as of 2026-11-06, after Development Round 5)
+# Claude Forge — handoff summary (state as of 2026-11-06, after Development Round 6)
 
 Paste this whole document into a new conversation. It describes what exists, what was verified, what is NOT verified, and what to improve next.
 
@@ -34,6 +34,17 @@ src/persistence  db.ts (v6), schemas, repo, backup, useLive
 scripts          sw-plugin.ts, check-sources.mjs + source-check-lib.mjs (optional, read-only)
 tests/unit  tests/e2e  docs/  .github/workflows/{ci,deploy,source-check}.yml
 ```
+
+## 2a. What Round 6 added (branch `round-6-assessment-integrity`, draft PR #4 stacked on PR #3, not merged)
+
+**Assessment integrity.** The multiple-choice length leak went from 211 of 258 items (82%) to 2 of 240 (0.8%); every option has its own explanation; a biased option shuffle (`seededOrder`) was found and fixed; all 24 older lessons were bumped one version so earlier attempts stay on record but stop counting. **Not fixed:** the right option is now the shortest in 46% of single-answer items (chance 25 to 33%); a ratchet caps it. See `docs/LEARNING_AUDIT.md` (before/after table, `npm run audit:content`).
+**New formats.** `case` (decision scenario, error diagnosis) and `construct` (structure-checked artifact plus unscored rubric), with deterministic graders, UI, misconception support, and tests that every reference solution passes and every starter fails.
+**Four modules, L25 to L28** (agent permissions; hooks and deterministic gates; research reliability; workflow architecture), four advanced competencies, linked into tracks, the capability map and pathways. Each assessment has two scenarios (one constraint changed), a diagnosis and a construction.
+**Adaptive practice** (`domain/mastery/adaptive.ts`, `#/practice`, Home card): foundation review for confident-and-wrong or repeated beliefs; independent assessment for guided-only evidence; harder and cross-topic only after repeated independent, unseen, strong results; transfer only after strong evidence. Five interleaved exercises. Nothing here changes a level.
+**Pilot.** "Do this now" line, optional local feedback (inside the experiment, never evidence), takeaway link, human checklist in `docs/REAL_WORLD_PILOT.md`.
+
+Round 6 verification (local, Linux, Chromium): ESLint clean; `tsc` clean; Vitest 655 passed (49 files); build OK; `npm audit` 0 vulnerabilities; Playwright 157 passed and 1 failed in the full run (a stale hard-coded "of 23 competencies" in the Home test, now 27; the fixed test passes alone; the whole suite was not re-run). CI on the PR head is recorded in the final report.
+**Not verified:** the live Pages site (host blocked from the build sandbox), real iPhone Safari, Windows, a real Claude Code session, the pilot. WebKit ran only as an informational Linux CI job.
 
 ## 2b. What Round 5 added (branch `round-5-real-world-lab`, draft PR #3 against `main`, not merged)
 
@@ -97,7 +108,7 @@ What the Round 4 tests prove, beyond Rounds 1-3:
 
 ## 7. Next three priorities
 
-1. **Fix the multiple-choice length leak** (docs/LEARNING_AUDIT.md), then **run the pilot** ([REAL_WORLD_PILOT.md](REAL_WORLD_PILOT.md)) and fix what it shows; then run `source-check.yml` once and enable GitHub Pages. Nothing about Round 3–4 workflows is known to help on real work until this happens.
+1. **Sharpen the right option in the roughly 110 items where it is now the shortest** (docs/LEARNING_AUDIT.md), then **run the pilot** ([REAL_WORLD_PILOT.md](REAL_WORLD_PILOT.md)) and fix what it shows; then run `source-check.yml` once and enable GitHub Pages. Nothing about Round 3–4 workflows is known to help on real work until this happens.
 2. **Blinded rubric scoring and transcript import** for the Lab (same preview/label rules as the Round 4 importer).
 3. **Non-game fixtures and the remaining planned topics** (34 are still planned): task-type templates with objective checks (extraction, triage, review comments), then hooks/guardrails as gates and agent permission design.
 

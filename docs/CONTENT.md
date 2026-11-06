@@ -105,3 +105,12 @@ Known small risk: the docs change quickly. Lesson text that quotes commands says
 - Challenge text lives in `src/content/challenges/index.ts` (problem, objective, fixture, worked example, hints, reference solution, rubric, common mistakes, transfer). The fixtures are in `src/domain/challenges/*` and are computed from seeds; invented names only. A reference solution must pass its own engine (a test enforces it).
 - Pathways in `src/content/pathways/index.ts`; every destination must exist (a test checks lessons, challenges and registered routes).
 - Written-answer items: the grader now refuses a list of accepted terms. When you change grading, bump the lesson `version`. See `docs/LEARNING_AUDIT.md` before writing multiple-choice distractors: make wrong options as long and as plausible as the right one.
+
+
+## Round 6 content rules
+
+- **Multiple-choice authoring.** Make every option about the same length, make every wrong option a realistic misconception, and give every option, including the right one, its own reason. Run `npm run audit:content` and read the report. Do not pad options with filler; sharpen them.
+- **Case items.** A scenario needs at least three constraints and parts whose right answers depend on them; write a sibling that changes one constraint and flips an answer. A diagnosis needs an artifact of at least three lines shown as inert text. Every part needs at least three options with reasons.
+- **Construct items.** Every check is a pure function of the text with a plain-language reason for failure. A reference solution must pass every check and the starter must not. Write a rubric of at least three honest self-evaluation prompts; it is never scored.
+- **Modules L25 to L28** are written to this standard and cite only pages already recorded in the source registry. The hooks lesson states that the exact hook contract must be read from the current documentation. All names, figures and corpora in the lessons are invented.
+- **Interleaved exercises** live in `src/content/interleaved/index.ts` and combine at least two competencies.

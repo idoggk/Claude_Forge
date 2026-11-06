@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { COMPETENCIES } from '../../src/domain/curriculum/competencies';
 import { expect, test, type Page } from '@playwright/test';
 import { LESSONS } from '../../src/content/lessons/index';
 import { TRACKS } from '../../src/domain/curriculum/competencies';
@@ -95,7 +96,7 @@ test.describe('Home: returning user', () => {
     await expect(bar).toHaveAttribute('aria-valuemax', String(denominator));
     await expect(page.getByTestId('path-count-game-development')).toHaveText(/^0 of \d+ lessons passed/);
     // verified competency progress states its denominator and only lists competencies with evidence
-    await expect(page.getByTestId('home-competency-count')).toHaveText(/^\d+ of 23 competencies have graded evidence/);
+    await expect(page.getByTestId('home-competency-count')).toHaveText(new RegExp(`^\\d+ of ${COMPETENCIES.length} competencies have graded evidence`));
     await expect(page.getByTestId('home-competency')).toContainText('Mechanism selection');
     // quick access
     for (const name of ['Skill Workshop', 'Playbooks', 'Real-world tasks', 'AI Lab']) await expect(page.getByTestId('home-lab').getByRole('link', { name: new RegExp(name) }).first()).toBeVisible();
