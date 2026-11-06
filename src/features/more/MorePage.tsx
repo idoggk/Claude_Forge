@@ -4,6 +4,7 @@ import { Icon, PageHeader, type IconName } from '@/components/ui';
 const ITEMS: { to: string; icon: IconName; title: string; text: string; id: string }[] = [
   { to: '/loop', icon: 'target', title: 'Improvement Loop', text: 'Improve a Skill with dev cases, then test it on held-out cases', id: 'more-loop' },
   { to: '/playbooks', icon: 'flag', title: 'Workflow Playbooks', text: 'Design repeatable AI workflows with gates and approvals', id: 'more-playbooks' },
+  { to: '/challenges', icon: 'flask', title: 'Challenges', text: 'Four non-game practice problems with computed fixtures: extraction, research, agent traces, context', id: 'more-challenges' },
   { to: '/pilot', icon: 'flask', title: 'Run your first real AI experiment', text: 'A guided, eight-step experiment on a task you really do', id: 'more-pilot' },
   { to: '/transfer', icon: 'target', title: 'Real-world transfer', text: 'Take one thing you learned to real work, with a check you can run and what actually happened', id: 'more-transfer' },
   { to: '/academy/opportunity-finder', icon: 'search', title: 'AI Opportunity Finder', text: 'Practice judging where AI fits - and where it does not', id: 'more-finder' },
