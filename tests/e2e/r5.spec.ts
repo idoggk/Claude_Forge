@@ -98,6 +98,7 @@ test.describe('Round 5: the guided first experiment', () => {
   test('accessible and usable on a phone: no serious axe violations and no horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 850 });
     const audit = async (label: string) => {
+      await page.waitForTimeout(400); // let colour transitions on just-clicked controls finish; axe would otherwise sample mid-transition
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
       expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${label}: ${v.id} ${v.nodes.slice(0, 2).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
       await expectNoHorizontalOverflow(page);
