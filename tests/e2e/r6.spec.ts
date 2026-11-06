@@ -5,6 +5,8 @@ import { answerItems, expectNoHorizontalOverflow, goto, startApp } from './helpe
 
 const L25 = LESSONS.find((l) => l.id === 'L25-agent-permissions-least-privilege')!;
 const L26 = LESSONS.find((l) => l.id === 'L26-hooks-guardrails-deterministic-gates')!;
+const L27 = LESSONS.find((l) => l.id === 'L27-research-reliability')!;
+const L28 = LESSONS.find((l) => l.id === 'L28-ai-workflow-architecture')!;
 
 async function startAssessment(page: Page, lessonId: string) {
   await goto(page, `/academy/lesson/${lessonId}`);
@@ -14,7 +16,7 @@ async function startAssessment(page: Page, lessonId: string) {
 }
 
 test.describe('Round 6: new assessment formats in real lessons', () => {
-  for (const lesson of [L25, L26]) {
+  for (const lesson of [L25, L26, L27, L28]) {
     test(`${lesson.id}: a perfect run through the real UI passes, with scenario, diagnosis and construction items`, async ({ page }) => {
       test.setTimeout(120_000);
       await startApp(page);

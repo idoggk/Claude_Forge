@@ -61,9 +61,9 @@ describe('curriculum structure', () => {
       'L06-merge-chain-failure', 'L07-economy-inflation', 'L08-battle-lab', 'L09-reviewer-vs-builder', 'L10-forge-production-skill',
       'L11-choose-ai-approach', 'L12-context-engineering', 'L13-why-agents-fail', 'L14-mcp-or-not',
       'L15-reliable-ai-workflow', 'L16-ai-evaluation', 'L17-efficient-ai-development', 'L18-evaluate-an-ai-tool',
-      'L19-structured-outputs-tool-calling', 'L20-few-shot-prompting', 'L21-prompt-injection-trust-boundaries', 'L22-retrieval-augmented-generation', 'L23-evaluation-harnesses', 'L24-long-running-agent-context', 'L25-agent-permissions-least-privilege', 'L26-hooks-guardrails-deterministic-gates',
+      'L19-structured-outputs-tool-calling', 'L20-few-shot-prompting', 'L21-prompt-injection-trust-boundaries', 'L22-retrieval-augmented-generation', 'L23-evaluation-harnesses', 'L24-long-running-agent-context', 'L25-agent-permissions-least-privilege', 'L26-hooks-guardrails-deterministic-gates', 'L27-research-reliability', 'L28-ai-workflow-architecture',
     ]);
-    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(26);
+    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(28);
   });
 
   it('every lesson has the required parts with real content (no placeholders)', () => {

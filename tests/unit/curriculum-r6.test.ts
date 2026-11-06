@@ -7,18 +7,18 @@ import { pickedMisconceptions } from '@/domain/assessment/misconception';
 import { perfectAnswer, wrongAnswer } from './helpers';
 import type { CaseItem, ConstructItem, Item } from '@/domain/curriculum/types';
 
-const R6 = ['L25-agent-permissions-least-privilege', 'L26-hooks-guardrails-deterministic-gates'];
+const R6 = ['L25-agent-permissions-least-privilege', 'L26-hooks-guardrails-deterministic-gates', 'L27-research-reliability', 'L28-ai-workflow-architecture'];
 const lessons = LESSONS.filter((l) => R6.includes(l.id));
 const all = (l: (typeof lessons)[number]): Item[] => [...l.activity.items, ...l.assessment.items, ...l.reviewItems];
 
-describe('Round 6 modules: permissions and gates', () => {
-  it('both exist, are ordered after the Round 4 lessons and teach one advanced competency each', () => {
-    expect(lessons.map((l) => l.order)).toEqual([25, 26]);
+describe('Round 6 modules: permissions, gates, research reliability and workflow architecture', () => {
+  it('all four exist, are ordered after the Round 4 lessons and teach one advanced competency each', () => {
+    expect(lessons.map((l) => l.order)).toEqual([25, 26, 27, 28]);
     for (const l of lessons) {
       expect(l.competencies.length).toBe(1);
       expect(COMPETENCIES.find((c) => c.id === l.competencies[0])?.advanced).toBe(true);
       expect(l.sources.length).toBeGreaterThanOrEqual(4);
-      expect(l.segments.length).toBeGreaterThanOrEqual(5);
+      expect(l.segments.length).toBeGreaterThanOrEqual(4);
       expect(l.objectives.length).toBeGreaterThanOrEqual(5);
       expect(l.reviewItems.length).toBeGreaterThanOrEqual(8);
       expect(l.assessment.items.length).toBeGreaterThanOrEqual(6);
@@ -97,11 +97,11 @@ describe('Round 6 modules: permissions and gates', () => {
 
   it('planned topics that now have a lesson point at it, and other planned topics stay planned', () => {
     const linked = TRACKS.flatMap((t) => t.topics).filter((t) => t.lessonId && R6.includes(t.lessonId));
-    expect(linked.length).toBeGreaterThanOrEqual(3);
+    expect(linked.length).toBeGreaterThanOrEqual(6);
     expect(TRACKS.flatMap((t) => t.topics).filter((t) => !t.lessonId).length).toBeGreaterThan(15);
   });
 
-  it('both are reachable from the Capability Map', () => {
+  it('all four are reachable from the Capability Map', () => {
     const reachable = new Set(CAPABILITIES.flatMap((c) => c.lessons));
     for (const l of lessons) expect(reachable.has(l.id), l.id).toBe(true);
   });

@@ -39,7 +39,7 @@ test.describe('Home: first-time user', () => {
     await expect(paths.getByRole('progressbar')).toHaveCount(0);
     await expect(paths.getByRole('link')).toHaveCount(0);
     await expect(page.locator('main')).not.toContainText(/\d+\s?%/);
-    await expect(page.getByTestId('path-research-verification')).toContainText('more topics planned');
+    await expect(page.getByTestId('path-ai-engineering')).toContainText('more topics planned');
     // profile and interests are optional and below
     await expect(page.getByText('Optional: tune your plan')).toBeVisible();
     await expect(page.getByLabel('Game development workflows')).not.toBeChecked();

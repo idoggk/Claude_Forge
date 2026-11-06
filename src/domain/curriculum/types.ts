@@ -33,7 +33,9 @@ export type CompetencyId =
   | 'long-running-context'
   // Round 6: permissions and deterministic gates
   | 'agent-permissions'
-  | 'deterministic-gates';
+  | 'deterministic-gates'
+  | 'research-reliability'
+  | 'workflow-architecture';
 
 /** The twelve learning tracks. Each lists the topics it will cover; only topics with a lesson are available. */
 export type TrackId =

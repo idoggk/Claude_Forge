@@ -29,6 +29,8 @@ export const COMPETENCIES: Competency[] = [
   // Round 6: permissions and deterministic gates
   { id: 'agent-permissions', title: 'Agent permissions and least privilege', summary: 'Grant an agent only the read, write, execute and send access its task needs, place human approvals before irreversible actions, and handle credentials safely.', outcomes: [], safetyCritical: true, advanced: true },
   { id: 'deterministic-gates', title: 'Hooks, guardrails and deterministic gates', summary: 'Tell a procedure from a policy, choose between a Skill, project instructions, a hook, a permission rule and a CI check, and design a gate that holds.', outcomes: [], safetyCritical: false, advanced: true },
+  { id: 'research-reliability', title: 'Research reliability', summary: 'Trace a claim to its source, judge the strength and kind of evidence, handle conflicting sources, and separate what is supported, inferred and unchecked.', outcomes: [], safetyCritical: false, advanced: true },
+  { id: 'workflow-architecture', title: 'AI workflow architecture', summary: 'Break a task into steps, choose the plainest design that works, and add checkpoints, bounded retries, approvals, monitoring, cost limits and an owner.', outcomes: [], safetyCritical: false, advanced: true },
 ];
 
 export const COMPETENCY_BY_ID: Record<CompetencyId, Competency> = Object.fromEntries(
@@ -56,8 +58,8 @@ export const COMPETENCY_AREAS: CompetencyArea[] = [
   { id: 'ai-coding', title: 'AI coding', summary: 'Claude Code mechanics, Skills and efficient AI-assisted development.', competencyIds: ['skill-anatomy', 'trigger-design', 'skill-authoring', 'production-skills', 'efficient-ai-development'] },
   { id: 'agents', title: 'Agents', summary: 'Multi-agent judgment and understanding why agents fail.', competencyIds: ['multi-agent-review', 'agent-failure-analysis', 'long-running-context', 'agent-permissions', 'deterministic-gates'] },
   { id: 'mcp', title: 'MCP and integrations', summary: 'Connecting AI to external systems safely.', competencyIds: ['mcp-integration', 'structured-tool-contracts'] },
-  { id: 'automation', title: 'Automation', summary: 'Reliable, repeatable AI workflows.', competencyIds: ['workflow-design'] },
-  { id: 'research', title: 'Research', summary: 'Sourcing, verifying and synthesising with AI.', competencyIds: ['retrieval-design'] },
+  { id: 'automation', title: 'Automation', summary: 'Reliable, repeatable AI workflows.', competencyIds: ['workflow-design', 'workflow-architecture'] },
+  { id: 'research', title: 'Research', summary: 'Sourcing, verifying and synthesising with AI.', competencyIds: ['retrieval-design', 'research-reliability'] },
   { id: 'evaluation', title: 'Evaluation', summary: 'Comparing approaches with honest evidence.', competencyIds: ['experiment-design', 'eval-harness-design'] },
   { id: 'security', title: 'Security', summary: 'Inspecting third-party Skills and integrations before trusting them.', competencyIds: ['skill-security', 'prompt-injection-defense', 'agent-permissions'] },
   { id: 'game-development', title: 'Game development', summary: 'Debugging and economy analysis on One More Merge-style fixtures.', competencyIds: ['systematic-debugging', 'economy-analysis'] },
@@ -146,7 +148,7 @@ export const TRACKS: Track[] = [
       { title: 'Spotting AI opportunities (and when the answer is no AI)', lessonId: 'L11-choose-ai-approach' },
       { title: 'Scheduled and event-driven workflows' },
       { title: 'Personal knowledge systems and document processing' },
-      { title: 'Cost versus value; maintenance of automations' },
+      { title: 'Cost versus value; maintenance of automations', lessonId: 'L28-ai-workflow-architecture' },
     ],
   },
   {
@@ -156,7 +158,7 @@ export const TRACKS: Track[] = [
     topics: [
       { title: 'Task decomposition, verification and delegation', lessonId: 'L17-efficient-ai-development' },
       { title: 'Reliable workflows for repeatable engineering tasks', lessonId: 'L15-reliable-ai-workflow' },
-      { title: 'Architecture design and feature planning' },
+      { title: 'Architecture design and feature planning', lessonId: 'L28-ai-workflow-architecture' },
       { title: 'Refactoring, testing and debugging at scale' },
       { title: 'Security reviews, CI/CD and release engineering' },
       { title: 'Legacy code comprehension and migration planning' },
@@ -182,9 +184,9 @@ export const TRACKS: Track[] = [
     outcome: 'Reject unsupported conclusions and keep claims tied to sources.',
     topics: [
       { title: 'Evaluating evidence and unsupported claims in a tool pitch', lessonId: 'L18-evaluate-an-ai-tool' },
-      { title: 'Source credibility and primary versus secondary sources' },
-      { title: 'Citation verification and fabricated citations' },
-      { title: 'Evidence extraction, synthesis and reproducibility' },
+      { title: 'Source credibility and primary versus secondary sources', lessonId: 'L27-research-reliability' },
+      { title: 'Citation verification and fabricated citations', lessonId: 'L27-research-reliability' },
+      { title: 'Evidence extraction, synthesis and reproducibility', lessonId: 'L27-research-reliability' },
     ],
   },
   {
