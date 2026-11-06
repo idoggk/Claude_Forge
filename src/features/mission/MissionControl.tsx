@@ -55,7 +55,7 @@ export default function MissionControl() {
 
   return (
     <div>
-      <PageHeader eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} title={profile?.displayName ? `Welcome back, ${profile.displayName}` : 'Mission Control'} subtitle="One next step, the reason for it, and the evidence you have so far." />
+      <PageHeader art="hero-forge" eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} title={profile?.displayName ? `Welcome back, ${profile.displayName}` : 'Mission Control'} subtitle="One next step, the reason for it, and the evidence you have so far." />
 
       <Card className="border-accent" aria-labelledby="mission-title" data-testid="next-mission">
         <p className="text-xs font-semibold uppercase tracking-wider text-accent-text">{p.kind === 'review' ? 'Due now' : p.kind === 'retry' ? 'Close the gap' : p.kind === 'loop' ? 'Apply it' : 'Next mission'}</p>

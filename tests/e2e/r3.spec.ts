@@ -218,7 +218,7 @@ test.describe('Round 3: layout', () => {
 });
 
 test.describe('Visual assets', () => {
-  const ART_PAGES: [string, string][] = [['/explore', 'discovery.svg'], ['/academy', 'academy.svg'], ['/battle-lab', 'battle-lab.svg'], ['/playbooks', 'workflows.svg']];
+  const ART_PAGES: [string, string][] = [['/', 'hero-forge.svg'], ['/explore', 'discovery.svg'], ['/academy', 'academy.svg'], ['/battle-lab', 'battle-lab.svg'], ['/playbooks', 'workflows.svg']];
 
   test('illustrations are decorative: empty alt, hidden from assistive tech, correct paths, never on dense pages', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
