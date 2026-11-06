@@ -35,6 +35,7 @@ test.describe('WebKit smoke (optional)', () => {
     await page.getByTestId('tk-title').fill('WebKit takeaway');
     await page.getByTestId('tk-statement').fill('Saved in IndexedDB under WebKit.');
     await page.getByTestId('tk-save').click();
+    await expect(page.getByText('Takeaway saved').first()).toBeVisible(); // wait for the write before reloading
     await page.reload();
     await goto(page, '/library');
     await expect(page.getByTestId('takeaway-list')).toContainText('WebKit takeaway');
