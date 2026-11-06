@@ -36,6 +36,8 @@ const Challenges = lazy(() => import('@/features/challenges/ChallengesPage'));
 const Challenge = lazy(() => import('@/features/challenges/ChallengePage'));
 const Library = lazy(() => import('@/features/library/LibraryPage'));
 const TakeawayEditor = lazy(() => import('@/features/library/TakeawayEditor'));
+const Pathways = lazy(() => import('@/features/pathways/PathwaysPage'));
+const PathwayPage = lazy(() => import('@/features/pathways/PathwayPage'));
 const Transfer = lazy(() => import('@/features/transfer/TransferPage'));
 const TransferEditor = lazy(() => import('@/features/transfer/TransferEditor'));
 
@@ -73,6 +75,8 @@ export function App() {
                 <Route path="challenges/:challengeId" element={<Challenge />} />
                 <Route path="library" element={<Library />} />
                 <Route path="library/:takeawayId" element={<TakeawayEditor />} />
+                <Route path="pathways" element={<Pathways />} />
+                <Route path="pathways/:pathwayId" element={<PathwayPage />} />
                 <Route path="transfer" element={<Transfer />} />
                 <Route path="transfer/:taskId" element={<TransferEditor />} />
                 <Route path="discovery" element={<Discovery />} />

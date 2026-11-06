@@ -185,6 +185,9 @@ export default function MissionControl() {
             <div className="hidden w-32 shrink-0 sm:block lg:w-36" aria-hidden="true"><HomeImage name="track-ai-lab" width={640} height={360} className="h-auto w-full rounded-lg border border-line object-cover" /></div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+            <LinkButton size="sm" to="/pathways" icon="target" data-testid="home-pathways">Pathways</LinkButton>
+            <LinkButton size="sm" to="/challenges" icon="flag" data-testid="home-challenges">Challenges</LinkButton>
+            <LinkButton size="sm" to="/library" icon="book" data-testid="home-library">My AI library</LinkButton>
             <LinkButton size="sm" to="/workshop" icon="hammer">Skill Workshop</LinkButton>
             <LinkButton size="sm" to="/playbooks" icon="flag">{playbooks.length ? `Playbooks (${playbooks.length})` : 'Playbooks'}</LinkButton>
             <LinkButton size="sm" to="/transfer" icon="target">Real-world tasks</LinkButton>
