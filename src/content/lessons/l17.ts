@@ -42,7 +42,7 @@ const LOG_B_TARGETS = [
 
 export const L17: Lesson = {
   id: 'L17-efficient-ai-development',
-  version: 1,
+  version: 2,
   track: 'engineering',
   alsoIn: ['claude-code'],
   order: 17,

@@ -108,3 +108,13 @@ Use these rules rather than impressions.
 ## Verification state of this document
 
 This protocol was written against the features that exist in the app and are covered by tests (Playbook evidence links and evaluation summaries, AI Lab attempts and import with preview, Real-world tasks). No part of it has been performed in a real project, and nothing here reports a result.
+
+## Round 5 update: what to do with the new tools (a human checklist)
+
+None of this has been done yet. It is the shortest honest route to evidence that Forge helps on real work.
+
+1. Open `#/pilot`, pick the starter that matches something you really do, and follow the eight steps. Run each condition at least twice (the guide proposes an ABBA order).
+2. If you use `claude -p --output-format json`, paste the output into the importer; check the preview (anything marked Inferred or Unknown is not a measurement) and keep secret redaction on.
+3. For a subjective output, open the experiment's **Blinded review** tab, lock the rubric, score, then reveal.
+4. Write one takeaway in `#/library` from the experiment; keep it a hypothesis or anecdotal unless a completed transfer task supports more.
+5. Note anything confusing; that note is the input for the next round.

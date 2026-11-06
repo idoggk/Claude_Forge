@@ -16,7 +16,7 @@ function valueDestroyedInCascadeCase(): number {
 
 export const L06: Lesson = {
   id: 'L06-merge-chain-failure',
-  version: 1,
+  version: 2,
   track: 'game-dev',
   order: 6,
   title: 'Debug a Merge-Chain Failure',

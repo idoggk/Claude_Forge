@@ -107,3 +107,13 @@ A deterministic scoring rule: due reviews first; then curriculum order, prerequi
 **Transfer.** A transfer task is the bridge from "I passed the assessment" to "I used it on real work". It is only complete with criteria, observations, evidence and a reflection, all in the learner's words, and it can be exported. Field evidence for Level 4 is still logged separately, by choice.
 
 **Assessment integrity.** Mastery still comes from unseen, hint-free attempts and the learner's own field evidence. Clicking through, the diagnostic, memorised answers, declared goals, playbook maturity and completed transfer tasks do not move a level; tests assert that for playbooks, evaluations and transfer tasks.
+
+
+## Round 5: from a well-tested academy to a real-world laboratory
+
+- **Guided real experiment**: a first run on a task the learner really does, with what to keep constant, a run order that avoids order effects (ABBA), and a reading of the result that says when n is too small.
+- **Evidence import**: pasted or uploaded results are previewed; every fact is classified (parsed tool result, parsed model output, user observation, inferred, unknown). A model saying "tests passed" is inferred, never a measurement. Secrets are flagged and redacted by default.
+- **Blinded evaluation**: conditions are hidden, the rubric is locked before scoring, guesses are recorded before the reveal.
+- **Challenges**: four non-game problems; practice runs never raise a competency level.
+- **Pathways and library**: the last step of every pathway is a takeaway; a takeaway's confidence label is raised only by the learner and only if its references can support it (evaluated on fixtures needs a Lab report or a challenge run; applied to real work needs a completed transfer task).
+- **Refused**: auto-running Claude, installing Skills, hidden analytics, treating a checkbox as mastery.

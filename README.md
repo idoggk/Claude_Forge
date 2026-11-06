@@ -91,6 +91,21 @@ docs/             ARCHITECTURE · PRODUCT · CONTENT · ROADMAP
 - [docs/ROADMAP.md](docs/ROADMAP.md) — what is deliberately not in this release.
 - [docs/HANDOFF.md](docs/HANDOFF.md) — the current state, what was verified, what was not, and what to do next.
 
+## Round 5 additions
+
+- **Home** redesigned: a first-time view (what Forge is, one diagnostic or first lesson, four learning paths) and a returning view (status with denominators, continue, review queue, goals, competency count). Art is decorative only.
+- **Run your first real AI experiment** (`#/pilot`): eight guided steps over three starters, built on the existing Lab. **Transcript and result import** with a preview, evidence classification, secret warnings and explicit confirmation. **Blinded review** of outputs.
+- **Challenges** (`#/challenges`): four non-game problems with computed fixtures: structured extraction, research reliability, agent failure investigation, prompt and context optimisation.
+- **Capability pathways** (`#/pathways`): seven routes from learn to save. **My AI library** (`#/library`): takeaways with evidence-gated confidence labels, Markdown and JSON export (database v7).
+- **Learning-quality audit**: see [docs/LEARNING_AUDIT.md](docs/LEARNING_AUDIT.md). A multiple-choice length leak was found and is **not fixed**.
+
+## Round 5 limitations (read these)
+
+- No real Claude Code session, project or device was used; no pilot has been run. The challenge fixtures and the context "reader" are deterministic stand-ins, not models.
+- The multiple-choice length leak (docs/LEARNING_AUDIT.md) weakens those items as mastery evidence.
+- The WebKit smoke test is a CI job (informational); it was not run locally (the download is blocked in the build sandbox) and a green run is not real-iPhone testing.
+- Blinded review hides condition names in the interface; the stored mapping is a local file the learner can read.
+
 ## Honest limitations
 
 - Claude Forge **cannot** run Claude, install Skills, or verify what is on your machine. Live testing is manual, and the app says so wherever it matters.

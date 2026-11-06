@@ -58,10 +58,10 @@ export async function answerItems(page: Page, items: Item[], opts: { wrong?: boo
         break;
       }
       case 'keywords':
-        await box.getByLabel('Your answer').fill(opts.wrong ? 'no idea' : it.groups.map((g) => g.anyOf[0]).join(' and '));
+        await box.getByLabel('Your answer').fill(opts.wrong ? 'no idea' : it.groups.map((g) => `we need ${g.anyOf[0]} here because it matters`).join(' and also '));
         break;
       case 'fields':
-        for (const f of it.fields) await box.getByLabel(f.label, { exact: true }).fill(opts.wrong ? 'no idea' : f.groups.map((g) => g.anyOf[0]).join(' and '));
+        for (const f of it.fields) await box.getByLabel(f.label, { exact: true }).fill(opts.wrong ? 'no idea' : f.groups.map((g) => `we need ${g.anyOf[0]} here because it matters`).join(' and also '));
         break;
       case 'flaglines': {
         const lines = opts.wrong ? [] : it.targets.map((t) => t.line);

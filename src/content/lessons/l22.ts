@@ -29,7 +29,7 @@ const ANSWER_LOG_TARGETS = [
 
 export const L22: Lesson = {
   id: 'L22-retrieval-augmented-generation',
-  version: 1,
+  version: 2,
   track: 'advanced',
   alsoIn: ['research', 'prompting'],
   order: 22,

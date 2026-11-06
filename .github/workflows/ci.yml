@@ -35,3 +35,19 @@ jobs:
           name: playwright-traces
           path: test-results
           retention-days: 7
+
+  # Safari-engine smoke test. Informational: it never blocks a merge (continue-on-error), because WebKit on a Linux
+  # runner is not a real iPhone. A green run shows the app loads and its core flow works in WebKit; it is not device testing.
+  webkit-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm run test:e2e:webkit -- --trace off

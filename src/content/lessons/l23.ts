@@ -48,7 +48,7 @@ const REPORT_2_TARGETS = [
 
 export const L23: Lesson = {
   id: 'L23-evaluation-harnesses',
-  version: 1,
+  version: 2,
   track: 'safety-eval',
   alsoIn: ['advanced', 'engineering'],
   order: 23,

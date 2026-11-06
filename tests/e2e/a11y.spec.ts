@@ -31,6 +31,7 @@ for (const theme of ['dark', 'light'] as const) {
   });
 
   test(`axe: lesson stages, exercise results and editors (${theme} theme)`, async ({ page }) => {
+    test.setTimeout(120_000); // many routes and lesson stages are audited in one test; it ran close to the 45 s default under full-suite load
     await startApp(page);
     await goto(page, '/settings');
     await page.getByRole('radio', { name: theme === 'dark' ? 'Dark' : 'Light' }).click();

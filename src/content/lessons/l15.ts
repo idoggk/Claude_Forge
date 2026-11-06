@@ -43,7 +43,7 @@ const WF_B_TARGETS = [
 
 export const L15: Lesson = {
   id: 'L15-reliable-ai-workflow',
-  version: 1,
+  version: 2,
   track: 'automation',
   alsoIn: ['engineering'],
   order: 15,

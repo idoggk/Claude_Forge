@@ -43,7 +43,7 @@ const EVAL_REPORT_TARGETS = [
 
 export const L20: Lesson = {
   id: 'L20-few-shot-prompting',
-  version: 1,
+  version: 2,
   track: 'prompting',
   alsoIn: ['safety-eval'],
   order: 20,
