@@ -7,8 +7,8 @@ import { Illustration, type ForgeArt } from './Illustration';
 import { isSafeExternalUrl } from '@/lib/safeUrl';
 
 export { Icon } from './Icon';
-export { Illustration, artUrl } from './Illustration';
-export type { ForgeArt };
+export { Illustration, HomeImage, artUrl, homeArtUrl } from './Illustration';
+export type { ForgeArt, HomeArt } from './Illustration';
 export type { IconName } from './Icon';
 export { Markdown } from './Markdown';
 

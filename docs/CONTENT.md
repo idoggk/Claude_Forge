@@ -98,3 +98,10 @@ Known small risk: the docs change quickly. Lesson text that quotes commands says
 - A lesson that uses a fixture says what the fixture does not simulate (the retrieval fixture does not simulate embeddings, reranking or a language model).
 - A source is `read` only if a person (or this process) read the page; a registry record that cannot be reached stays `unreachable` with `retriedAt`. The checker never changes that status.
 - Transfer-task guidance is placeholder text, never pre-filled content.
+
+
+## Round 5 content
+
+- Challenge text lives in `src/content/challenges/index.ts` (problem, objective, fixture, worked example, hints, reference solution, rubric, common mistakes, transfer). The fixtures are in `src/domain/challenges/*` and are computed from seeds; invented names only. A reference solution must pass its own engine (a test enforces it).
+- Pathways in `src/content/pathways/index.ts`; every destination must exist (a test checks lessons, challenges and registered routes).
+- Written-answer items: the grader now refuses a list of accepted terms. When you change grading, bump the lesson `version`. See `docs/LEARNING_AUDIT.md` before writing multiple-choice distractors: make wrong options as long and as plausible as the right one.

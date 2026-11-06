@@ -2,6 +2,7 @@ import type { Evidence, Experiment } from './model';
 import { ATTEMPT_LABELS, CONDITION_KIND_LABELS, EXPERIMENT_TYPE_LABELS, METRICS, isBaselineKind } from './model';
 import type { Comparison } from './compare';
 import { compareExperiment } from './compare';
+import { CLASSIFICATION_LABEL } from '@/domain/transcript/candidates';
 
 export const EXPERIMENT_FORMAT = 'claude-forge-experiment';
 export const EXPERIMENT_FORMAT_VERSION = 1;
@@ -78,7 +79,7 @@ export function buildExperimentReport(exp: Experiment, evidence: Evidence[], com
   L.push('', '### What was observed (your notes)', '', exp.observations || '_none_', '');
   if (evidence.length) {
     L.push('### Attached evidence', '');
-    for (const e of evidence) L.push(`- ${e.name} (${e.kind}, ${e.size} bytes, ${e.provenance === 'user-imported' ? 'user-imported: untrusted text you supplied' : 'self-reported'})`);
+    for (const e of evidence) L.push(`- ${e.name} (${e.kind}, ${e.size} bytes, ${e.provenance === 'user-imported' ? 'user-imported: untrusted text you supplied' : 'self-reported'}${e.classification ? `, classified: ${CLASSIFICATION_LABEL[e.classification]}` : ''})`);
     L.push('');
   }
   // ---- Interpretation: what the figures suggest, kept apart from the figures.

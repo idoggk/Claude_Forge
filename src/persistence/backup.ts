@@ -8,6 +8,7 @@ import { LoopRunSchema } from '@/domain/loop/model';
 import { LearningGoalSchema } from '@/domain/goals/model';
 import { PlaybookSchema } from '@/domain/playbook/model';
 import { TransferTaskSchema } from '@/domain/transfer/model';
+import { TakeawaySchema } from '@/domain/library/model';
 import { nowIso } from '@/lib/clock';
 import { recomputeCompetencies } from './repo';
 
@@ -34,6 +35,7 @@ const SCHEMAS: Record<StoreName, z.ZodType> = {
   playbooks: PlaybookSchema,
   activityRuns: ActivityRunSchema,
   transferTasks: TransferTaskSchema,
+  takeaways: TakeawaySchema,
   meta: MetaSchema,
 };
 

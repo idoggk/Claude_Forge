@@ -3,7 +3,7 @@ import { o, DOCS } from './helpers';
 
 export const L01: Lesson = {
   id: 'L01-skill-or-tool',
-  version: 1,
+  version: 2,
   track: 'claude-code',
   order: 1,
   title: 'Skill or Tool?',

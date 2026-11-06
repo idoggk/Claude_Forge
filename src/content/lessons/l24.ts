@@ -30,7 +30,7 @@ const HANDOFF_TARGETS = [
 
 export const L24: Lesson = {
   id: 'L24-long-running-agent-context',
-  version: 1,
+  version: 2,
   track: 'agents',
   alsoIn: ['prompting', 'claude-code'],
   order: 24,

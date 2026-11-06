@@ -45,7 +45,7 @@ const PITCH_B_TARGETS = [
 
 export const L18: Lesson = {
   id: 'L18-evaluate-an-ai-tool',
-  version: 1,
+  version: 2,
   track: 'ecosystem',
   alsoIn: ['research', 'safety-eval'],
   order: 18,

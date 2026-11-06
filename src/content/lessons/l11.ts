@@ -14,7 +14,7 @@ const LADDER = [
 
 export const L11: Lesson = {
   id: 'L11-choose-ai-approach',
-  version: 1,
+  version: 2,
   track: 'fundamentals',
   alsoIn: ['agents', 'automation'],
   order: 11,

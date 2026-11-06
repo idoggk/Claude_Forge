@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BlindedReviewSchema } from '../blinded/schema';
 
 /** Metrics the AI Lab knows about. `direction` says which way is better. */
 export const METRICS = [
@@ -160,12 +161,16 @@ export const EvidenceSchema = z.object({
   id: z.string().min(1),
   experimentId: z.string().min(1),
   runId: z.string().nullable(),
-  kind: z.enum(['pasted-output', 'file', 'test-report', 'note']),
+  kind: z.enum(['pasted-output', 'file', 'test-report', 'note', 'prompt', 'model-output', 'tool-result', 'tool-call', 'metadata']),
   name: z.string().max(200),
   mime: z.string().max(100).default('text/plain'),
   size: z.number().int().min(0),
   text: z.string().max(600_000),
   provenance: ProvenanceSchema,
+  /** How Forge came to hold this: set by the transcript importer; null for evidence added the older ways. */
+  classification: z.enum(['parsed-tool-result', 'parsed-tool-call', 'parsed-model-output', 'parsed-prompt', 'parsed-metadata', 'user-observation', 'inferred', 'unknown']).nullable().default(null),
+  /** Where it came from inside the import (format, tool name, turn). Small, plain strings only. */
+  meta: z.record(z.string().max(40), z.string().max(300)).default({}),
   addedAt: z.string(),
 });
 export type Evidence = z.infer<typeof EvidenceSchema>;
@@ -177,6 +182,21 @@ export const FixtureRefSchema = z.object({
   hash: z.string().max(100).nullable().default(null),
 });
 export type FixtureRef = z.infer<typeof FixtureRefSchema>;
+
+/** Marks an experiment that was started from the guided "first experiment" flow. It adds guidance state only: the data is an ordinary experiment. */
+export const PILOT_STARTERS = ['skill', 'workflow', 'prompts'] as const;
+export const PilotMetaSchema = z.object({
+  starter: z.enum(PILOT_STARTERS),
+  /** The Skill, workflow or technique being tried, in the learner's words. */
+  technique: z.string().max(200).default(''),
+  /** What to change next, written after the evaluation. */
+  nextImprovement: z.string().max(2000).default(''),
+  /** Optional: the playbook step this experiment was started to evidence. */
+  playbookId: z.string().max(100).nullable().default(null),
+  stepId: z.string().max(100).nullable().default(null),
+  startedAt: z.string(),
+});
+export type PilotMeta = z.infer<typeof PilotMetaSchema>;
 
 export const ExperimentSchema = z.object({
   id: z.string().min(1),
@@ -215,6 +235,10 @@ export const ExperimentSchema = z.object({
   /** Set when this experiment belongs to a Skill Improvement Loop. */
   loopId: z.string().nullable().default(null),
   phase: z.enum(['dev', 'heldout']).nullable().default(null),
+  /** Blinded reviews of this experiment's outputs. Kept with the experiment so they travel with it in a backup. */
+  blindedReviews: z.array(BlindedReviewSchema).max(20).default([]),
+  /** Present only for experiments created by the guided first-experiment flow. */
+  pilot: PilotMetaSchema.nullable().default(null),
   /** Held-out runs are locked when the ground truth is revealed, so results cannot be edited afterwards. */
   runsLockedAt: z.string().nullable().default(null),
   createdAt: z.string(),

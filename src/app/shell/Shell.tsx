@@ -35,7 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/discovery', label: 'Discovery Hub', icon: 'search', testId: 'nav-discovery' },
     ],
   },
-  { heading: 'Lab', items: [{ to: '/battle-lab', label: 'AI Lab', icon: 'flask', testId: 'nav-battle-lab' }] },
+  { heading: 'Lab', items: [{ to: '/pilot', label: 'First experiment', icon: 'target', testId: 'nav-pilot' }, { to: '/battle-lab', label: 'AI Lab', icon: 'flask', testId: 'nav-battle-lab' }] },
   {
     heading: 'Build',
     items: [

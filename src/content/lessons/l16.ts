@@ -27,7 +27,7 @@ const REPORT_TARGETS = [
 
 export const L16: Lesson = {
   id: 'L16-ai-evaluation',
-  version: 1,
+  version: 2,
   track: 'safety-eval',
   alsoIn: ['research'],
   order: 16,

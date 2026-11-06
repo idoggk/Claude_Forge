@@ -55,6 +55,22 @@ export interface AttemptGrade {
 const round = (n: number) => Math.round(n * 1000) / 1000;
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
+const STOPWORDS = new Set('a an the and or of to in on for is are be it its this that with as at by from not no do does can you your we they them their i if so but than then into because so when which what how why'.split(' '));
+/**
+ * A list of accepted terms is not an explanation. Keyword checks are narrow, and without this guard anyone who has read
+ * the accepted terms could pass by typing them. An answer counts as a term list when it is long enough to be a sentence
+ * but is almost all accepted words, or has almost no connecting words at all.
+ */
+export function readsAsTermList(raw: string, groups: { anyOf: string[] }[]): boolean {
+  const tokens = normalizeText(raw).split(' ').filter(Boolean);
+  if (tokens.length < 6) return false;
+  const accepted = new Set(groups.flatMap((g) => g.anyOf.flatMap((k) => normalizeText(k).split(' '))));
+  const inAccepted = tokens.filter((t) => accepted.has(t)).length / tokens.length;
+  const connectors = tokens.filter((t) => STOPWORDS.has(t)).length / tokens.length;
+  return inAccepted >= 0.7 || (tokens.length >= 8 && connectors < 0.1);
+}
+const TERM_LIST_FEEDBACK = 'This reads as a list of terms rather than an explanation, so it was not credited. Write one or two sentences saying what you would do and why.';
+
 function normalizeText(s: string): string {
   return s
     .toLowerCase()
@@ -204,6 +220,7 @@ export function gradeItem(item: Item, answer: unknown, external: ExternalResults
     case 'keywords': {
       const text = typeof answer === 'string' ? normalizeText(answer) : '';
       if (!text) return base(item, { feedback: 'Write a short answer.', details: item.groups.map((g) => ({ label: g.label, ok: false, note: `Look for: ${g.anyOf.join(' / ')}` })) });
+      if (readsAsTermList(String(answer), item.groups)) return base(item, { answered: true, feedback: TERM_LIST_FEEDBACK, details: item.groups.map((g) => ({ label: g.label, ok: false, note: 'Not credited: the answer reads as a list of terms.' })) });
       const need = item.minGroups ?? item.groups.length;
       let met = 0;
       const details = item.groups.map((g) => {
@@ -258,6 +275,10 @@ function gradeFields(item: FieldsItem, answer: unknown): ItemGrade {
     const raw = typeof map[f.id] === 'string' ? (map[f.id] as string) : '';
     const text = normalizeText(raw);
     if (text) any = true;
+    if (text && readsAsTermList(raw, f.groups)) {
+      allOk = false;
+      return { label: f.label, ok: false, note: TERM_LIST_FEEDBACK };
+    }
     const need = f.minGroups ?? f.groups.length;
     const hits = f.groups.map((g) => ({ g, hit: text ? g.anyOf.find((k) => text.includes(normalizeText(k))) : undefined }));
     const met = hits.filter((h) => h.hit).length;

@@ -1,6 +1,8 @@
 import type { Item } from '@/domain/curriculum/types';
 
 /** The answer a perfect learner would give. */
+const natural = (groups: { anyOf: string[] }[]) => groups.map((g) => `we need ${g.anyOf[0]} here because it matters`).join(' and also ');
+
 export function perfectAnswer(item: Item): unknown {
   switch (item.kind) {
     case 'single': return item.correct;
@@ -8,8 +10,8 @@ export function perfectAnswer(item: Item): unknown {
     case 'classify': return Object.fromEntries(item.entries.map((e) => [e.id, e.correct]));
     case 'order': return item.steps.map((s) => s.id);
     case 'numeric': return typeof item.answer === 'function' ? item.answer() : item.answer;
-    case 'keywords': return item.groups.map((g) => g.anyOf[0]).join(' and ');
-    case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, f.groups.map((g) => g.anyOf[0]).join(' and ')]));
+    case 'keywords': return natural(item.groups);
+    case 'fields': return Object.fromEntries(item.fields.map((f) => [f.id, natural(f.groups)]));
     case 'flaglines': return item.targets.map((t) => t.line);
     case 'reflect': return Object.fromEntries(item.rubric.map((_, i) => [String(i), true]));
     case 'external': return undefined;

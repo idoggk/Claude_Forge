@@ -238,7 +238,7 @@ export async function recordCaseRun(input: CaseRunInput): Promise<void> {
       const text = input.evidenceText.slice(0, 500_000);
       const old = await db.evidence.where('experimentId').equals(exp.id).filter((e) => e.runId === run.id && e.kind === 'pasted-output').toArray();
       for (const o of old) await db.evidence.delete(o.id);
-      await db.evidence.put({ id: newId('ev'), experimentId: exp.id, runId: run.id, kind: 'pasted-output', name: `${input.caseId} · ${input.condition} final answer`, mime: 'text/plain', size: new TextEncoder().encode(text).length, text, provenance: 'self-reported', addedAt: nowIso() });
+      await db.evidence.put({ id: newId('ev'), experimentId: exp.id, runId: run.id, kind: 'pasted-output', name: `${input.caseId} · ${input.condition} final answer`, mime: 'text/plain', size: new TextEncoder().encode(text).length, text, provenance: 'self-reported', classification: null, meta: {}, addedAt: nowIso() });
     }
     await db.loops.put({ ...loop, updatedAt: nowIso() });
   });

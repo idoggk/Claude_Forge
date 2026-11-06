@@ -45,7 +45,7 @@ const AGENT_CONFIG_TARGETS = [
 
 export const L21: Lesson = {
   id: 'L21-prompt-injection-trust-boundaries',
-  version: 1,
+  version: 2,
   track: 'safety-eval',
   alsoIn: ['mcp-tools', 'agents'],
   order: 21,

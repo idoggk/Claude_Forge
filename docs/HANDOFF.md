@@ -1,4 +1,4 @@
-# Claude Forge — handoff summary (state as of 2026-11-05, after Development Round 4)
+# Claude Forge — handoff summary (state as of 2026-11-06, after Development Round 5)
 
 Paste this whole document into a new conversation. It describes what exists, what was verified, what is NOT verified, and what to improve next.
 
@@ -18,7 +18,7 @@ Hard product rules (must be preserved):
 
 ## 2. Stack, location, branch state
 
-React 19, TypeScript 5.9 (strict), Vite 8 (Node ≥ 22.12), Tailwind 4, React Router 7 (hash routing, `base: './'`), Dexie 4 (IndexedDB, **schema v6**), Zod 4, `yaml`, JSZip, react-markdown + remark-gfm, Vitest + Testing Library + fake-indexeddb, Playwright (Chromium) + axe-core, ESLint 9.
+React 19, TypeScript 5.9 (strict), Vite 8 (Node ≥ 22.12), Tailwind 4, React Router 7 (hash routing, `base: './'`), Dexie 4 (IndexedDB, **schema v7**), Zod 4, `yaml`, JSZip, react-markdown + remark-gfm, Vitest + Testing Library + fake-indexeddb, Playwright (Chromium) + axe-core, ESLint 9.
 
 Repository: `https://github.com/idoggk/Claude_Forge`. Round 1–2 are on `main`; Round 3 is on `round-3-ai-mastery` (draft PR #1, **not merged**); Round 4 is on `round-4-advanced-mastery`, branched from Round 3 and therefore opened as a draft PR **against `round-3-ai-mastery`**. Nothing was merged or deployed. Local working copy used: `/home/user/claude_forge`.
 
@@ -34,6 +34,12 @@ src/persistence  db.ts (v6), schemas, repo, backup, useLive
 scripts          sw-plugin.ts, check-sources.mjs + source-check-lib.mjs (optional, read-only)
 tests/unit  tests/e2e  docs/  .github/workflows/{ci,deploy,source-check}.yml
 ```
+
+## 2b. What Round 5 added (branch `round-5-real-world-lab`, draft PR #3 against `main`, not merged)
+
+Home redesign (first-time and returning views, four learning paths over the 24 lessons, decorative `forge-home` art) · guided first real experiment `#/pilot` (3 starters, 8 steps) · transcript and result import with preview, classification, secret redaction · blinded review (seeded, rubric locked before scoring) · four challenges `#/challenges` (extraction, research reliability, agent failure investigator, context optimisation) on a shared computed-fixture engine · seven pathways `#/pathways` (steps count only with a matching record) · personal library `#/library` (DB v7, evidence-gated confidence, MD/JSON export) · learning-quality audit (`docs/LEARNING_AUDIT.md`): keyword-stuffing guard and version 2 for 14 lessons; **the multiple-choice length leak (82% of single-answer items) was found and is NOT fixed** · CI runs on PRs and `main` only; optional WebKit CI job (never run) · Pages deploy workflow succeeded on `main` earlier; the live URL was not loaded by me.
+
+Round 5 verification (local, Linux, Chromium): ESLint clean, `tsc` clean, Vitest 618 passed (47 files), build OK, Playwright 138 passed and 2 failed in the first full run (the two axe lesson-stage tests hit the 45 s timeout under load; both passed when re-run alone; the test now sets a 120 s timeout and has not had a second full run). `npm audit`: 0 vulnerabilities. Not verified: WebKit, Windows, a real device, a real Claude Code session, the pilot.
 
 ## 3. What Round 4 added
 
@@ -91,7 +97,7 @@ What the Round 4 tests prove, beyond Rounds 1-3:
 
 ## 7. Next three priorities
 
-1. **Run the pilot** ([REAL_WORLD_PILOT.md](REAL_WORLD_PILOT.md)) and fix what it shows; then run `source-check.yml` once and enable GitHub Pages. Nothing about Round 3–4 workflows is known to help on real work until this happens.
+1. **Fix the multiple-choice length leak** (docs/LEARNING_AUDIT.md), then **run the pilot** ([REAL_WORLD_PILOT.md](REAL_WORLD_PILOT.md)) and fix what it shows; then run `source-check.yml` once and enable GitHub Pages. Nothing about Round 3–4 workflows is known to help on real work until this happens.
 2. **Blinded rubric scoring and transcript import** for the Lab (same preview/label rules as the Round 4 importer).
 3. **Non-game fixtures and the remaining planned topics** (34 are still planned): task-type templates with objective checks (extraction, triage, review comments), then hooks/guardrails as gates and agent permission design.
 

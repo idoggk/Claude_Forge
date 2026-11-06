@@ -3,6 +3,8 @@ import { Badge, Button, Callout, Card, Segmented, TextArea, TextInput, useToast,
 import { RUBRIC_CRITERIA, RunSchema, METRICS, type Experiment, type Evidence, type Run } from '@/domain/experiments/model';
 import { looksBinary, MAX_EVIDENCE_BYTES, parseTestReport } from '@/domain/experiments/testReport';
 import { IMPORT_LABEL_MEANING, analyseEvidenceText, type TextAnalysis } from '@/domain/experiments/importer';
+import { TranscriptImporter } from './TranscriptImporter';
+import type { ImportOutcome } from '@/domain/transcript/candidates';
 import { getFixture } from '@/fixtures';
 import { newId } from '@/lib/ids';
 import { nowIso } from '@/lib/clock';
@@ -13,10 +15,10 @@ const num = (s: string): number | null => {
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
-interface Pending { kind: Evidence['kind']; name: string; text: string; provenance: Evidence['provenance']; analysis: TextAnalysis }
+interface Pending { kind: Evidence['kind']; name: string; text: string; provenance: Evidence['provenance']; analysis: TextAnalysis; classification?: Evidence['classification']; meta?: Evidence['meta'] }
 
 /** What Forge found in a piece of text, with how it knows. Pasted model output is untrusted: a statement is never a measurement. */
-function FoundInText({ analysis, onUse }: { analysis: TextAnalysis; onUse: (a: TextAnalysis) => void }) {
+export function FoundInText({ analysis, onUse }: { analysis: TextAnalysis; onUse: (a: TextAnalysis) => void }) {
   const { counts, claims, ambiguous, contradiction } = analysis;
   if (!counts && claims.length === 0 && !ambiguous) return <p className="text-xs text-muted" data-testid="found-nothing">No recognised test summary in this text, so nothing can be applied. {IMPORT_LABEL_MEANING.unknown}</p>;
   return (
@@ -65,6 +67,7 @@ export function RunForm({ exp, editing, onSave, onCancel }: { exp: Experiment; e
   const [pasteText, setPasteText] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => { if (editing) setCondId(editing.conditionId); }, [editing]);
 
@@ -98,6 +101,13 @@ export function RunForm({ exp, editing, onSave, onCancel }: { exp: Experiment; e
     setPassed(String(a.counts.passed)); setTotal(String(a.counts.total)); setProv('self-reported');
     toast(`Applied ${a.counts.passed}/${a.counts.total} from the text. Marked self-reported: Forge cannot verify it.`);
   };
+  const applyImport = (o: ImportOutcome) => {
+    setPending((p) => [...p, ...o.evidence.map((e) => ({ kind: e.kind, name: e.name, text: e.text, provenance: e.provenance, analysis: analyseEvidenceText(e.text), classification: e.classification, meta: e.meta }))]);
+    if (o.tests) { setPassed(String(o.tests.passed)); setTotal(String(o.tests.total)); setProv('user-imported'); }
+    if (o.runtimeSec !== null) setMetrics((m) => ({ ...m, runtimeSec: String(o.runtimeSec) }));
+    setImporting(false);
+    toast(`${o.evidence.length} item(s) added to this run's evidence${o.redactedCount ? `; ${o.redactedCount} possible secret(s) replaced` : ''}. Review the numbers, then save the run.`);
+  };
   const pasteAnalysis = useMemo(() => (pasteText.trim() ? analyseEvidenceText(pasteText) : null), [pasteText]);
 
   const save = async () => {
@@ -117,7 +127,7 @@ export function RunForm({ exp, editing, onSave, onCancel }: { exp: Experiment; e
         metrics: m, rubric, observations: obs,
         attempt, skillVersion: skillVersion.trim(), fixtureVersion: fixtureVersion.trim(), context: context.trim(),
       });
-      const evidence: Evidence[] = pending.map((p) => ({ id: newId('ev'), experimentId: exp.id, runId: run.id, kind: p.kind, name: p.name, mime: 'text/plain', size: new TextEncoder().encode(p.text).length, text: p.text, provenance: p.provenance, addedAt: nowIso() }));
+      const evidence: Evidence[] = pending.map((p) => ({ id: newId('ev'), experimentId: exp.id, runId: run.id, kind: p.kind, name: p.name, mime: 'text/plain', size: new TextEncoder().encode(p.text).length, text: p.text, provenance: p.provenance, classification: p.classification ?? null, meta: p.meta ?? {}, addedAt: nowIso() }));
       await onSave({ run, evidence });
       setPending([]);
       if (!editing) { setPassed(''); setTotal(''); setProv('self-reported'); setSuccess('na'); setAssessed(false); setFound([]); setMetrics(Object.fromEntries(Object.keys(metrics).map((k) => [k, '']))); setRubric(Object.fromEntries(RUBRIC_CRITERIA.map((c) => [c.id, null]))); setObs(''); setAttempt('completed'); }
@@ -195,7 +205,8 @@ export function RunForm({ exp, editing, onSave, onCancel }: { exp: Experiment; e
           <div><TextInput label="Paste Claude's output - label" value={pasteName} onChange={(e) => setPasteName(e.target.value)} placeholder="Run output" /><TextArea label="Pasted output" rows={4} mono value={pasteText} onChange={(e) => setPasteText(e.target.value)} data-testid="evidence-text" />{pasteAnalysis && <div className="mt-2"><FoundInText analysis={pasteAnalysis} onUse={useCounts} /></div>}<Button size="sm" className="mt-2" onClick={addPaste} disabled={!pasteText.trim()} data-testid="add-pasted">Attach pasted output</Button></div>
           <div><label htmlFor="ev-file" className="block text-sm font-semibold">Or upload a text file</label><input id="ev-file" type="file" accept=".txt,.md,.json,.log,.diff,.patch,.ts,.js,text/*" onChange={(e) => void onFile(e.target.files?.[0])} className="mt-1 block w-full text-sm file:mr-2 file:min-h-11 file:rounded-lg file:border file:border-line file:bg-surface2 file:px-3 file:font-semibold file:text-fg" /><p className="mt-1 text-xs text-muted">Text only, up to {MAX_EVIDENCE_BYTES / 1024} KB. Stored locally, displayed as plain text, never executed.</p></div>
         </div>
-        {pending.length > 0 && <ul className="mt-2 space-y-2 text-sm" data-testid="pending-evidence">{pending.map((p, i) => <li key={i}><div className="flex items-center gap-2"><Badge tone="teal">{p.kind}</Badge>{p.name} <Badge>{p.provenance}</Badge><Button size="sm" variant="ghost" aria-label={`Remove ${p.name}`} icon="x" onClick={() => setPending((cur) => cur.filter((_, j) => j !== i))} /></div>{(p.analysis.counts || p.analysis.claims.length > 0) && <div className="mt-1"><FoundInText analysis={p.analysis} onUse={useCounts} /></div>}</li>)}</ul>}
+        <div className="mt-3 border-t border-line pt-3">{importing ? <TranscriptImporter skillName={exp.conditions.find((c) => c.id === condId)?.skillName} onCancel={() => setImporting(false)} onConfirm={applyImport} /> : <Button size="sm" onClick={() => setImporting(true)} data-testid="open-importer-full">Import a Claude Code transcript or result…</Button>}</div>
+        {pending.length > 0 && <ul className="mt-2 space-y-2 text-sm" data-testid="pending-evidence">{pending.map((p, i) => <li key={i}><div className="flex items-center gap-2"><Badge tone="teal">{p.kind}</Badge>{p.name} <Badge>{p.provenance}</Badge>{p.classification && <Badge tone="accent">{p.classification}</Badge>}<Button size="sm" variant="ghost" aria-label={`Remove ${p.name}`} icon="x" onClick={() => setPending((cur) => cur.filter((_, j) => j !== i))} /></div>{(p.analysis.counts || p.analysis.claims.length > 0) && <div className="mt-1"><FoundInText analysis={p.analysis} onUse={useCounts} /></div>}</li>)}</ul>}
       </fieldset>
 
       {err && <Callout tone="bad" role="alert" title="Check this">{err}</Callout>}

@@ -58,3 +58,7 @@ export function useActivityRuns() {
 export function useTransferTasks() {
   return useLive(() => getDb().transferTasks.orderBy('updatedAt').reverse().toArray());
 }
+
+export function useTakeaways() {
+  return useLive(() => getDb().takeaways.orderBy('updatedAt').reverse().toArray());
+}

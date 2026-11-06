@@ -224,7 +224,7 @@ test.describe('Visual assets', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
     // welcome hero on first visit
-    const hero = page.locator('img[src$="assets/forge/hero-forge.svg"]');
+    const hero = page.locator('img[src$="assets/forge-home/hero-forge-wide.svg"]');
     await expect(hero).toHaveAttribute('alt', '');
     await expect(hero).toHaveAttribute('aria-hidden', 'true');
     await expect.poll(async () => hero.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);

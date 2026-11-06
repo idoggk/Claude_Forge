@@ -12,7 +12,7 @@ const ELEMENTS = [
 
 export const L12: Lesson = {
   id: 'L12-context-engineering',
-  version: 1,
+  version: 2,
   track: 'prompting',
   alsoIn: ['claude-code'],
   order: 12,

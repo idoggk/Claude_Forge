@@ -51,7 +51,7 @@ const RUN_LOG_TARGETS = [
 
 export const L19: Lesson = {
   id: 'L19-structured-outputs-tool-calling',
-  version: 1,
+  version: 2,
   track: 'mcp-tools',
   alsoIn: ['prompting', 'agents'],
   order: 19,

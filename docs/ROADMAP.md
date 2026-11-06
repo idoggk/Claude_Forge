@@ -28,3 +28,10 @@ Still deliberately out: accounts, sync, executing playbooks, real Claude API cal
 3. **Teach the next planned tracks and non-game fixtures.** 34 topics are still planned. The AI Lab fixtures are game-development files; add task-type templates and fixtures with objective checks for non-game work (extraction, triage, code review comments), then lessons for guardrails/hooks as gates and agent permission design.
 
 Round 4 items from earlier lists that are now done: connecting playbooks and the Lab; structured-outputs/tool-calling, few-shot, prompt-injection, RAG and evaluation-harness lessons; the MCP, OWASP, Gemini and OpenAI documentation entries.
+
+
+## After Round 5 (the next three priorities)
+
+1. **Fix the multiple-choice length leak** (docs/LEARNING_AUDIT.md): rewrite wrong options lesson by lesson and lower the ratchet in `tests/unit/learning-quality.test.ts`.
+2. **Run the pilot** (docs/REAL_WORLD_PILOT.md) with the guided experiment, a blinded review and a saved takeaway, on a real project, and fix what it shows.
+3. **Planned topics** (research track, hooks and guardrails, agent permission design) and real-device checks (a phone, Safari) once WebKit CI has run.

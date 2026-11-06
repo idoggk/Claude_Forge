@@ -59,7 +59,7 @@ export default function TransferEditor() {
 
   return (
     <div data-testid="transfer-editor">
-      <PageHeader eyebrow="Real-world transfer" title={draft.title} subtitle={`${TRANSFER_KIND_LABELS[draft.kind]}${source.label ? ` · from ${source.label}` : ''}`} actions={<LinkButton to="/transfer" variant="ghost" size="sm">All transfer tasks</LinkButton>} />
+      <PageHeader eyebrow="Real-world transfer" title={draft.title} subtitle={`${TRANSFER_KIND_LABELS[draft.kind]}${source.label ? ` · from ${source.label}` : ''}`} actions={<><LinkButton to={`/library/new?ref=transfer&refId=${encodeURIComponent(draft.id)}&label=${encodeURIComponent(draft.title)}`} variant="secondary" size="sm" data-testid="tt-save-takeaway">Save a takeaway</LinkButton><LinkButton to="/transfer" variant="ghost" size="sm">All transfer tasks</LinkButton></>} />
       <div className="sticky top-14 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3">
         <Badge tone={completed ? 'ok' : 'neutral'}>{draft.status}</Badge>
         {completed && <Badge tone="teal">self-declared</Badge>}

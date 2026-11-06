@@ -70,7 +70,17 @@ The registry lists every external page the ecosystem knowledge rests on, with st
 - **AI Lab** (`domain/experiments`): `Run` gains `attempt` (completed / failed / abandoned), `skillVersion`, `fixtureVersion`, `context`. `compare.ts` adds sample SD, per-condition failed/abandoned counts and validity notes (mixed versions, mixed fixture versions, different contexts, unequal failure rates). `importer.ts` analyses pasted text (recognised test-runner summaries become `Parsed`; statements such as "all tests pass" become `Inferred` and are never applied) and builds a NEW experiment from an exported record (fresh ids, `user-imported` provenance, loop links and locks dropped, derived comparison ignored) only after the UI has shown a preview. `report.ts` separates Observed results / Interpretation / Limitations / Next experiment.
 - **Source check** (`scripts/source-check-lib.mjs`, `scripts/check-sources.mjs`, `.github/workflows/source-check.yml`): pure, unit-tested helpers; curated public https URLs only (no addresses, ports, credentials or private names; at most 100); 1 request per second; at most 2 MB read per response; off-host redirects flagged; `last-check.json` validated before a second, write-permitted job opens a **draft** PR. See *Living discovery* above.
 
-## Data model (IndexedDB `claude-forge`, schema version 6)
+## Round 5 additions
+
+- `domain/pilot` and `content/pilot`: the three starters and the eight derived steps, built on the existing Experiment model (new optional fields with Zod defaults, so no database bump).
+- `domain/transcript`: parsing of `claude -p --output-format json`, `stream-json` and local JSONL transcripts (best effort, the on-disk format is undocumented), classification of every extracted fact, secret scanning and redaction. Nothing is imported without a preview and a confirmation.
+- `domain/blinded`: seeded shuffle, state machine (setup, scoring, locked, revealed), identities hidden in exports until reveal.
+- `domain/challenges`: a shared `lab.ts` (items carry the flaws their generator injected; checks never see them; a flag is a catch only when it names a real flaw of the same kind on the same item) and four engines; `content/challenges` holds the text; `features/challenges` is one generic page.
+- `domain/mastery/paths.ts` (Home learning paths) and `pathways.ts` (a step is done only when a matching record exists).
+- `domain/library`: takeaways, evidence-gated confidence, exports. **Database v7** adds the `takeaways` store only.
+- `domain/curriculum/audit.ts`: content measurements used by `tests/unit/learning-quality.test.ts`.
+
+## Data model (IndexedDB `claude-forge`, schema version 7)
 
 `profile · preferences · lessonProgress · attempts · competencies · reviews · annotations · arsenal · customSkills · experiments · evidence · fieldEvidence (v2) · loops (v3) · diagnostics (v4) · meta`
 
