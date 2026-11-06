@@ -178,6 +178,21 @@ export const FixtureRefSchema = z.object({
 });
 export type FixtureRef = z.infer<typeof FixtureRefSchema>;
 
+/** Marks an experiment that was started from the guided "first experiment" flow. It adds guidance state only: the data is an ordinary experiment. */
+export const PILOT_STARTERS = ['skill', 'workflow', 'prompts'] as const;
+export const PilotMetaSchema = z.object({
+  starter: z.enum(PILOT_STARTERS),
+  /** The Skill, workflow or technique being tried, in the learner's words. */
+  technique: z.string().max(200).default(''),
+  /** What to change next, written after the evaluation. */
+  nextImprovement: z.string().max(2000).default(''),
+  /** Optional: the playbook step this experiment was started to evidence. */
+  playbookId: z.string().max(100).nullable().default(null),
+  stepId: z.string().max(100).nullable().default(null),
+  startedAt: z.string(),
+});
+export type PilotMeta = z.infer<typeof PilotMetaSchema>;
+
 export const ExperimentSchema = z.object({
   id: z.string().min(1),
   schemaVersion: z.literal(1).default(1),
@@ -215,6 +230,8 @@ export const ExperimentSchema = z.object({
   /** Set when this experiment belongs to a Skill Improvement Loop. */
   loopId: z.string().nullable().default(null),
   phase: z.enum(['dev', 'heldout']).nullable().default(null),
+  /** Present only for experiments created by the guided first-experiment flow. */
+  pilot: PilotMetaSchema.nullable().default(null),
   /** Held-out runs are locked when the ground truth is revealed, so results cannot be edited afterwards. */
   runsLockedAt: z.string().nullable().default(null),
   createdAt: z.string(),

@@ -42,6 +42,7 @@ export const DEMO_EXPERIMENT: Experiment = {
   synthetic: true,
   skillLinks: [],
   loopId: null,
+  pilot: null,
   phase: null,
   runsLockedAt: null,
   createdAt: t,

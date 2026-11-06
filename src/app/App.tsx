@@ -29,6 +29,9 @@ const Explore = lazy(() => import('@/features/explore/ExplorePage'));
 const CapabilityPage = lazy(() => import('@/features/explore/CapabilityPage'));
 const Playbooks = lazy(() => import('@/features/playbooks/PlaybooksPage'));
 const PlaybookEditor = lazy(() => import('@/features/playbooks/PlaybookEditor'));
+const Pilot = lazy(() => import('@/features/pilot/PilotPage'));
+const PilotStart = lazy(() => import('@/features/pilot/PilotStart'));
+const PilotGuide = lazy(() => import('@/features/pilot/PilotGuide'));
 const Transfer = lazy(() => import('@/features/transfer/TransferPage'));
 const TransferEditor = lazy(() => import('@/features/transfer/TransferEditor'));
 
@@ -59,6 +62,9 @@ export function App() {
                 <Route path="explore/:capabilityId" element={<CapabilityPage />} />
                 <Route path="playbooks" element={<Playbooks />} />
                 <Route path="playbooks/:playbookId" element={<PlaybookEditor />} />
+                <Route path="pilot" element={<Pilot />} />
+                <Route path="pilot/new/:starterId" element={<PilotStart />} />
+                <Route path="pilot/:experimentId" element={<PilotGuide />} />
                 <Route path="transfer" element={<Transfer />} />
                 <Route path="transfer/:taskId" element={<TransferEditor />} />
                 <Route path="discovery" element={<Discovery />} />

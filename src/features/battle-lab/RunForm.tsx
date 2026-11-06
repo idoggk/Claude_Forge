@@ -16,7 +16,7 @@ const num = (s: string): number | null => {
 interface Pending { kind: Evidence['kind']; name: string; text: string; provenance: Evidence['provenance']; analysis: TextAnalysis }
 
 /** What Forge found in a piece of text, with how it knows. Pasted model output is untrusted: a statement is never a measurement. */
-function FoundInText({ analysis, onUse }: { analysis: TextAnalysis; onUse: (a: TextAnalysis) => void }) {
+export function FoundInText({ analysis, onUse }: { analysis: TextAnalysis; onUse: (a: TextAnalysis) => void }) {
   const { counts, claims, ambiguous, contradiction } = analysis;
   if (!counts && claims.length === 0 && !ambiguous) return <p className="text-xs text-muted" data-testid="found-nothing">No recognised test summary in this text, so nothing can be applied. {IMPORT_LABEL_MEANING.unknown}</p>;
   return (
