@@ -94,7 +94,7 @@ export default function MissionControl() {
         ) : (
           <>
             <LinkButton to="/academy/diagnostic" size="lg" icon="arrow" data-testid="home-diagnostic">Optional: take the 5-minute diagnostic</LinkButton>
-            <LinkButton to="/academy" size="lg" variant="ghost">Browse the Academy</LinkButton>
+            <LinkButton to="/academy" size="lg" variant="secondary">Browse the Academy</LinkButton>
           </>
         )}
       >

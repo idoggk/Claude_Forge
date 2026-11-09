@@ -156,7 +156,7 @@ test.describe('Home: artwork, layout and accessibility', () => {
         const art = page.locator('img[src$="hero-forge-wide.svg"]');
         if (width < 768) await expect(art).toBeHidden(); else await expect(art).toBeVisible();
         // the first thing to do is visible without scrolling
-        const first = state === 'first-time' ? page.getByTestId('onboard-diagnostic') : page.getByTestId('primary-action');
+        const first = state === 'first-time' ? page.getByTestId('onboard-diagnostic') : page.getByTestId('next-challenge-start');
         const box = (await first.boundingBox())!;
         expect(box.y + box.height, `primary action is within the first screen at ${width}px`).toBeLessThanOrEqual(width < 800 ? 1500 : 900);
         await shot(page, `${state}-${width}`);
