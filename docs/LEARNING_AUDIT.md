@@ -36,6 +36,10 @@ Measured on the same 461 items in the 24 lessons that existed in Round 5 (practi
 - **Two lessons without sources** (L06 and L07 teach on invented game fixtures and cite no external page). That is intentional for the fixture content, but it means no claim in them can be traced. A ratchet allows no more than two.
 - **Heuristics are not proof.** None of these checks can tell whether a distractor is a real misconception or whether a scenario is realistic. Reviewers should read the items.
 
+## Round 7 additions
+
+Guided missions and sparks are practice, not evidence. Gates: every option has feedback; challenge steps are frozen and hint-free; unit items must not restate lesson items (overlap test); completion writes no attempts. Known weakness: unit options were only partly checked for the "right answer is longest/shortest" cue; the 110-item cue from Round 6 is still open.
+
 ## Earlier findings (Round 5)
 
 The Round 5 audit found the 82% length leak and the keyword-stuffing weakness. Keyword and fields answers that read as a list of accepted terms are not credited (`readsAsTermList` in `domain/assessment/grade.ts`).

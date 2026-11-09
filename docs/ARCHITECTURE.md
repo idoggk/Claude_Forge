@@ -89,7 +89,14 @@ The registry lists every external page the ecosystem knowledge rests on, with st
 - **`domain/curriculum/audit.ts`** grew the content audit; `seededOrder` has a proper finaliser.
 - Four lessons (L25 to L28) and four advanced competencies (`agent-permissions`, `deterministic-gates`, `research-reliability`, `workflow-architecture`). The database is still schema v7.
 
-## Data model (IndexedDB `claude-forge`, schema version 7)
+## Round 7 additions
+
+- `domain/missions/` (model, engine, next, quality) is pure; persistence goes through `saveMissionRun` / `activeMissionRun` / `deleteMissionRun` in `persistence/repo.ts` (store `missionRuns`, DB v8, included in backups; older backups import fine).
+- `content/units/` holds missions and sparks; `registry.ts` validates every unit at test time. `features/units/` renders them (`UnitPlayer` reuses `ItemView`).
+- `domain/playgrounds/` holds three deterministic simulators; the retrieval one reuses the BM25 fixture.
+- `startFiveMinuteReview` / `submitFiveMinuteReview` build on the existing review planner and `submitReview`.
+
+## Data model (IndexedDB `claude-forge`, schema version 8)
 
 `profile · preferences · lessonProgress · attempts · competencies · reviews · annotations · arsenal · customSkills · experiments · evidence · fieldEvidence (v2) · loops (v3) · diagnostics (v4) · meta`
 

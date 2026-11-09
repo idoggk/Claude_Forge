@@ -65,8 +65,6 @@ export function nextChallenge(i: NextInput): Challenge {
   }
   const s = i.suggestions[0];
   if (s) {
-    const u = s.tier === 'foundation' || s.tier === 'standard' ? undefined : undefined;
-    void u;
     const spark = pickSpark(i.units, i.runs, s.competencies);
     const match = spark && spark.competencies.some((c) => s.competencies.includes(c)) ? spark : null;
     if (match && (s.tier === 'foundation' || s.tier === 'standard')) {

@@ -9,6 +9,9 @@ const ROUTES = [
   // Round 5 and 6 surfaces
   '/pilot', '/challenges', '/challenges/agent', '/pathways', '/pathways/trustworthy-research', '/library', '/library/new', '/practice', '/practice/mixed-injection-mcp',
   '/academy/lesson/L25-agent-permissions-least-privilege', '/academy/lesson/L26-hooks-guardrails-deterministic-gates',
+  // Round 7 surfaces
+  '/learn', '/deep-lab', '/review5', '/playgrounds', '/playgrounds/context', '/playgrounds/permissions', '/playgrounds/retrieval', '/quality',
+  '/mission/mission-skill-or-tool', '/spark/spark-agent-permissions',
 ];
 
 for (const width of WIDTHS) {

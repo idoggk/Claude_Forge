@@ -37,6 +37,13 @@ Round 4 items from earlier lists that are now done: connecting playbooks and the
 3. **Planned topics** (research track, hooks and guardrails, agent permission design) and real-device checks (a phone, Safari) once WebKit CI has run.
 
 
+## After Round 7 (the next three priorities)
+
+1. **Watch real learners** use sparks and missions (the quality report is the instrument); fix confusing steps; do not trust editorial minute estimates.
+2. **Convert more lessons** to missions and add sparks for the remaining planned topics; consider a bridge that lets a passed challenge schedule a review.
+3. **Close the earlier open items:** assessment cue (shortest right option), pilot, real-device and live-site checks.
+
+
 ## After Round 6 (the next three priorities)
 
 1. **Close the remaining assessment cue and run the pilot together.** Sharpen the right option in the roughly 110 single-answer items where it is now the shortest, lower the ratchet, and have a real learner take a few assessments and the guided experiment to see what the heuristics cannot.

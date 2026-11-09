@@ -91,6 +91,10 @@ docs/             ARCHITECTURE · PRODUCT · CONTENT · ROADMAP
 - [docs/ROADMAP.md](docs/ROADMAP.md) — what is deliberately not in this release.
 - [docs/HANDOFF.md](docs/HANDOFF.md) — the current state, what was verified, what was not, and what to do next.
 
+## Round 7 additions
+
+Learning-first Home with a single "next challenge"; Quick Sparks (`/learn`), Guided Missions, Deep Lab, five-minute review (`/review5`), three simulated playgrounds (`/playgrounds`), a local quality report (`/quality`). Missions and sparks are practice only and never change competency levels. IndexedDB is now schema v8. Limitations: unevaluated with real learners; minutes are estimates; playgrounds are rule-based simulations. See `docs/HANDOFF.md`.
+
 ## Round 6 additions
 
 - **Assessment integrity.** The multiple-choice length leak (82% of single-answer items) is down to under 1%, every option has its own explanation, and a biased option shuffle was fixed. `npm run audit:content` reports the measures; see [docs/LEARNING_AUDIT.md](docs/LEARNING_AUDIT.md), including what is not fixed (the right option is now the shortest in 46% of items).
