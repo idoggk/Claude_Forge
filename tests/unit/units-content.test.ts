@@ -11,7 +11,30 @@ const itemSteps = (m: Mission): ItemStep[] => m.steps.filter((s): s is ItemStep 
 const asAudit = (m: Mission): AuditItem[] => itemSteps(m).map((s) => ({ lessonId: m.id, where: 'activity' as const, item: s.item }));
 const T = '2026-11-09T10:00:00.000Z';
 
+const STOP = new Set('a an the and or of to in on for is are be it its this that with as at by from not no do does can you your we they them their i if so but than then into over about which what when how why'.split(' '));
+const cw = (t: string) => t.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(w) && w.length > 2);
+const keyTexts = (it: ItemStep['item']): string[] => {
+  const out = [it.prompt];
+  if (it.kind === 'single' || it.kind === 'multi') { const c = it.kind === 'single' ? [it.correct] : it.correct; for (const o of it.options.filter((x) => c.includes(x.id))) out.push(o.text); }
+  return out;
+};
+
 describe('guided missions and Quick Sparks', () => {
+  it('ASSESSMENT INTEGRITY: no mission or spark restates a lesson item (activity, assessment or review) or its right answer, so independent assessments stay unseen', () => {
+    const lessons = lessonItems(LESSONS);
+    const hits: string[] = [];
+    for (const u of UNITS) for (const st of itemSteps(u)) for (const t of keyTexts(st.item)) {
+      const a = new Set(cw(t));
+      if (a.size < 5) continue;
+      for (const l of lessons) for (const x of keyTexts(l.item)) {
+        const b = new Set(cw(x));
+        if (b.size < 5) continue;
+        const inter = [...a].filter((w) => b.has(w)).length;
+        if (inter / Math.min(a.size, b.size) >= 0.6) hits.push(`${u.id}/${st.id} ~ ${l.lessonId}/${l.item.id}`);
+      }
+    }
+    expect(hits).toEqual([]);
+  });
   it('every unit validates (references, feedback, branches, reachability, phases, early action)', () => {
     expect(validateAllUnits()).toEqual([]);
   });

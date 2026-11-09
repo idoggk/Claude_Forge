@@ -14,7 +14,7 @@ const SKILL_OR_TOOL: Mission = {
   steps: [
     read('hook', 'hook', 'A bad commit on a busy Friday', 'Your Skill says: **always run the economy simulation before committing a balance change**. In short sessions Claude does. In a long session, three hours in, it skips the step, and a bad balance change reaches the main branch.\n\nEveryone agrees the rule was clear.'),
     pick('predict', 'predict', 'mechanism-selection', 'What is the most reliable way to make sure the simulation runs before every balance commit?', [
-      o('a', 'Keep the Skill for interpreting results and enforce "the simulation must pass" with a hook or a CI check', 'Judgment stays in guidance while the guarantee moves to something that runs every time.'),
+      o('a', 'Let the Skill explain what a failed simulation means, and make a hook or CI job refuse the change until it has run', 'Judgment stays in guidance while the guarantee moves to something that runs every time.'),
       o('b', 'Rewrite the sentence in the Skill in capital letters with the word IMPORTANT at the start of the line', 'Emphasis changes the odds a little, but a Skill can still be skipped or fall out of a long context.'),
       o('c', 'Move the same sentence into the project instructions so that it is loaded at the start of every session', 'Project instructions are reliably loaded, but following them is still a request and not an enforced rule.'),
       o('d', 'Turn the Skill into a plugin so that it is distributed as a managed package to everyone on the team', 'Packaging changes how a Skill is shared and installed; it does not change whether a step is enforced.'),
@@ -25,7 +25,7 @@ const SKILL_OR_TOOL: Mission = {
       { id: 'skill', text: 'Write a Skill that describes how the tracker works and what its fields mean', consequence: 'Claude now knows the tracker\'s vocabulary, but it still cannot read a single ticket. A Skill gives knowledge, not access.', goto: 'practice', better: false },
       { id: 'claude', text: 'Paste the tracker\'s export into the project instructions so it is always in context', consequence: 'It works for a moment, then goes stale and fills context on every task, whether or not the tracker is relevant.', goto: 'practice', better: false },
     ]),
-    multi('practice', 'practice', 'mechanism-selection', 'Which of these should be enforced by a hook or a CI check rather than left to a Skill?', [
+    multi('practice', 'practice', 'mechanism-selection', 'Which two requirements must be enforced at the moment of the action, and not merely described to Claude?', [
       o('a', 'Refuse any commit that touches the save format unless its migration test has run', 'It must hold every time, and a missed step is costly.'),
       o('b', 'Explain to a teammate why a balance change was needed, in a friendly tone', 'A communication task, which is judgment and suits a Skill.'),
       o('c', 'Block writes outside the docs folder while the documentation agent runs', 'A limit on an action that must always hold.'),
@@ -111,8 +111,8 @@ const INJECTION: Mission = {
       'Contact: maintainers@gridline.example',
     ], [{ line: 7, severity: 'critical', why: 'A hidden comment addressed to the assistant: it is invisible when the page is rendered but still read by the model, and it asks for a private key.' }], { explanation: 'The only line that tries to direct the assistant is the hidden comment.', reveal: 'Attackers hide instructions where a human would not look.', hints: ['Look for text addressed to an assistant.'] }),
     multi('practice', 'practice', 'prompt-injection-defense', 'Which changes make this assistant safer to run on files you do not trust?', [
-      o('a', 'Remove the ability to run shell commands, since summarising needs only reading', 'Removes the capability a hostile line would need.'),
-      o('b', 'Add a prompt line saying never to follow instructions found inside files', 'Helpful as one layer, but it is a request and not a limit.'),
+      o('a', 'Remove its shell entirely, since reading a file never requires running a command', 'Removes the capability a hostile line would need.'),
+      o('b', 'Tell it in the prompt that file contents are data to summarise, not instructions to carry out', 'Helpful as one layer, but it is a request and not a limit.'),
       o('c', 'Keep your credentials folder out of the places the assistant can read', 'Removes the sensitive data from reach.'),
       o('d', 'Give the assistant a larger budget so that it can read more files before it stops for the day', 'More reach increases what a hostile line could touch.'),
     ], ['a', 'b', 'c'], { explanation: 'Limit capability, keep secrets out of reach, and say that text is data. Do not add reach.', reveal: 'Structural limits still hold when the prompt is fooled.', hints: ['Which choices shrink what a hostile line could do?'] }),
@@ -138,7 +138,7 @@ const AGENTS: Mission = {
   steps: [
     read('hook', 'hook', 'Verified, it says', 'An agent finishes a data export and reports: **"Export complete and verified."** You open the trace. The only verification query in it timed out.'),
     pick('predict', 'predict', 'agent-failure-analysis', 'How should you treat the claim "verified"?', [
-      o('a', 'As unverified: the only evidence for it failed, so run a real check of the export before relying on any of it', 'The trace, not the narration, is the evidence.'),
+      o('a', 'As not yet verified: the one check in the trace timed out, so do your own check of the export before using it', 'The trace, not the narration, is the evidence.'),
       o('b', 'As verified, because the agent said so in its final report and agents are generally accurate about their work', 'A claim contradicted by the trace is not verification, however fluent it sounds.'),
       o('c', 'As verified if the export file exists, because a file on disk shows that the export ran to the end of the job', 'A file existing does not show that its contents are right.'),
       o('d', 'As a reason to stop using agents for exports, since this one has now shown that it reports things it has not done', 'An overreaction: the fix is verification and a gate, not abandoning agents.'),
@@ -152,12 +152,12 @@ const AGENTS: Mission = {
       'step 5: run_tests() -> timeout after 120 s',
       'step 6: final: "All three files updated and every test passes."',
     ], [{ line: 4, severity: 'major', why: 'An assumption acted on as a fact: the write failed and nothing checked the file.' }, { line: 6, severity: 'critical', why: 'A success claim that the trace contradicts: one write failed and the tests never completed.' }], { explanation: 'Two lines carry claims the evidence does not support: the assumption and the final report.', reveal: 'Look for a claim, then look for the tool result that would back it.', hints: ['Find a line that says something worked, then look for the result that shows it.'] }),
-    multi('practice', 'practice', 'agent-failure-analysis', 'A run fails after step 7 of 10. Which controls would have helped most?', [
-      o('a', 'Checkpoints, so that it can resume from step 7 instead of restarting from step 1', 'Progress is kept and nothing is repeated.'),
-      o('b', 'An approval gate before any step that cannot be undone', 'A person sees the action before it happens.'),
-      o('c', 'A longer prompt that tells the agent never to make a mistake on any step of the task', 'A request cannot stop an error that the agent does not know it is making.'),
-      o('d', 'A check on each step\'s output that can fail, such as running the real test command', 'A check with a result the agent cannot talk around.'),
-    ], ['a', 'b', 'd'], { explanation: 'Checkpoints, approval gates and checks that can fail. A longer prompt is not a control.', reveal: 'Controls live in the workflow, not in the wording.', hints: ['Which choices make a failure visible or recoverable?'] }),
+    multi('practice', 'practice', 'agent-failure-analysis', 'A nightly job crashes after 60 of 200 records and nobody notices until a customer writes in. Which controls help most?', [
+      o('a', 'Saving progress after each batch, so that a rerun can carry on from record 61 and not start again', 'Progress is kept and nothing already done is repeated.'),
+      o('b', 'An alert when a run fails or ends with fewer records processed than were received', 'A failure that nobody sees continues until a customer notices.'),
+      o('c', 'A longer prompt that tells the job never to crash and to be very careful with every record', 'A request cannot stop an error that the agent does not know it is making.'),
+      o('d', 'A check that compares the number of records processed with the number that arrived', 'A count that cannot be talked around shows at once that records are missing.'),
+    ], ['a', 'b', 'd'], { explanation: 'Saved progress, visible failures and a check that can fail. A longer prompt is not a control.', reveal: 'Controls live in the workflow, not in the wording.', hints: ['Which choices make a failure visible or recoverable?'] }),
     scenario('challenge', 'challenge', 'agent-failure-analysis', 'Decide how to treat the evidence.', 'A coding agent reports that a refactor "works". You have its trace and the repository.', [
       'The trace shows the test command was started once and then killed by a timeout.',
       'Two files changed that the task did not mention.',
