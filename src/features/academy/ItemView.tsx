@@ -20,6 +20,8 @@ export interface ItemViewProps {
   seed: string;
   /** When set, answer options are shown in a deterministic per-attempt order so positions cannot be memorised. */
   optionSeed?: string;
+  /** Hide the question number and kind badge (used where one item fills the whole screen, such as a mission step). */
+  bare?: boolean;
 }
 
 const KIND_LABEL: Record<Item['kind'], string> = {
@@ -42,7 +44,7 @@ export function initialValue(item: Item, seed: string): unknown {
   return undefined;
 }
 
-export function ItemView({ item, index, value, onChange, disabled, grade, hintsShown, onHint, external, seed, optionSeed }: ItemViewProps) {
+export function ItemView({ item, index, value, onChange, disabled, grade, hintsShown, onHint, external, seed, optionSeed, bare }: ItemViewProps) {
   const graded = Boolean(grade);
   // Grading is by option id, never by position, so showing options in a different order per attempt is safe.
   const shown: Item = useMemo(() => {
@@ -55,7 +57,7 @@ export function ItemView({ item, index, value, onChange, disabled, grade, hintsS
     <fieldset className="rounded-xl border border-line bg-surface p-4 sm:p-5" data-testid={`item-${item.id}`}>
       <legend className="sr-only">Question {index + 1}</legend>
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <Badge>Q{index + 1}</Badge>
+        {!bare && <Badge>Q{index + 1}</Badge>}
         <span className="text-xs font-semibold uppercase tracking-wide text-muted">{KIND_LABEL[item.kind]}</span>
         {item.critical && <Badge tone="warn" title="A missed mandatory check caps your level for this concept, whatever else you score.">Mandatory check</Badge>}
         {item.kind === 'reflect' && <Badge tone="teal">Self-assessed · not scored</Badge>}

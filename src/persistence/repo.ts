@@ -32,6 +32,7 @@ import { LearningGoalSchema, MAX_ACTIVE_GOALS, type LearningGoal } from '@/domai
 import { PlaybookSchema, type EvidenceLink, type Playbook, type PlaybookContent, type PlaybookEvaluation } from '@/domain/playbook/model';
 import { buildEvaluation, createEvidenceLink, linkCurrency, playbookContentFingerprint, reassessLink, reviewLink, stepFingerprint } from '@/domain/playbook/evidence';
 import { TransferTaskSchema, completionProblems, type TransferTask } from '@/domain/transfer/model';
+import { MissionRunSchema, type MissionRun } from '@/domain/missions/model';
 import { TakeawaySchema, confidenceProblems, type EvidenceContext, type Takeaway } from '@/domain/library/model';
 import { ActivityRunSchema, type ActivityRun } from './schemas';
 
@@ -691,3 +692,22 @@ export async function resetEverything(): Promise<void> {
 }
 
 export type { CompetencyRecord };
+
+/* --------------------------------------- guided missions and Quick Sparks --------------------------------------- */
+
+/** Save a mission run. It is practice: it never writes an attempt and never changes a competency level. */
+export async function saveMissionRun(run: MissionRun): Promise<MissionRun> {
+  const parsed = MissionRunSchema.parse(run);
+  await getDb().missionRuns.put(parsed);
+  return parsed;
+}
+
+/** The newest unfinished run of a mission, if any. */
+export async function activeMissionRun(missionId: string): Promise<MissionRun | undefined> {
+  const rows = await getDb().missionRuns.where('missionId').equals(missionId).toArray();
+  return rows.filter((r) => r.status === 'in-progress').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+}
+
+export async function deleteMissionRun(id: string): Promise<void> {
+  await getDb().missionRuns.delete(id);
+}

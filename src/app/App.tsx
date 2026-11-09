@@ -40,6 +40,8 @@ const Pathways = lazy(() => import('@/features/pathways/PathwaysPage'));
 const PathwayPage = lazy(() => import('@/features/pathways/PathwayPage'));
 const Practice = lazy(() => import('@/features/practice/PracticePage'));
 const MixedExercise = lazy(() => import('@/features/practice/MixedExercisePage'));
+const Learn = lazy(() => import('@/features/units/LearnPage'));
+const UnitPlayer = lazy(() => import('@/features/units/UnitPlayer'));
 const Transfer = lazy(() => import('@/features/transfer/TransferPage'));
 const TransferEditor = lazy(() => import('@/features/transfer/TransferEditor'));
 
@@ -81,6 +83,9 @@ export function App() {
                 <Route path="pathways/:pathwayId" element={<PathwayPage />} />
                 <Route path="practice" element={<Practice />} />
                 <Route path="practice/:exerciseId" element={<MixedExercise />} />
+                <Route path="learn" element={<Learn />} />
+                <Route path="mission/:unitId" element={<UnitPlayer />} />
+                <Route path="spark/:unitId" element={<UnitPlayer />} />
                 <Route path="transfer" element={<Transfer />} />
                 <Route path="transfer/:taskId" element={<TransferEditor />} />
                 <Route path="discovery" element={<Discovery />} />
