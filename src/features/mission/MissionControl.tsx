@@ -20,6 +20,8 @@ import { misconceptionsHit } from '@/domain/mastery/reviewPlan';
 import { useData } from '@/app/providers/DataProvider';
 import { ARSENAL_STATUSES } from '@/persistence/schemas';
 import { useAdaptive } from '@/features/practice/useAdaptive';
+import { useNextChallenge } from '@/features/units/useNextChallenge';
+import { NextChallengeCard } from '@/features/units/NextChallengeCard';
 import { SuggestionCard } from '@/features/practice/SuggestionCard';
 
 export default function MissionControl() {
@@ -32,7 +34,8 @@ export default function MissionControl() {
   const { data: playbooks } = usePlaybooks();
   const { profile } = useData();
   const adaptive = useAdaptive();
-  if (!l || !arsenal || !experiments || !loops || !goals || !runs || !playbooks) return <Spinner label="Loading Mission Control" />;
+  const learningNow = useNextChallenge();
+  if (!l || !arsenal || !experiments || !loops || !goals || !runs || !playbooks || !learningNow) return <Spinner label="Loading Mission Control" />;
 
   const today = todayKey();
   const hint = latestHint(l.diagnostics);
@@ -90,8 +93,8 @@ export default function MissionControl() {
           </>
         ) : (
           <>
-            <LinkButton to="/academy/diagnostic" variant="primary" size="lg" icon="arrow" data-testid="home-diagnostic">Take the 5-minute diagnostic</LinkButton>
-            <LinkButton to="/academy" size="lg">Browse the Academy</LinkButton>
+            <LinkButton to="/academy/diagnostic" size="lg" icon="arrow" data-testid="home-diagnostic">Optional: take the 5-minute diagnostic</LinkButton>
+            <LinkButton to="/academy" size="lg" variant="ghost">Browse the Academy</LinkButton>
           </>
         )}
       >
@@ -101,6 +104,8 @@ export default function MissionControl() {
           <p data-testid="home-intro">Claude Forge is a personal academy for judging, using and measuring AI. You learn by doing, and your levels change only when you pass unseen assessments or log real work. {LESSONS.length} lessons across {TRACKS.length} tracks exist today; {plannedTopics} more topics are planned and marked as planned. Nothing here is pre-filled or simulated.</p>
         )}
       </HomeHero>
+
+      <NextChallengeCard now={learningNow} />
 
       <div className={returning ? 'grid gap-4 lg:grid-cols-3' : 'space-y-4'}>
         <Card className={`border-accent ${returning ? 'lg:col-span-2' : ''}`} aria-labelledby="mission-title" data-testid="next-mission">

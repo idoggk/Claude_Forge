@@ -44,6 +44,8 @@ const Learn = lazy(() => import('@/features/units/LearnPage'));
 const UnitPlayer = lazy(() => import('@/features/units/UnitPlayer'));
 const PlaygroundsIndex = lazy(() => import('@/features/playgrounds/Playgrounds').then((m) => ({ default: m.PlaygroundsIndex })));
 const PlaygroundPage = lazy(() => import('@/features/playgrounds/Playgrounds').then((m) => ({ default: m.PlaygroundPage })));
+const FiveMinuteReview = lazy(() => import('@/features/units/FiveMinuteReview'));
+const DeepLab = lazy(() => import('@/features/units/DeepLabPage'));
 const Transfer = lazy(() => import('@/features/transfer/TransferPage'));
 const TransferEditor = lazy(() => import('@/features/transfer/TransferEditor'));
 
@@ -90,6 +92,8 @@ export function App() {
                 <Route path="spark/:unitId" element={<UnitPlayer />} />
                 <Route path="playgrounds" element={<PlaygroundsIndex />} />
                 <Route path="playgrounds/:playgroundId" element={<PlaygroundPage />} />
+                <Route path="review5" element={<FiveMinuteReview />} />
+                <Route path="deep-lab" element={<DeepLab />} />
                 <Route path="transfer" element={<Transfer />} />
                 <Route path="transfer/:taskId" element={<TransferEditor />} />
                 <Route path="discovery" element={<Discovery />} />

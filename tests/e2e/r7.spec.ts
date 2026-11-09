@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { UNITS, getUnit } from '../../src/content/units/registry';
 import type { ItemStep } from '../../src/domain/missions/model';
-import { answerItems, expectNoHorizontalOverflow, goto, startApp } from './helpers';
+import { L01, answerItems, expectNoHorizontalOverflow, goto, setClockOffset, startApp, takeL01Assessment } from './helpers';
 
 const MISSION = getUnit('mission-skill-or-tool')!;
 const items = MISSION.steps.filter((s): s is ItemStep => s.type === 'item');
@@ -164,6 +164,92 @@ test.describe('Round 7: guided missions in the real UI', () => {
           await page.waitForTimeout(250);
           const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
           expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${id}: ${v.id} ${v.nodes[0]?.target.join(' ')}`)).toEqual([]);
+          await expectNoHorizontalOverflow(page);
+        }
+      });
+    }
+  });
+
+  test.describe('learning-first home, five-minute review and the whole loop', () => {
+    test('1. a new learner sees one inviting challenge first, completes the Quick Spark, and returns to Mission Control with it remembered', async ({ page }) => {
+      await startApp(page);
+      await expect(page.getByTestId('next-challenge')).toBeVisible();
+      await expect(page.getByTestId('next-challenge')).toContainText('Try this first');
+      await expect(page.getByTestId('next-challenge-why')).toContainText('No set-up');
+      await expect(page.getByTestId('learn-modes')).toContainText('Quick Spark');
+      await expect(page.getByTestId('learn-modes')).toContainText('Guided Mission');
+      await expect(page.getByTestId('learn-modes')).toContainText('Deep Lab');
+      await expect(page.getByTestId('next-challenge')).toContainText('estimate');
+      await page.getByTestId('next-challenge-start').click();
+      await expect(page).toHaveURL(/#\/spark\//);
+      const unit = UNITS.find((u) => page.url().endsWith(u.id))!;
+      const steps = unit.steps;
+      for (const st of steps) {
+        if (st.type === 'item') { await answerItems(page, [st.item]); await page.getByTestId('step-check').click(); }
+        await page.getByTestId('step-continue').click();
+      }
+      await expect(page.getByTestId('unit-finished')).toBeVisible();
+      await page.getByRole('link', { name: 'Mission Control' }).first().click();
+      await expect(page.getByTestId('next-challenge-title')).not.toHaveText(unit.title); // a different challenge now
+      await goto(page, '/learn');
+      await expect(page.getByTestId(`unit-card-${unit.id}`)).toContainText('Done');
+    });
+
+    test('2. a returning learner resumes an unfinished mission straight from Mission Control in one interaction', async ({ page }) => {
+      await startApp(page);
+      await goto(page, `/mission/${MISSION.id}`);
+      await page.getByTestId('step-continue').click();
+      await goto(page, '/');
+      await expect(page.getByTestId('next-challenge')).toContainText('Pick up where you left off');
+      await page.getByTestId('next-challenge-start').click();
+      await expect(page.getByTestId('unit-progress')).toContainText('Predict');
+    });
+
+    test('5. a five-minute review: nothing due offers a relevant challenge; when reviews are due it asks one question at a time and saves', async ({ page }) => {
+      test.setTimeout(120_000);
+      await startApp(page);
+      await goto(page, '/review5');
+      await expect(page.getByTestId('review5-empty')).toContainText('Nothing is due');
+      await expect(page.getByRole('link', { name: /Try it|Start/ }).first()).toBeVisible();
+      // pass lesson 1 so a review is scheduled, then move the app's clock forward two days (Settings -> Testing tools)
+      await takeL01Assessment(page, { confidence: 3 });
+      await setClockOffset(page, 2);
+      await goto(page, '/');
+      await expect(page.getByTestId('next-challenge')).toContainText('Due now');
+      await page.getByTestId('next-challenge-start').click();
+      await expect(page.getByTestId('review5')).toBeVisible();
+      await expect(page.getByTestId('review5-progress')).toContainText('Question 1 of');
+      const total = Number((await page.getByTestId('review5-progress').textContent())!.match(/of (\d+)/)![1]);
+      expect(total).toBeLessThanOrEqual(5);
+      for (let q = 0; q < total; q++) {
+        const id = (await page.locator('[data-testid^="item-"]').first().getAttribute('data-testid'))!.replace('item-', '');
+        const item = L01.reviewItems.find((x) => x.id === id)!;
+        await answerItems(page, [item]);
+        await page.getByTestId('review5-check').click();
+        await expect(page.getByTestId(`feedback-${id}`)).toBeVisible();
+        await page.getByTestId(q === total - 1 ? 'review5-finish' : 'review5-next').click();
+      }
+      await expect(page.getByTestId('review5-summary')).toContainText('Review done');
+      await expect(page.getByTestId('review5-summary')).toContainText('Next review');
+    });
+
+    test('Deep Lab is an honest doorway into the existing tools and shows where you left off', async ({ page }) => {
+      await startApp(page);
+      await goto(page, '/deep-lab');
+      await expect(page.getByTestId('deep-lab-list').locator('li')).toHaveCount(5);
+      await expect(page.getByTestId('deep-lab-experiment')).toContainText(/own Claude Code/i);
+      await expect(page.getByTestId('deep-lab-experiment')).toContainText('(estimate)');
+    });
+
+    for (const w of [375, 390, 768, 1280]) {
+      test(`Home, Learn and Deep Lab fit and pass axe at ${w}px`, async ({ page }) => {
+        await page.setViewportSize({ width: w, height: 900 });
+        await startApp(page);
+        for (const r of ['/', '/learn', '/deep-lab', '/review5']) {
+          await goto(page, r);
+          await page.waitForTimeout(250);
+          const a = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+          expect(a.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${r}: ${v.id} ${v.nodes[0]?.target.join(' ')}`)).toEqual([]);
           await expectNoHorizontalOverflow(page);
         }
       });
