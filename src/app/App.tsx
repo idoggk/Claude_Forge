@@ -46,6 +46,7 @@ const PlaygroundsIndex = lazy(() => import('@/features/playgrounds/Playgrounds')
 const PlaygroundPage = lazy(() => import('@/features/playgrounds/Playgrounds').then((m) => ({ default: m.PlaygroundPage })));
 const FiveMinuteReview = lazy(() => import('@/features/units/FiveMinuteReview'));
 const DeepLab = lazy(() => import('@/features/units/DeepLabPage'));
+const Quality = lazy(() => import('@/features/units/QualityPage'));
 const Transfer = lazy(() => import('@/features/transfer/TransferPage'));
 const TransferEditor = lazy(() => import('@/features/transfer/TransferEditor'));
 
@@ -94,6 +95,7 @@ export function App() {
                 <Route path="playgrounds/:playgroundId" element={<PlaygroundPage />} />
                 <Route path="review5" element={<FiveMinuteReview />} />
                 <Route path="deep-lab" element={<DeepLab />} />
+                <Route path="quality" element={<Quality />} />
                 <Route path="transfer" element={<Transfer />} />
                 <Route path="transfer/:taskId" element={<TransferEditor />} />
                 <Route path="discovery" element={<Discovery />} />
