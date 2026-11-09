@@ -110,4 +110,63 @@ test.describe('Round 7: guided missions in the real UI', () => {
       await expect(page.getByTestId('unit-title')).toHaveText(u.title);
     }
   });
+
+  test.describe('playgrounds', () => {
+    test('context: building a sufficient brief meets the challenge, "paste everything" fails in several ways, and the simulation is labelled', async ({ page }) => {
+      await startApp(page);
+      await goto(page, '/playgrounds/context');
+      await expect(page.getByTestId('sim-banner')).toContainText('What is not');
+      await expect(page.getByTestId('challenge-c1')).toContainText('Not yet');
+      for (const id of ['code', 'failure', 'constraint', 'acceptance']) await page.getByTestId(`card-${id}`).check();
+      await page.getByRole('radio', { name: 'First' }).click();
+      await expect(page.getByTestId('challenge-c1')).toContainText('Met');
+      await expect(page.getByTestId('pg-effects')).toContainText('fair chance');
+      await page.getByTestId('pg-all').click();
+      await expect(page.getByTestId('pg-effects')).toContainText('against a budget');
+      await expect(page.getByTestId('pg-effects')).toContainText('contradicts the constraint');
+      await expect(page.getByTestId('challenge-c1')).toContainText('Not yet');
+    });
+
+    test('permissions: reaching least privilege for a task, using only keyboard-operable controls', async ({ page }) => {
+      await startApp(page);
+      await goto(page, '/playgrounds/permissions');
+      await expect(page.getByTestId('perm-verdict')).toContainText('Not enough to do the task');
+      await page.getByTestId('perm-read').selectOption('inbox');
+      await page.getByTestId('perm-write').selectOption('output');
+      await expect(page.getByTestId('perm-verdict')).toContainText('Least privilege');
+      await page.getByTestId('perm-network').check();
+      await expect(page.getByTestId('perm-verdict')).toContainText('Breaks a constraint');
+      await page.getByTestId('perm-network').uncheck();
+      await page.getByTestId('perm-del').check();
+      await expect(page.getByTestId('perm-verdict')).toContainText('broader than needed');
+    });
+
+    test('retrieval: a vague query misleads, a precise one retrieves the current source, and the limits are stated', async ({ page }) => {
+      await startApp(page);
+      await goto(page, '/playgrounds/retrieval');
+      await expect(page.getByTestId('sim-banner')).toContainText('embeddings');
+      await page.getByTestId('rag-vague').click();
+      await expect(page.getByTestId('rag-hits')).toContainText('Dashboard session settings');
+      await page.getByTestId('rag-good').click();
+      await expect(page.getByTestId('pg-effects')).toContainText('rank');
+      await expect(page.getByTestId('rag-hits')).toContainText('Quillbridge CLI reference');
+      await page.getByTestId('rag-k').fill('5');
+      await expect(page.getByTestId('rag-k-value')).toHaveText('5');
+    });
+
+    for (const w of [375, 1280]) {
+      test(`all three are accessible and have no overflow at ${w}px`, async ({ page }) => {
+        test.setTimeout(90_000);
+        await page.setViewportSize({ width: w, height: 900 });
+        await startApp(page);
+        for (const id of ['', 'context', 'permissions', 'retrieval']) {
+          await goto(page, `/playgrounds${id ? `/${id}` : ''}`);
+          await page.waitForTimeout(250);
+          const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+          expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${id}: ${v.id} ${v.nodes[0]?.target.join(' ')}`)).toEqual([]);
+          await expectNoHorizontalOverflow(page);
+        }
+      });
+    }
+  });
 });

@@ -42,6 +42,8 @@ const Practice = lazy(() => import('@/features/practice/PracticePage'));
 const MixedExercise = lazy(() => import('@/features/practice/MixedExercisePage'));
 const Learn = lazy(() => import('@/features/units/LearnPage'));
 const UnitPlayer = lazy(() => import('@/features/units/UnitPlayer'));
+const PlaygroundsIndex = lazy(() => import('@/features/playgrounds/Playgrounds').then((m) => ({ default: m.PlaygroundsIndex })));
+const PlaygroundPage = lazy(() => import('@/features/playgrounds/Playgrounds').then((m) => ({ default: m.PlaygroundPage })));
 const Transfer = lazy(() => import('@/features/transfer/TransferPage'));
 const TransferEditor = lazy(() => import('@/features/transfer/TransferEditor'));
 
@@ -86,6 +88,8 @@ export function App() {
                 <Route path="learn" element={<Learn />} />
                 <Route path="mission/:unitId" element={<UnitPlayer />} />
                 <Route path="spark/:unitId" element={<UnitPlayer />} />
+                <Route path="playgrounds" element={<PlaygroundsIndex />} />
+                <Route path="playgrounds/:playgroundId" element={<PlaygroundPage />} />
                 <Route path="transfer" element={<Transfer />} />
                 <Route path="transfer/:taskId" element={<TransferEditor />} />
                 <Route path="discovery" element={<Discovery />} />
