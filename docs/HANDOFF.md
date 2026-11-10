@@ -1,4 +1,4 @@
-# Claude Forge — handoff summary (state as of 2026-11-06, after Development Round 6)
+# Claude Forge — handoff summary (state as of 2026-11-09, after Development Round 7)
 
 Paste this whole document into a new conversation. It describes what exists, what was verified, what is NOT verified, and what to improve next.
 
@@ -45,6 +45,19 @@ tests/unit  tests/e2e  docs/  .github/workflows/{ci,deploy,source-check}.yml
 
 Round 6 verification (local, Linux, Chromium): ESLint clean; `tsc` clean; Vitest 655 passed (49 files); build OK; `npm audit` 0 vulnerabilities; Playwright 157 passed and 1 failed in the full run (a stale hard-coded "of 23 competencies" in the Home test, now 27; the fixed test passes alone; the whole suite was not re-run). CI on the PR head is recorded in the final report.
 **Not verified:** the live Pages site (host blocked from the build sandbox), real iPhone Safari, Windows, a real Claude Code session, the pilot. WebKit ran only as an informational Linux CI job.
+
+## 2c. What Round 7 added (branch `round-7-learning-experience`)
+
+- **Mission engine** (`src/domain/missions/`): content-driven `Mission` (kind `spark` ~3 min or `mission` ~8 min) of `read` / `item` / `branch` steps over phases hook→predict→discover→practice→challenge→reflect. Items reuse the existing Item types and `gradeItem`. `validateMission` is the content gate (≥3/≥6 steps, first action within 2 steps, option feedback, forward-only branches, a mission needs a predict step, a frozen no-hint challenge and a final reflection). The pure state machine (`engine.ts`) never touches the DB; runs are bound to the content version and saved after every move in `missionRuns` (DB **v8**), so a run resumes where it stopped. Challenge answers are frozen once checked. **Completing a mission or spark is practice only: it writes no attempts and no competency evidence.**
+- Content: `src/content/units/` — 5 guided missions (L01, L12, L21, L13, L23; each links to the unchanged lesson assessment, so no lesson versions changed) and 12 Quick Sparks (11 non-game). A test fails any unit item that restates a lesson activity/assessment/review item (word overlap ≥ 0.6).
+- **Three modes**: Quick Spark and Guided Mission at `/learn`, `/spark/:id`, `/mission/:id`; Deep Lab (`/deep-lab`) is a doorway to the existing AI Lab, Improvement Loop, Challenges, Playbooks and Transfer.
+- **Playgrounds** (`/playgrounds`): context window, tool permissions, retrieval; deterministic rule-based modules, each labelled as simulated, no model and no accuracy numbers.
+- **Five-minute review** (`/review5`): ≤5 items, ≤2 due lessons, interleaved; a target not a timer; hints make an answer non-independent; offers a challenge when nothing is due.
+- **Learning-first Home**: "Your next challenge" card (`domain/missions/next.ts`: unfinished run → due reviews → adaptive suggestion → intro spark for first-timers → next spark/mission → caught up), plus the three modes. The first-run diagnostic is now optional.
+- **Quality report** (`/quality`, `domain/missions/quality.ts`): local, descriptive, no timing; samples under 5 are shown as "too few to say".
+- **Round 7 quality audit** (`docs/ROUND_7_QUALITY_AUDIT.md`): five High findings fixed (option-shuffle position bias, right-option length cue, first-run CTA below the fold, stale-tab overwrite of a frozen answer, focus lost after Check); open Medium items M2, M6, M7, M8 are listed there with recommendations.
+- Verification: see section 4 and the Round 7 final report. Not verified: real learners, real devices, WebKit; the effect of any of this on learning is unmeasured. Spark and mission minutes are editorial estimates.
+
 
 ## 2b. What Round 5 added (branch `round-5-real-world-lab`, draft PR #3 against `main`, not merged)
 

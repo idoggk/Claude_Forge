@@ -89,6 +89,10 @@ code, kbd, pre, samp { font-family: var(--font-mono); }
   transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; scroll-behavior: auto !important;
 }
 
+/* Mission steps arrive with a short fade; removed entirely when motion is reduced (see the rules above). */
+@keyframes step-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.step-enter { animation: step-enter 180ms ease-out both; }
+
 /* Rendered Markdown (react-markdown output; raw HTML is never rendered). */
 .prose-forge { max-width: 68ch; overflow-wrap: anywhere; }
 .prose-forge > * + * { margin-top: 0.8em; }

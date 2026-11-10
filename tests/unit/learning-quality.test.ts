@@ -108,6 +108,16 @@ describe('options are shuffled for the learner at display time', () => {
     }
     for (const c of pos) { expect(c).toBeGreaterThan(60); expect(c).toBeLessThan(140); }
   });
+  it('answer options are uniform over positions even with three options, so listing the right option first does not show it last', () => {
+    const opts = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+    const pos = [0, 0, 0];
+    const N = 1200;
+    for (let i = 0; i < N; i++) pos[seededOrder(opts, `u_${i}-xyz:mr_${i * 7}:ask`, false).findIndex((x) => x.id === 'a')]!++;
+    // expected 400 each; the old identity rotation gave about 200 / 400 / 600
+    for (const c of pos) { expect(c).toBeGreaterThan(340); expect(c).toBeLessThan(460); }
+    // ordering exercises still never start in the solution order
+    for (let i = 0; i < 200; i++) expect(seededOrder(opts, `order-${i}`).map((x) => x.id)).not.toEqual(['a', 'b', 'c']);
+  });
   it('the only place that renders choice items always passes an option seed', () => {
     const src = readFileSync('src/features/academy/ExerciseRunner.tsx', 'utf8');
     expect(src).toMatch(/optionSeed=\{/);

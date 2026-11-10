@@ -119,6 +119,11 @@ A deterministic scoring rule: due reviews first; then curriculum order, prerequi
 - **Refused**: auto-running Claude, installing Skills, hidden analytics, treating a checkbox as mastery.
 
 
+## Round 7: learning experience reinvention
+
+The learner now starts with a 3-minute Quick Spark, a ~8-minute Guided Mission, or a Deep Lab, chosen by a single "next challenge" recommendation. Sparks and missions teach by predict → discover → practice → challenge → reflect, give feedback on every option, and never count toward mastery; only independent assessments do. Five-minute review and three simulated playgrounds add low-friction practice. A local, descriptive quality report shows where learners get stuck.
+
+
 ## Round 6: learning integrity, adaptive mastery and real-world practice
 
 - **Assessments that cannot be passed by formatting.** Answer length, option wording and option position are no longer reliable cues; the remaining one (the right option tends to be the shortest) is documented and capped.

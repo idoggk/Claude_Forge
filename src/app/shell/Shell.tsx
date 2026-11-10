@@ -20,7 +20,7 @@ interface NavGroup {
 
 /** Six areas keep the sidebar short: Home, Learn, Explore, Lab, Build, My System. Test ids are stable across versions. */
 export const NAV_GROUPS: NavGroup[] = [
-  { items: [{ to: '/', label: 'Mission Control', icon: 'home', end: true, testId: 'nav-mission' }] },
+  { items: [{ to: '/', label: 'Mission Control', icon: 'home', end: true, testId: 'nav-mission' }, { to: '/learn', label: 'Start learning', icon: 'target', testId: 'nav-learn' }] },
   {
     heading: 'Learn',
     items: [

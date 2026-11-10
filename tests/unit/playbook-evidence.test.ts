@@ -368,8 +368,8 @@ describe('migration v5 -> v6: a real older database is upgraded without losing a
     const db = new ForgeDB(name);
     setDbForTesting(db);
     await db.open();
-    expect(DB_VERSION).toBe(7);
-    expect(db.verno).toBe(7);
+    expect(DB_VERSION).toBe(8);
+    expect(db.verno).toBe(8);
     const pb = (await db.playbooks.get('pb-old'))!;
     expect(pb.contentVersion).toBe(1);
     expect(pb.evidenceLinks).toEqual([]);

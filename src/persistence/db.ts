@@ -19,18 +19,19 @@ import type { LoopRun } from '@/domain/loop/model';
 import type { LearningGoal } from '@/domain/goals/model';
 import type { TransferTask } from '@/domain/transfer/model';
 import type { Takeaway } from '@/domain/library/model';
+import type { MissionRun } from '@/domain/missions/model';
 import { stepFingerprint } from '@/domain/playbook/evidence';
 import type { Playbook } from '@/domain/playbook/model';
 
 export const DB_NAME = 'claude-forge';
 /** Bump when stores or record shapes change, and add a numbered `version()` block with an upgrade. */
-export const DB_VERSION = 7;
+export const DB_VERSION = 8;
 
 /**
  * Stores (all local to this browser profile):
  *  profile · preferences · lessonProgress · attempts · competencies · reviews ·
  *  annotations (catalog notes) · arsenal · customSkills · experiments · evidence ·
- *  fieldEvidence (v2) · loops (v3) · diagnostics (v4) · goals, playbooks, activityRuns (v5) · transferTasks (v6) · takeaways (v7) · meta
+ *  fieldEvidence (v2) · loops (v3) · diagnostics (v4) · goals, playbooks, activityRuns (v5) · transferTasks (v6) · takeaways (v7) · missionRuns (v8) · meta
  */
 export class ForgeDB extends Dexie {
   profile!: Table<Profile, string>;
@@ -52,6 +53,7 @@ export class ForgeDB extends Dexie {
   activityRuns!: Table<ActivityRun, string>;
   transferTasks!: Table<TransferTask, string>;
   takeaways!: Table<Takeaway, string>;
+  missionRuns!: Table<MissionRun, string>;
   meta!: Table<MetaRecord, string>;
 
   constructor(name: string = DB_NAME) {
@@ -157,6 +159,10 @@ export class ForgeDB extends Dexie {
 
     // v7 - adds `takeaways` (the personal knowledge library). A new store only: no existing record is read or rewritten.
     this.version(7).stores({ takeaways: 'id, confidence, updatedAt' });
+
+    // v8 - adds `missionRuns`: progress through guided missions and Quick Sparks (current step, checked answers, whether it was
+    // resumed). A new store only: no existing record is read or rewritten, and mission runs are practice, never attempts.
+    this.version(8).stores({ missionRuns: 'id, missionId, status, updatedAt' });
   }
 }
 
@@ -192,6 +198,7 @@ export const ALL_STORES = [
   'activityRuns',
   'transferTasks',
   'takeaways',
+  'missionRuns',
   'meta',
 ] as const;
 export type StoreName = (typeof ALL_STORES)[number];

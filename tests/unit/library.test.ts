@@ -117,8 +117,8 @@ describe('migration v6 -> v7', () => {
     const db = new ForgeDB(name);
     setDbForTesting(db);
     await db.open();
-    expect(DB_VERSION).toBe(7);
-    expect(db.verno).toBe(7);
+    expect(DB_VERSION).toBe(8);
+    expect(db.verno).toBe(8);
     expect((await db.activityRuns.get('r-old'))!.score).toBe(1);
     expect(await db.takeaways.count()).toBe(0);
   });

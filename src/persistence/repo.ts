@@ -1,11 +1,12 @@
 import { getDb } from './db';
 import type { Lesson, Item } from '@/domain/curriculum/types';
 import { LESSONS } from '@/content/lessons';
+import { mergeRuns } from '@/domain/missions/engine';
 import { gradeAttempt, type AttemptGrade } from '@/domain/assessment/grade';
 import { evaluateExternal } from '@/domain/assessment/external';
 import { predictedPctFor, calibrationVerdict } from '@/domain/assessment/calibration';
 import { applyEvaluations, evaluateCompetencies } from '@/domain/mastery/competency';
-import { applyReviewOutcome, classifyReview, initialReview } from '@/domain/mastery/review';
+import { applyReviewOutcome, classifyReview, initialReview, isDue } from '@/domain/mastery/review';
 import { planReview, type PlannedItem } from '@/domain/mastery/reviewPlan';
 import { lessonStatus } from '@/domain/mastery/recommend';
 import { nowIso, todayKey } from '@/lib/clock';
@@ -32,6 +33,7 @@ import { LearningGoalSchema, MAX_ACTIVE_GOALS, type LearningGoal } from '@/domai
 import { PlaybookSchema, type EvidenceLink, type Playbook, type PlaybookContent, type PlaybookEvaluation } from '@/domain/playbook/model';
 import { buildEvaluation, createEvidenceLink, linkCurrency, playbookContentFingerprint, reassessLink, reviewLink, stepFingerprint } from '@/domain/playbook/evidence';
 import { TransferTaskSchema, completionProblems, type TransferTask } from '@/domain/transfer/model';
+import { MissionRunSchema, type MissionRun } from '@/domain/missions/model';
 import { TakeawaySchema, confidenceProblems, type EvidenceContext, type Takeaway } from '@/domain/library/model';
 import { ActivityRunSchema, type ActivityRun } from './schemas';
 
@@ -691,3 +693,86 @@ export async function resetEverything(): Promise<void> {
 }
 
 export type { CompetencyRecord };
+
+/* --------------------------------------- guided missions and Quick Sparks --------------------------------------- */
+
+/** Save a mission run. It is practice: it never writes an attempt and never changes a competency level. */
+export async function saveMissionRun(run: MissionRun): Promise<MissionRun> {
+  const parsed = MissionRunSchema.parse(run);
+  const db = getDb();
+  // Read-merge-write in one transaction (Dexie work only): a stale tab cannot replace an answer that is already frozen.
+  return db.transaction('rw', db.missionRuns, async () => {
+    const merged = mergeRuns(await db.missionRuns.get(parsed.id), parsed);
+    await db.missionRuns.put(merged);
+    return merged;
+  });
+}
+
+/** The newest unfinished run of a mission, if any. */
+export async function activeMissionRun(missionId: string): Promise<MissionRun | undefined> {
+  const rows = await getDb().missionRuns.where('missionId').equals(missionId).toArray();
+  return rows.filter((r) => r.status === 'in-progress').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+}
+
+export async function deleteMissionRun(id: string): Promise<void> {
+  await getDb().missionRuns.delete(id);
+}
+
+
+/* ------------------------------------------ five-minute review ------------------------------------------ */
+
+export interface FiveMinuteItem { lessonId: string; lessonTitle: string; item: Item; reason: PlannedItem['reason']; note: string }
+export interface FiveMinuteSession {
+  /** At most five questions, interleaved across at most two due lessons. */
+  items: FiveMinuteItem[];
+  lessonIds: string[];
+  /** Due reviews beyond this session. */
+  remainingDue: number;
+}
+export const FIVE_MINUTE_MAX_ITEMS = 5;
+export const FIVE_MINUTE_MAX_LESSONS = 2;
+
+/**
+ * A short session built from the learner's own due reviews: oldest due first, at most two lessons so each gets enough questions
+ * to be meaningful, planned by the same review planner as a full review (mistakes and misconceptions first, difficulty by
+ * schedule box), then interleaved so the lessons alternate. Returns null when nothing is due. It reads only.
+ */
+export async function startFiveMinuteReview(today: string): Promise<FiveMinuteSession | null> {
+  const db = getDb();
+  const due = (await db.reviews.toArray()).filter((r) => isDue(r, today)).sort((a, b) => a.dueOn.localeCompare(b.dueOn));
+  if (due.length === 0) return null;
+  const chosen = due.slice(0, FIVE_MINUTE_MAX_LESSONS);
+  const perLesson: FiveMinuteItem[][] = [];
+  for (const rec of chosen) {
+    const lesson = LESSONS.find((l) => l.id === rec.lessonId);
+    if (!lesson) continue;
+    const plan = await planFor(lesson, rec);
+    // only items from this lesson's own plan: keep the interleaved guest item out, because grading is per lesson
+    const own = plan.filter((p) => p.lessonId === lesson.id);
+    perLesson.push(own.map((p) => ({ lessonId: lesson.id, lessonTitle: lesson.title, item: p.item, reason: p.reason, note: p.note })));
+  }
+  const cap = chosen.length === 1 ? FIVE_MINUTE_MAX_ITEMS : Math.ceil(FIVE_MINUTE_MAX_ITEMS / 2);
+  const trimmed = perLesson.map((l, i) => l.slice(0, i === 0 ? cap : FIVE_MINUTE_MAX_ITEMS - Math.min(cap, perLesson[0]!.length)));
+  const items: FiveMinuteItem[] = [];
+  for (let k = 0; items.length < FIVE_MINUTE_MAX_ITEMS; k++) {
+    let added = false;
+    for (const l of trimmed) if (l[k] && items.length < FIVE_MINUTE_MAX_ITEMS) { items.push(l[k]!); added = true; }
+    if (!added) break;
+  }
+  if (items.length === 0) return null;
+  return { items, lessonIds: [...new Set(items.map((i) => i.lessonId))], remainingDue: due.length - [...new Set(items.map((i) => i.lessonId))].length };
+}
+
+/** Save a finished five-minute session: one ordinary review per lesson, through the same scheduling and mastery rules. */
+export async function submitFiveMinuteReview(input: { items: FiveMinuteItem[]; answers: Record<string, unknown>; hintsByLesson: Record<string, number>; startedAt: string }): Promise<{ lessonId: string; outcome: ReviewResult['outcome']; dueOn: string; score: number }[]> {
+  const out: { lessonId: string; outcome: ReviewResult['outcome']; dueOn: string; score: number }[] = [];
+  const lessonIds = [...new Set(input.items.map((i) => i.lessonId))];
+  for (const lessonId of lessonIds) {
+    const mine = input.items.filter((i) => i.lessonId === lessonId);
+    const answers = Object.fromEntries(mine.map((i) => [i.item.id, input.answers[i.item.id]]));
+    const res = await submitReview({ attemptId: newIdForReview(lessonId), lessonId, startedAt: input.startedAt, answers, hintsUsed: input.hintsByLesson[lessonId] ?? 0, confidence: null, itemIds: mine.map((i) => i.item.id) });
+    if (res) out.push({ lessonId, outcome: res.outcome, dueOn: res.review.dueOn, score: res.attempt.score });
+  }
+  return out;
+}
+const newIdForReview = (lessonId: string) => newId(`att_${lessonId.slice(0, 3).toLowerCase()}`);
