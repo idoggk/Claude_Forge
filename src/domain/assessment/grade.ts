@@ -415,8 +415,15 @@ export function gradeAttempt(
   };
 }
 
-/** Deterministic shuffle so ordering exercises look the same on every render and in tests. */
-export function seededOrder<T extends { id: string }>(items: T[], seed: string): T[] {
+/**
+ * Deterministic shuffle so ordering exercises look the same on every render and in tests.
+ *
+ * `avoidIdentity` (default true) rotates the result when it happens to equal the authored order. That is right for ORDER items,
+ * where the authored order is the answer. It is wrong for answer options: with 3 options the rotation sends the authored-first
+ * option to the last position half the time, so authors who list the correct option first would show it last about 1 time in 2.
+ * Options therefore pass `false`.
+ */
+export function seededOrder<T extends { id: string }>(items: T[], seed: string, avoidIdentity = true): T[] {
   const keyed = items.map((it) => {
     let h = 2166136261;
     const s = seed + ':' + it.id;
@@ -428,6 +435,6 @@ export function seededOrder<T extends { id: string }>(items: T[], seed: string):
   });
   keyed.sort((a, b) => a.h - b.h || a.it.id.localeCompare(b.it.id));
   const out = keyed.map((k) => k.it);
-  if (out.length > 1 && out.every((x, i) => x.id === items[i]?.id)) out.push(out.shift()!);
+  if (avoidIdentity && out.length > 1 && out.every((x, i) => x.id === items[i]?.id)) out.push(out.shift()!);
   return out;
 }

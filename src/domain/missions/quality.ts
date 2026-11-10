@@ -23,7 +23,7 @@ export interface UnitQuality {
   hintRuns: Stat;
   /** Step ids where unfinished runs currently sit, with counts. */
   stuckAt: { stepId: string; count: number }[];
-  /** Steps whose checked answers were mostly wrong. */
+  /** Steps (other than predictions) whose checked answers were mostly wrong. */
   confusingSteps: { stepId: string; correct: Stat }[];
 }
 
@@ -49,7 +49,9 @@ export function qualityReport(input: { units: Mission[]; runs: MissionRun[]; att
     const stuck = new Map<string, number>();
     for (const r of open) stuck.set(r.stepId, (stuck.get(r.stepId) ?? 0) + 1);
     const byStep = new Map<string, { right: number; n: number }>();
-    for (const r of mine) for (const res of r.results) { const x = byStep.get(res.stepId) ?? { right: 0, n: 0 }; x.n++; if (res.correct) x.right++; byStep.set(res.stepId, x); }
+    // A prediction is made before the idea is taught, so most first answers are expected to be wrong. That is not confusion.
+    const predictIds = new Set(u.steps.filter((st) => st.phase === 'predict').map((st) => st.id));
+    for (const r of mine) for (const res of r.results) { if (predictIds.has(res.stepId)) continue; const x = byStep.get(res.stepId) ?? { right: 0, n: 0 }; x.n++; if (res.correct) x.right++; byStep.set(res.stepId, x); }
     return {
       unitId: u.id, title: u.title, kind: u.kind,
       started: mine.length, completed: completed.length, inProgress: open.length, abandoned: abandoned.length, resumed: mine.filter((r) => r.resumes > 0).length,

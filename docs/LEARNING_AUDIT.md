@@ -38,7 +38,7 @@ Measured on the same 461 items in the 24 lessons that existed in Round 5 (practi
 
 ## Round 7 additions
 
-Guided missions and sparks are practice, not evidence. Gates: every option has feedback; challenge steps are frozen and hint-free; unit items must not restate lesson items (overlap test); completion writes no attempts. Known weakness: unit options were only partly checked for the "right answer is longest/shortest" cue; the 110-item cue from Round 6 is still open.
+Guided missions and sparks are practice, not evidence. Gates: every option has feedback; challenge steps are frozen and hint-free; unit items must not restate lesson items (overlap test); completion writes no attempts. The Round 7 quality audit (`ROUND_7_QUALITY_AUDIT.md`) then measured and rebalanced length, causal-clause and position cues in the units and added corpus gates for them. Known weakness that remains: precision words ("only", "real", "actual") appear in right options about three times as often as in wrong ones. Earlier note: unit options were only partly checked for the "right answer is longest/shortest" cue; the 110-item cue from Round 6 is still open.
 
 ## Earlier findings (Round 5)
 

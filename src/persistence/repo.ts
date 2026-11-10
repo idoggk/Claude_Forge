@@ -1,6 +1,7 @@
 import { getDb } from './db';
 import type { Lesson, Item } from '@/domain/curriculum/types';
 import { LESSONS } from '@/content/lessons';
+import { mergeRuns } from '@/domain/missions/engine';
 import { gradeAttempt, type AttemptGrade } from '@/domain/assessment/grade';
 import { evaluateExternal } from '@/domain/assessment/external';
 import { predictedPctFor, calibrationVerdict } from '@/domain/assessment/calibration';
@@ -698,8 +699,13 @@ export type { CompetencyRecord };
 /** Save a mission run. It is practice: it never writes an attempt and never changes a competency level. */
 export async function saveMissionRun(run: MissionRun): Promise<MissionRun> {
   const parsed = MissionRunSchema.parse(run);
-  await getDb().missionRuns.put(parsed);
-  return parsed;
+  const db = getDb();
+  // Read-merge-write in one transaction (Dexie work only): a stale tab cannot replace an answer that is already frozen.
+  return db.transaction('rw', db.missionRuns, async () => {
+    const merged = mergeRuns(await db.missionRuns.get(parsed.id), parsed);
+    await db.missionRuns.put(merged);
+    return merged;
+  });
 }
 
 /** The newest unfinished run of a mission, if any. */

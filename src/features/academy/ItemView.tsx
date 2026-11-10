@@ -49,8 +49,8 @@ export function ItemView({ item, index, value, onChange, disabled, grade, hintsS
   // Grading is by option id, never by position, so showing options in a different order per attempt is safe.
   const shown: Item = useMemo(() => {
     if (!optionSeed) return item;
-    if (item.kind === 'single' || item.kind === 'multi') return { ...item, options: seededOrder(item.options, `${optionSeed}:${item.id}`) };
-    if (item.kind === 'case') return { ...item, parts: item.parts.map((p) => ({ ...p, options: seededOrder(p.options, `${optionSeed}:${item.id}:${p.id}`) })) };
+    if (item.kind === 'single' || item.kind === 'multi') return { ...item, options: seededOrder(item.options, `${optionSeed}:${item.id}`, false) };
+    if (item.kind === 'case') return { ...item, parts: item.parts.map((p) => ({ ...p, options: seededOrder(p.options, `${optionSeed}:${item.id}:${p.id}`, false) })) };
     return item;
   }, [item, optionSeed]);
   return (

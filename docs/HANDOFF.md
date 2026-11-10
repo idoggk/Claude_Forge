@@ -55,6 +55,7 @@ Round 6 verification (local, Linux, Chromium): ESLint clean; `tsc` clean; Vitest
 - **Five-minute review** (`/review5`): ≤5 items, ≤2 due lessons, interleaved; a target not a timer; hints make an answer non-independent; offers a challenge when nothing is due.
 - **Learning-first Home**: "Your next challenge" card (`domain/missions/next.ts`: unfinished run → due reviews → adaptive suggestion → intro spark for first-timers → next spark/mission → caught up), plus the three modes. The first-run diagnostic is now optional.
 - **Quality report** (`/quality`, `domain/missions/quality.ts`): local, descriptive, no timing; samples under 5 are shown as "too few to say".
+- **Round 7 quality audit** (`docs/ROUND_7_QUALITY_AUDIT.md`): five High findings fixed (option-shuffle position bias, right-option length cue, first-run CTA below the fold, stale-tab overwrite of a frozen answer, focus lost after Check); open Medium items M2, M6, M7, M8 are listed there with recommendations.
 - Verification: see section 4 and the Round 7 final report. Not verified: real learners, real devices, WebKit; the effect of any of this on learning is unmeasured. Spark and mission minutes are editorial estimates.
 
 

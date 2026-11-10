@@ -73,17 +73,54 @@ export function advance(run: MissionRun, m: Mission, now: string): MoveResult {
   return { ok: true, run: { ...run, stepId: nextId, path: [...run.path, nextId], updatedAt: now } };
 }
 
+/**
+ * Combine a run being saved with what is already stored under the same id. A tab that was opened before an answer was checked
+ * (a second tab, a restored page) holds an older copy of the run; saving it blindly would replace a frozen answer with a new one.
+ * Rules: a finished run is final; a step frozen in storage keeps its stored answer, result and branch; progress never moves
+ * backwards. Everything else comes from the incoming run.
+ */
+export function mergeRuns(stored: MissionRun | undefined, incoming: MissionRun): MissionRun {
+  if (!stored || stored.id !== incoming.id) return incoming;
+  if (stored.status === 'completed') return stored;
+  const kept = new Set(stored.frozen);
+  const answers = { ...incoming.answers };
+  const branches = { ...incoming.branches };
+  for (const id of kept) {
+    if (id in stored.answers) answers[id] = stored.answers[id];
+    if (id in stored.branches) branches[id] = stored.branches[id]!;
+  }
+  const results = [...stored.results.filter((r) => kept.has(r.stepId)), ...incoming.results.filter((r) => !kept.has(r.stepId))];
+  const ahead = stored.path.length > incoming.path.length ? stored : incoming;
+  return {
+    ...incoming,
+    answers,
+    branches,
+    results,
+    frozen: [...new Set([...stored.frozen, ...incoming.frozen])],
+    hintsUsed: results.reduce((n, r) => n + r.hintsUsed, 0),
+    path: ahead.path,
+    stepId: ahead.stepId,
+    resumes: Math.max(stored.resumes, incoming.resumes),
+    startedAt: stored.startedAt,
+    updatedAt: stored.updatedAt > incoming.updatedAt ? stored.updatedAt : incoming.updatedAt,
+  };
+}
+
 /** Coming back to an unfinished run. Counted locally, only to see whether runs are picked up again. */
 export const markResumed = (run: MissionRun, now: string): MissionRun => ({ ...run, resumes: run.resumes + 1, updatedAt: now });
 
 /** What a learner is shown at the end. Descriptive: finishing is not proof of understanding. */
 export function runSummary(run: MissionRun, m: Mission) {
   const items = m.steps.filter((s): s is ItemStep => s.type === 'item');
-  const answered = run.results.length;
-  const correct = run.results.filter((r) => r.correct).length;
+  // A prediction is made before the idea is taught, so a wrong one is expected and useful. It is shown, but not counted as a miss.
+  const predictIds = new Set(items.filter((s) => s.phase === 'predict').map((s) => s.id));
+  const scored = items.filter((s) => !predictIds.has(s.id));
+  const answered = run.results.filter((r) => !predictIds.has(r.stepId)).length;
+  const correct = run.results.filter((r) => !predictIds.has(r.stepId) && r.correct).length;
+  const predictions = items.filter((s) => predictIds.has(s.id)).map((s) => ({ stepId: s.id, result: run.results.find((r) => r.stepId === s.id) ?? null }));
   const challenge = items.filter((s) => s.frozenOnAnswer).map((s) => ({ stepId: s.id, result: run.results.find((r) => r.stepId === s.id) ?? null }));
   const branches = m.steps.filter((s): s is BranchStep => s.type === 'branch').map((s) => ({ stepId: s.id, better: s.options.find((o) => o.id === run.branches[s.id])?.better ?? null }));
-  return { answered, correct, total: items.length, challenge, branches, hintsUsed: run.hintsUsed };
+  return { answered, correct, total: scored.length, predictions, challenge, branches, hintsUsed: run.hintsUsed };
 }
 
 /** Position for the progress indicator along the path taken so far plus the steps still to come on the straight path. */

@@ -21,7 +21,7 @@ export default function UnitPlayer() {
   const [run, setRun] = useState<MissionRun | null | undefined>(undefined);
   const [hints, setHints] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
-  const [seed] = useState(() => newId('u'));
+  const [choseNow, setChoseNow] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -48,7 +48,12 @@ export default function UnitPlayer() {
   const apply = useCallback(async (r: MoveResult) => {
     if (!r.ok) { toast(r.error); return; }
     setRun(r.run);
-    await saveMissionRun(r.run);
+    const saved = await saveMissionRun(r.run);
+    // Storage already holds a newer or frozen state (another tab got there first): show what is stored, not this tab's copy.
+    if (saved.frozen.length !== r.run.frozen.length || saved.stepId !== r.run.stepId || saved.status !== r.run.status) {
+      setRun(saved);
+      toast('This was already answered in another tab. Showing the saved answer.');
+    }
   }, [toast]);
 
   if (!unit) return <EmptyState title="No such learning unit" action={<LinkButton to="/learn">Back to learning</LinkButton>}>That mission or Quick Spark does not exist.</EmptyState>;
@@ -88,14 +93,14 @@ export default function UnitPlayer() {
             <div className="mt-4"><Button variant="primary" size="lg" onClick={() => void apply(advance(run, unit, now()))} data-testid="step-continue">{step.cta ?? (last ? 'Finish' : 'Continue')}</Button></div>
           </Card>
         )}
-        {step.type === 'item' && <ItemScreen unit={unit} run={run} step={step} hints={hints} setHints={setHints} seed={seed} heading={heading} onAnswer={(v) => void apply(setAnswer(run, unit, step.id, v, now()))} onCheck={() => void apply(checkStep(run, unit, step.id, hints, now()))} onContinue={() => void apply(advance(run, unit, now()))} last={last} />}
+        {step.type === 'item' && <ItemScreen unit={unit} run={run} step={step} hints={hints} setHints={setHints} seed={run.id} heading={heading} onAnswer={(v) => void apply(setAnswer(run, unit, step.id, v, now()))} onCheck={() => void apply(checkStep(run, unit, step.id, hints, now()))} onContinue={() => void apply(advance(run, unit, now()))} last={last} />}
         {step.type === 'branch' && (
           <Card aria-labelledby="step-h">
             <h2 id="step-h" ref={heading} tabIndex={-1} className="text-xl font-semibold outline-none">{step.prompt}</h2>
             {!run.branches[step.id] ? (
-              <ul className="mt-3 space-y-2" data-testid="branch-options">{step.options.map((o) => <li key={o.id}><Button className="w-full justify-start text-left" onClick={() => void apply(chooseBranch(run, unit, step.id, o.id, now()))} data-testid={`branch-${o.id}`}>{o.text}</Button></li>)}</ul>
+              <ul className="mt-3 space-y-2" data-testid="branch-options">{step.options.map((o) => <li key={o.id}><Button className="w-full justify-start text-left" onClick={() => { setChoseNow(step.id); void apply(chooseBranch(run, unit, step.id, o.id, now())); }} data-testid={`branch-${o.id}`}>{o.text}</Button></li>)}</ul>
             ) : (
-              <div className="mt-3" role="status" data-testid="branch-consequence">
+              <div className="mt-3" role="status" data-testid="branch-consequence" tabIndex={-1} ref={(el) => { if (el && choseNow === step.id) { el.focus(); setChoseNow(null); } }}>
                 <p className="rounded-lg border border-line bg-surface2 p-3 text-sm"><strong>You chose: </strong>{step.options.find((o) => o.id === run.branches[step.id])!.text}</p>
                 <p className="mt-2 text-sm">{step.options.find((o) => o.id === run.branches[step.id])!.consequence}</p>
                 <div className="mt-4"><Button variant="primary" size="lg" onClick={() => void apply(advance(run, unit, now()))} data-testid="step-continue">Continue</Button></div>
@@ -115,12 +120,23 @@ function ItemScreen({ unit, run, step, hints, setHints, seed, heading, onAnswer,
   const hasAnswer = answer !== undefined && !(Array.isArray(answer) && answer.length === 0) && !(typeof answer === 'object' && !Array.isArray(answer) && answer !== null && Object.keys(answer).length === 0);
   const hintsAllowed = !step.frozenOnAnswer && !frozen;
   void unit;
+  // After "Check my answer" the button disappears; without this, keyboard and screen-reader focus falls back to the page top
+  // and, on a phone, the feedback and Continue sit below the fold. Move focus to the feedback, but only when this screen was
+  // checked just now, never when a run is resumed already checked.
+  const wasFrozen = useRef(frozen);
+  useEffect(() => {
+    if (frozen && !wasFrozen.current) {
+      const el = document.querySelector<HTMLElement>(`[data-testid="feedback-${step.item.id}"]`);
+      if (el) { el.tabIndex = -1; el.focus(); }
+    }
+    wasFrozen.current = frozen;
+  }, [frozen, step.item.id]);
   return (
     <div>
       <h2 ref={heading} tabIndex={-1} className="sr-only">{PHASE_LABELS[step.phase]}: {step.item.prompt}</h2>
       {step.frozenOnAnswer && !frozen && <Callout tone="info" title="Independent challenge">No hints here. Your answer is final once you check it, and it is saved as practice. It does not change your competency level.</Callout>}
       <div className={step.frozenOnAnswer && !frozen ? 'mt-3' : ''}>
-        <ItemView item={{ ...step.item, hints: hintsAllowed ? step.item.hints : undefined }} index={0} bare value={answer} onChange={onAnswer} disabled={frozen} grade={grade} hintsShown={hints} onHint={hintsAllowed ? () => setHints(hints + 1) : undefined} seed={seed} optionSeed={`${seed}:${run.id}`} />
+        <ItemView item={{ ...step.item, hints: hintsAllowed ? step.item.hints : undefined }} index={0} bare value={answer} onChange={onAnswer} disabled={frozen} grade={grade} hintsShown={hints} onHint={hintsAllowed ? () => setHints(hints + 1) : undefined} seed={seed} optionSeed={seed} />
       </div>
       {!frozen && <div className="mt-4"><Button variant="primary" size="lg" disabled={!hasAnswer} onClick={onCheck} data-testid="step-check">Check my answer</Button></div>}
       {frozen && (
@@ -143,6 +159,7 @@ function Finished({ unit, run, onAgain }: { unit: Mission; run: MissionRun; onAg
         <h2 id="fin-h" className="text-lg font-semibold">What you did</h2>
         <ul className="mt-2 space-y-1 text-sm">
           <li data-testid="unit-score">{s.correct} of {s.total} decisions right{s.hintsUsed > 0 ? `, with ${s.hintsUsed} hint${s.hintsUsed === 1 ? '' : 's'}` : ''}.</li>
+          {s.predictions.length > 0 && <li data-testid="unit-predictions">Your prediction{s.predictions.length === 1 ? '' : 's'}: {s.predictions.filter((p) => p.result?.correct).length} of {s.predictions.length} right. A wrong prediction is useful: it is what the rest of the mission was for.</li>}
           {s.challenge.map((c) => <li key={c.stepId}>Independent challenge: <strong>{c.result ? (c.result.correct ? 'right' : 'not yet') : 'not answered'}</strong>.</li>)}
           {s.branches.length > 0 && <li>{s.branches.filter((b) => b.better).length} of {s.branches.length} choices were the stronger option.</li>}
         </ul>

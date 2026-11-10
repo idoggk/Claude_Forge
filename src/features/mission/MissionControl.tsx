@@ -91,12 +91,7 @@ export default function MissionControl() {
             {continueLesson && <LinkButton to={`/academy/lesson/${continueLesson.id}`} variant="primary" icon="arrow" data-testid="home-continue">Continue: {continueLesson.title}</LinkButton>}
             {activePilot ? <LinkButton to={`/pilot/${activePilot.id}`} icon="flask" data-testid="home-pilot">Continue your experiment</LinkButton> : experiments.length === 0 && <LinkButton to="/pilot" icon="flask" data-testid="home-pilot">Run your first real AI experiment</LinkButton>}
           </>
-        ) : (
-          <>
-            <LinkButton to="/academy/diagnostic" size="lg" icon="arrow" data-testid="home-diagnostic">Optional: take the 5-minute diagnostic</LinkButton>
-            <LinkButton to="/academy" size="lg" variant="secondary">Browse the Academy</LinkButton>
-          </>
-        )}
+        ) : undefined}
       >
         {returning ? (
           <p data-testid="home-status">{passedCount} of {LESSONS.length} lessons passed · {due.length > 0 ? `${due.length} review${due.length === 1 ? '' : 's'} due` : 'no reviews due'} · {activeGoals.length} active goal{activeGoals.length === 1 ? '' : 's'}</p>
@@ -106,6 +101,13 @@ export default function MissionControl() {
       </HomeHero>
 
       <NextChallengeCard now={learningNow} />
+      {!returning && (
+        <p className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted" data-testid="home-first-run-options">
+          <span>Or, if you prefer:</span>
+          <LinkButton to="/academy/diagnostic" size="sm" icon="arrow" data-testid="home-diagnostic">Take the optional 5-minute diagnostic</LinkButton>
+          <LinkButton to="/academy" size="sm" variant="secondary">Browse the Academy</LinkButton>
+        </p>
+      )}
 
       <div className={returning ? 'grid gap-4 lg:grid-cols-3' : 'space-y-4'}>
         <Card className={`border-accent ${returning ? 'lg:col-span-2' : ''}`} aria-labelledby="mission-title" data-testid="next-mission">

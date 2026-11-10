@@ -23,6 +23,91 @@ async function playStep(page: Page, opts: { wrong?: boolean } = {}) {
 }
 
 test.describe('Round 7: guided missions in the real UI', () => {
+  test('a second tab that still holds the unanswered step cannot replace an answer that was already checked', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    const a = await ctx.newPage();
+    const b = await ctx.newPage();
+    const spark = getUnit('spark-agent-permissions')!;
+    const ask = (spark.steps[0] as ItemStep).item;
+    await startApp(a);
+    await goto(a, `/spark/${spark.id}`);
+    await expect(a.getByTestId('unit-title')).toBeVisible();
+    await goto(b, `/spark/${spark.id}`);
+    await expect(b.getByTestId('unit-title')).toBeVisible();
+    // tab A answers wrongly and checks
+    await answerItems(a, [ask], { wrong: true });
+    await a.getByTestId('step-check').click();
+    await expect(a.getByTestId(`feedback-${ask.id}`)).toContainText('Not quite');
+    // tab B, still on the unanswered step, tries the right answer
+    await answerItems(b, [ask]);
+    // B is told and shows the stored answer; nothing in storage changed
+    await expect(b.getByText('already answered in another tab')).toBeVisible();
+    await expect(b.getByTestId(`feedback-${ask.id}`)).toContainText('Not quite');
+    const stored = await a.evaluate(() => new Promise<{ answers: Record<string, unknown>; results: { correct: boolean }[] }[]>((res) => { const r = indexedDB.open('claude-forge'); r.onsuccess = () => { const q = r.result.transaction('missionRuns').objectStore('missionRuns').getAll(); q.onsuccess = () => res(q.result); }; }));
+    expect(stored).toHaveLength(1);
+    expect(stored[0]!.results[0]!.correct).toBe(false);
+    await ctx.close();
+  });
+
+  test('after Check my answer focus moves to the feedback, so the keyboard and a screen reader land on the result (and it is on screen on a phone)', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await startApp(page);
+    const spark = getUnit('spark-agent-permissions')!;
+    const ask = (spark.steps[0] as ItemStep).item;
+    await goto(page, `/spark/${spark.id}`);
+    await answerItems(page, [ask]);
+    await page.getByTestId('step-check').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId(`feedback-${ask.id}`)).toBeFocused();
+    await expect(page.getByTestId(`feedback-${ask.id}`)).toBeInViewport();
+  });
+
+  test('a Quick Spark can be completed with the keyboard alone (Tab, Space, Enter), ending on the summary', async ({ page }) => {
+    await startApp(page);
+    await goto(page, '/spark/spark-agent-permissions');
+    await expect(page.getByTestId('unit-title')).toBeVisible();
+    const tabTo = async (match: (el: Element | null) => boolean) => {
+      for (let i = 0; i < 40; i++) {
+        await page.keyboard.press('Tab');
+        if (await page.evaluate(`(${match.toString()})(document.activeElement)`)) return;
+      }
+      throw new Error('could not reach the control with Tab alone');
+    };
+    for (let guard = 0; guard < 8; guard++) {
+      if (await page.getByTestId('unit-finished').isVisible()) break;
+      if (await page.getByTestId('step-check').isVisible()) {
+        await tabTo((el) => !!el && ((el as HTMLInputElement).type === 'radio' || (el as HTMLInputElement).type === 'checkbox'));
+        await page.keyboard.press('Space');
+        await tabTo((el) => el?.getAttribute('data-testid') === 'step-check');
+        await page.keyboard.press('Enter');
+        await expect(page.locator('[data-testid^="feedback-"]').first()).toBeFocused();
+      }
+      await tabTo((el) => el?.getAttribute('data-testid') === 'step-continue');
+      await page.keyboard.press('Enter');
+    }
+    await expect(page.getByTestId('unit-finished')).toBeVisible();
+  });
+
+  test('the option order of a question does not change when the page is reloaded, even after the answer is checked', async ({ page }) => {
+    await startApp(page);
+    const spark = getUnit('spark-agent-permissions')!;
+    const ask = (spark.steps[0] as ItemStep).item;
+    await goto(page, `/spark/${spark.id}`);
+    const order = () => page.getByTestId(`item-${ask.id}`).getByRole('radio').evaluateAll((els) => els.map((e) => (e.closest('label') ?? e.parentElement)!.textContent!.slice(0, 24)));
+    await expect(page.getByTestId(`item-${ask.id}`)).toBeVisible();
+    const before = await order();
+    await page.reload();
+    await expect(page.getByTestId(`item-${ask.id}`)).toBeVisible();
+    expect(await order()).toEqual(before);
+    await answerItems(page, [ask], { wrong: true });
+    await page.getByTestId('step-check').click();
+    const checked = await order();
+    await page.reload();
+    await expect(page.getByTestId(`item-${ask.id}`)).toBeVisible();
+    await expect(page.getByTestId('step-continue')).toBeVisible();
+    expect(await order()).toEqual(checked);
+  });
+
   test('a wrong prediction gets useful feedback and the idea to keep; a refresh resumes at the same step', async ({ page }) => {
     await startApp(page);
     await goto(page, `/mission/${MISSION.id}`);
@@ -171,6 +256,22 @@ test.describe('Round 7: guided missions in the real UI', () => {
   });
 
   test.describe('learning-first home, five-minute review and the whole loop', () => {
+    test('first 30 seconds: on a small phone the first challenge can be started without scrolling, and nothing optional comes before it', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.goto('/');
+      await page.getByTestId('finish-onboarding').click();
+      const start = page.getByTestId('next-challenge-start');
+      await expect(start).toBeVisible();
+      const box = (await start.boundingBox())!;
+      const nav = (await page.getByRole('navigation', { name: 'Primary mobile' }).boundingBox())!;
+      expect(box.y + box.height, 'the Start button must end above the bottom navigation').toBeLessThanOrEqual(nav.y);
+      const optional = (await page.getByTestId('home-diagnostic').boundingBox())!;
+      expect(optional.y, 'the optional diagnostic comes after the first challenge').toBeGreaterThan(box.y);
+      await start.click();
+      await expect(page.getByTestId('unit-title')).toBeVisible();
+      await expect(page.getByRole('radio').first()).toBeVisible(); // the first screen is a question, not more reading
+    });
+
     test('1. a new learner sees one inviting challenge first, completes the Quick Spark, and returns to Mission Control with it remembered', async ({ page }) => {
       await startApp(page);
       await expect(page.getByTestId('next-challenge')).toBeVisible();

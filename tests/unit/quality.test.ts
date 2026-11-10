@@ -28,9 +28,15 @@ describe('learning experience report (local, descriptive)', () => {
   it('shows where unfinished runs sit, and flags a step that most people answer wrongly only when the sample is big enough', () => {
     const stuck = report([run('a', { stepId: 'predict' }), run('b', { stepId: 'predict' }), run('c', { stepId: 'hook' })]);
     expect(mine(stuck).stuckAt[0]).toEqual({ stepId: 'predict', count: 2 });
-    const wrong = (id: string) => run(id, { results: [{ stepId: 'predict', correct: false, score: 0, hintsUsed: 0 }] });
+    const practice = U.steps.find((st) => st.type === 'item' && st.phase === 'practice')!.id;
+    const wrong = (id: string) => run(id, { results: [{ stepId: practice, correct: false, score: 0, hintsUsed: 0 }] });
     expect(mine(report([wrong('a'), wrong('b')])).confusingSteps).toEqual([]);
-    expect(mine(report(['a', 'b', 'c', 'd', 'e'].map(wrong))).confusingSteps.map((c) => c.stepId)).toEqual(['predict']);
+    expect(mine(report(['a', 'b', 'c', 'd', 'e'].map(wrong))).confusingSteps.map((c) => c.stepId)).toEqual([practice]);
+  });
+  it('a wrong prediction is expected, so a prediction step is never reported as confusing', () => {
+    const predict = U.steps.find((st) => st.phase === 'predict')!.id;
+    const wrong = (id: string) => run(id, { results: [{ stepId: predict, correct: false, score: 0, hintsUsed: 0 }] });
+    expect(mine(report(['a', 'b', 'c', 'd', 'e', 'f'].map(wrong))).confusingSteps).toEqual([]);
   });
   it('hint reliance is counted per run', () => {
     expect(mine(report([run('a', { hintsUsed: 2 }), run('b')])).hintRuns.value).toBe(0.5);

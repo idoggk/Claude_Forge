@@ -11,7 +11,7 @@ import { Button, Callout, cx } from '@/components/ui';
 export function PredictionGate({ prediction, segmentId, children }: { prediction: NonNullable<Segment['prediction']>; segmentId: string; children: ReactNode }) {
   const [pick, setPick] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const options = seededOrder(prediction.options, `predict:${segmentId}`);
+  const options = seededOrder(prediction.options, `predict:${segmentId}`, false);
   const right = pick === prediction.correct;
   const chosen = prediction.options.find((o) => o.id === pick);
   const correct = prediction.options.find((o) => o.id === prediction.correct);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UNITS, MISSIONS_ONLY, SPARKS_ONLY, validateAllUnits, unitForLesson } from '@/content/units/registry';
 import { LESSONS } from '@/content/lessons';
-import { gradeItem } from '@/domain/assessment/grade';
+import { gradeItem, seededOrder } from '@/domain/assessment/grade';
 import { advance, chooseBranch, checkStep, newRun, setAnswer } from '@/domain/missions/engine';
 import { MISSION_ITEM_KINDS, type ItemStep, type Mission } from '@/domain/missions/model';
 import { perfectAnswer, wrongAnswer } from './helpers';
@@ -109,14 +109,49 @@ describe('guided missions and Quick Sparks', () => {
     expect(cue.wrong - cue.right).toBeLessThanOrEqual(0.25);
     expect(choiceItems(items).length).toBeGreaterThan(5);
   });
-  it('the right option is not systematically in one place or one length', () => {
-    let longest = 0, shortest = 0, n = 0;
+  it('LENGTH CUE: the right option is not systematically the shortest or the longest, by words or by characters', () => {
+    const words = (t: string) => t.split(/\s+/).length;
+    const c = { n: 0, charLongest: 0, charShortest: 0, wordLongest: 0, wordShortest: 0, clearLonger: 0, clearShorter: 0 };
     for (const u of UNITS) for (const s of itemSteps(u)) {
       const parts = s.item.kind === 'single' ? [{ options: s.item.options, correct: s.item.correct }] : s.item.kind === 'case' ? s.item.parts : [];
-      for (const p of parts) { n++; const c = p.options.find((x) => x.id === p.correct)!; const oth = p.options.filter((x) => x !== c); if (oth.every((x) => c.text.length > x.text.length)) longest++; if (oth.every((x) => c.text.length < x.text.length)) shortest++; }
+      for (const p of parts) {
+        c.n++;
+        const right = p.options.find((x) => x.id === p.correct)!;
+        const others = p.options.filter((x) => x !== right);
+        const maxC = Math.max(...others.map((x) => x.text.length)), minC = Math.min(...others.map((x) => x.text.length));
+        if (right.text.length > maxC) c.charLongest++;
+        if (right.text.length < minC) c.charShortest++;
+        if (others.every((x) => words(right.text) > words(x.text))) c.wordLongest++;
+        if (others.every((x) => words(right.text) < words(x.text))) c.wordShortest++;
+        if (right.text.length > maxC * 1.08) c.clearLonger++; // visibly longer than every other option
+        if (right.text.length < minC * 0.92) c.clearShorter++; // visibly shorter than every other option
+      }
     }
-    expect(longest / n).toBeLessThanOrEqual(0.45);
-    expect(shortest / n).toBeLessThanOrEqual(0.55);
+    // Chance is about 0.3 for 3 to 4 options. The audit measured "shortest" at 0.45 by characters and 0.48 by words (a rule that
+    // picked the shortest option got 57%) before the options were rebalanced. Character rank is left generous because the
+    // remaining differences are a few characters; the "clear" gates are the ones a learner could actually see.
+    expect(c.charLongest / c.n).toBeLessThanOrEqual(0.5);
+    expect(c.charShortest / c.n).toBeLessThanOrEqual(0.4);
+    expect(c.wordLongest / c.n).toBeLessThanOrEqual(0.4);
+    expect(c.wordShortest / c.n).toBeLessThanOrEqual(0.4);
+    expect(c.clearLonger / c.n).toBeLessThanOrEqual(0.15);
+    expect(c.clearShorter / c.n).toBeLessThanOrEqual(0.15);
+  });
+  it('WORDING CUE: wrong options do not carry their own "because/since/so that" justification much more often than right ones', () => {
+    const CONN = /\b(since|because|so that|therefore|which means|as it|as the)\b|, so\b/i;
+    let right = 0, rightConn = 0, wrong = 0, wrongConn = 0;
+    for (const u of UNITS) for (const s of itemSteps(u)) {
+      const groups = s.item.kind === 'single' ? [{ options: s.item.options, correct: [s.item.correct] }] : s.item.kind === 'multi' ? [{ options: s.item.options, correct: s.item.correct }] : s.item.kind === 'case' ? s.item.parts.map((p) => ({ options: p.options, correct: [p.correct] })) : [];
+      for (const g of groups) for (const o of g.options) { const isRight = g.correct.includes(o.id); if (isRight) { right++; if (CONN.test(o.text)) rightConn++; } else { wrong++; if (CONN.test(o.text)) wrongConn++; } }
+    }
+    // the audit found 0.44 for wrong options against 0.12 for right ones, which made "pick the one that does not explain itself" work
+    expect(Math.abs(wrongConn / wrong - rightConn / right)).toBeLessThanOrEqual(0.15);
+  });
+  it('POSITION: the right option is not always authored first AND shown by a biased shuffle; displayed positions are uniform for these items', () => {
+    // authored order is irrelevant only if the shuffle is uniform (see learning-quality.test.ts); this guards the 3-option sparks directly
+    const opts = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+    const last = [...Array(900).keys()].filter((i) => seededOrder(opts, `u_${i}:mr_${i}:ask`, false)[2]!.id === 'a').length;
+    expect(last).toBeLessThan(380); // about 300 expected; the old rotation gave about 450
   });
   it('sparks are short, resumable units that never claim mastery', () => {
     for (const s of SPARKS_ONLY) { expect(s.minutes).toBeLessThanOrEqual(4); expect(s.steps.length).toBeLessThanOrEqual(6); }

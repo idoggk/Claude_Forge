@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getLesson, LESSONS } from '@/content/lessons';
+import { unitForLesson } from '@/content/units/registry';
 import { COMPETENCY_BY_ID, TRACKS } from '@/domain/curriculum/competencies';
 import { LEVEL_NAMES } from '@/domain/mastery/competency';
 import { prerequisitesMet } from '@/domain/mastery/recommend';
@@ -109,6 +110,11 @@ export default function LessonPage() {
         <Badge tone={mine.some((a) => a.stage === 'practice') ? 'accent' : 'neutral'}>{mine.filter((a) => a.stage === 'practice').length} practice attempt(s)</Badge>
         <Badge tone={assessments.some((a) => a.passed) ? 'ok' : assessments.length ? 'warn' : 'neutral'}>{assessments.some((a) => a.passed) ? 'assessment passed' : assessments.length ? 'assessment not passed' : 'assessment not taken'}</Badge>
       </p>
+      {unitForLesson(lesson.id) && (
+        <p className="mb-3 text-sm text-muted" data-testid="lesson-mission-link">
+          Want a shorter way in? Try the <Link className="font-semibold text-accent-text underline" to={`/mission/${unitForLesson(lesson.id)!.id}`}>{unitForLesson(lesson.id)!.minutes}-minute guided mission</Link> first. It is practice only: this lesson's own assessment is what counts.
+        </p>
+      )}
       <Tabs label="Lesson stages" tabs={STAGES.map((s) => ({ ...s }))} value={stage} onChange={go} />
 
       <TabPanel id="learn" active={stage === 'learn'}>

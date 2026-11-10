@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { o } from '@/content/lessons/helpers';
-import { advance, canAdvance, chooseBranch, checkStep, isCurrent, markResumed, newRun, progressOf, runSummary, setAnswer } from '@/domain/missions/engine';
+import { advance, canAdvance, chooseBranch, checkStep, isCurrent, markResumed, mergeRuns, newRun, progressOf, runSummary, setAnswer } from '@/domain/missions/engine';
 import { MissionRunSchema, validateMission, type Mission, type ValidationContext } from '@/domain/missions/model';
 import { DB_VERSION, ForgeDB, getDb, setDbForTesting } from '@/persistence/db';
 import * as repo from '@/persistence/repo';
@@ -88,7 +88,10 @@ describe('mission state machine', () => {
     expect(run.status).toBe('completed');
     expect(run.completedAt).toBe(T);
     const s = runSummary(run, m);
-    expect(s).toMatchObject({ answered: 3, correct: 2, total: 3, hintsUsed: 1 });
+    // the prediction is shown separately and is not counted as a decision
+    expect(s).toMatchObject({ answered: 2, correct: 2, total: 2, hintsUsed: 1 });
+    expect(s.predictions).toHaveLength(1);
+    expect(s.predictions[0]!.result?.correct).toBe(false); // a wrong prediction is not a miss
     expect(s.challenge[0]!.result?.correct).toBe(true);
     expect(s.branches[0]!.better).toBe(true);
     expect(progressOf(run, m).done).toBe(progressOf(run, m).total);
@@ -156,6 +159,36 @@ describe('mission run persistence', () => {
     await repo.saveMissionRun({ ...newRun(mission(), 'c', T), status: 'completed', completedAt: T });
     expect(await getDb().attempts.count()).toBe(0);
     expect(await getDb().competencies.count()).toBe(0);
+  });
+  it('a stale copy of a run cannot replace an answer that is already checked (second tab, restored page)', async () => {
+    const m = mission();
+    const ok = (r: ReturnType<typeof setAnswer>) => { if (!r.ok) throw new Error(r.error); return r.run; };
+    const base = ok(advance(newRun(m, 'stale', T), m, T)); // on the predict step, nothing answered
+    // tab A answers wrongly and checks
+    let a = ok(setAnswer(base, m, 'predict', 'b', T));
+    a = ok(checkStep(a, m, 'predict', 0, T));
+    await repo.saveMissionRun(a);
+    // tab B still holds the unanswered copy, answers correctly and checks
+    let b = ok(setAnswer(base, m, 'predict', 'a', '2026-11-09T10:05:00.000Z'));
+    b = ok(checkStep(b, m, 'predict', 0, '2026-11-09T10:05:00.000Z'));
+    const saved = await repo.saveMissionRun(b);
+    expect(saved.answers.predict).toBe('b'); // the first checked answer stands
+    expect(saved.results.find((r) => r.stepId === 'predict')?.correct).toBe(false);
+    expect((await getDb().missionRuns.get('stale'))?.answers.predict).toBe('b');
+    expect(saved.frozen).toEqual(['predict']);
+  });
+  it('a finished run is final, progress never moves backwards, and unrelated runs are untouched', () => {
+    const m = mission();
+    const done = { ...newRun(m, 'x', T), status: 'completed' as const, completedAt: T, stepId: 'reflect', path: ['hook', 'reflect'] };
+    expect(mergeRuns(done, { ...newRun(m, 'x', T) })).toBe(done);
+    const ahead = { ...newRun(m, 'y', T), stepId: 'branch', path: ['hook', 'predict', 'branch'], frozen: ['predict'], answers: { predict: 'a' } };
+    const behind = { ...newRun(m, 'y', T), stepId: 'predict', path: ['hook', 'predict'], answers: { predict: 'c' } };
+    const merged = mergeRuns(ahead, behind);
+    expect(merged.stepId).toBe('branch');
+    expect(merged.answers.predict).toBe('a');
+    const other = newRun(m, 'z', T);
+    expect(mergeRuns(ahead, other)).toBe(other);
+    expect(mergeRuns(undefined, other)).toBe(other);
   });
   it('round-trips through backup export and import, and an older backup without runs still imports', async () => {
     await repo.saveMissionRun(newRun(mission(), 'd', T));
