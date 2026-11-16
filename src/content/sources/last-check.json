@@ -1,0 +1,258 @@
+{
+  "format": "claude-forge-source-check",
+  "version": 1,
+  "checks": {
+    "src-anthropics-skills": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "2c218e589eec11d30da913f570d28a6e79c0aa0109660d979c22e1e313f356c1",
+      "error": null
+    },
+    "src-claude-code-skills": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "9ee480cb7056fa0aea846d2f8468a4253580edd9aa54dba889f4f5d1a7eb1c01",
+      "error": null
+    },
+    "src-obra-superpowers": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "008a1bae997601f4f7280a0f0ab3a673585c73a35b77186c757e9fba1fd4f09e",
+      "error": null
+    },
+    "src-getsentry-skills": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "1d83f2edd50bb39b62018b466f4fc2ca4096e01e6d172d2244fbee82cd6b91f5",
+      "error": null
+    },
+    "src-vercel-agent-skills": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "31d9477ed1ff9bfdf095ff1de9909e38529018226c920ed28423825ec752dfee",
+      "error": null
+    },
+    "src-playwright-mcp": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "f7b2251c4b807b04d44c33308f1de576ebd37147872e868372d62ce56709fa82",
+      "error": null
+    },
+    "src-mcp-servers": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "814051cd596a6eb219541b7bf2f107dae231b5c21261bbcf9c9b4fb8c108c12f",
+      "error": null
+    },
+    "src-claude-code-repo": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "1b925d317cd34f671afde1c19ae893ac97126db2bc3b93d0df9e9cd745d1743a",
+      "error": null
+    },
+    "src-agent-sdk-overview": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "f6910b2a564624ad2ce9953cf84f2bb7539157fd7293b7ffbac39133a298ff60",
+      "error": null
+    },
+    "src-models-overview": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "d71124eace42d81e111e13e10ca74d849c8f42b1d7f1dd170d0edabf84719de2",
+      "error": null
+    },
+    "src-openai-agents-python": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "8c1245f8981e91542abc49f1041323205b6594f3466e1139fc5965a8bad79362",
+      "error": null
+    },
+    "src-langgraph": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "16a0c0e9c5e77a2438f182937cca3d36890c32423caba9b2dc24fdb4eeeec00c",
+      "error": null
+    },
+    "src-aider": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "e72aada09843af68ffe8e7f9cb6e0281e3a8f4b9ed28fda58e6fd03c79dc25b5",
+      "error": null
+    },
+    "src-claude-code-action": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "fefe313ec14cf16056d1b1eb753cecfedecbf098c617875a120abcf540a2044d",
+      "error": null
+    },
+    "src-mcp-spec-repo": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "4a7abd6231fb24e6188449bdc2e873f574117c45a67fc19e932b78230a59cb75",
+      "error": null
+    },
+    "src-building-agents": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://www.anthropic.com/research/building-effective-agents",
+      "bodyHash": "8eec38b6b238ba9a06e798349cfac8d6e4665e420a831bf732f501643b9ce03f",
+      "error": null
+    },
+    "src-context-engineering": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents",
+      "bodyHash": "c843b558f5d7e9a85aacd9f9e34156461a38e2b179e4007827923377fcc2c484",
+      "error": null
+    },
+    "src-evals": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://www.anthropic.com/research/demystifying-evals-for-ai-agents",
+      "bodyHash": "9fe3ffbff69bdb87378652260cffde9dfca9f0644bef70182d6fa078f07488ba",
+      "error": null
+    },
+    "src-writing-tools": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://www.anthropic.com/research/writing-tools-for-agents",
+      "bodyHash": "7fbb27e034793d8bf3440e7260a258dd2b84c2a198a68cb37365142e200aa7a8",
+      "error": null
+    },
+    "src-multi-agent": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://www.anthropic.com/research/multi-agent-research-system",
+      "bodyHash": "65c022451c41d945357d96ea60dcf8e3bf2e1d563e3ad49bf6b93ae448aa2b15",
+      "error": null
+    },
+    "src-mcp-docs-site": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro",
+      "bodyHash": "c1ebb3d1f4853bfa698df45a53bd53a0da8050b15a4050b2455d288a0e7735d3",
+      "error": null
+    },
+    "src-openai-agents-docs": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "418aad0de89bcbc0f440490324cc4040296923cd58e2ad29f2e4572ad82b67de",
+      "error": null
+    },
+    "src-owasp-genai": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "5d1d4ab0601a130ee5669e11403320ce7bea71317d9d8892f5178a950e63f86a",
+      "error": null
+    },
+    "src-google-ai-docs": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://aistudio.google.com/docs/function-calling",
+      "bodyHash": "38a9acd2beca447bfc66769508fce49ab85e80df87f67491b22e2f32c8e5cb64",
+      "error": null
+    },
+    "src-tool-use": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "10a0f738c4788f1854697f86da6d72ddee61b9bdb81848b709b41c6d72414e55",
+      "error": null
+    },
+    "src-handle-tool-calls": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "03c8cb55713a5418df5e751712052a9000be89b5bc7e48f6b96d821e4fe355c5",
+      "error": null
+    },
+    "src-structured-outputs": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "832117930abf78d4705060bfb0269f59f19b832985bb9d055d6333a344f15dc5",
+      "error": null
+    },
+    "src-prompting-practices": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "0892b91e87d67a6548ef03801c467da67bb6d44e079ec26f9fa45f14aff33517",
+      "error": null
+    },
+    "src-develop-tests": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "61240acfda78606267c786949e547c84ad4203c8d2fe25729a626341235ca326",
+      "error": null
+    },
+    "src-mitigate-injection": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "b2c0a5daf76b9b622d388763ed02c71f5dd2d351e32c9c4ded837921da44eedf",
+      "error": null
+    },
+    "src-contextual-retrieval": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://www.anthropic.com/research/contextual-retrieval",
+      "bodyHash": "3b47043d4d31e3cb1067f7a0bf51271a93c929291a52e012cd9ece3e64829ab1",
+      "error": null
+    },
+    "src-long-running-harness": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://www.anthropic.com/research/effective-harnesses-for-long-running-agents",
+      "bodyHash": "a036c8b830501603cdfba30527f2ec041be894fca6490b01c7ff877946eec146",
+      "error": null
+    },
+    "src-mcp-spec": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://modelcontextprotocol.io/specification/2026-07-28",
+      "bodyHash": "de32495be0ce2dc8b8256df404df9a5346fb6a41e20add2fb36dbb26f4091f3e",
+      "error": null
+    },
+    "src-mcp-security": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices",
+      "bodyHash": "fc42b515ffeea5333028ad8572fc501d2cd9a93fcb28abc8f9aa141fd27ac7a4",
+      "error": null
+    },
+    "src-owasp-llm01": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": null,
+      "bodyHash": "8a932a3d1f937693c8f247e6c04efff213e087be6641ec72fdebc7efbd44400d",
+      "error": null
+    },
+    "src-gemini-structured": {
+      "checkedAt": "2026-11-16",
+      "httpStatus": 200,
+      "redirectedTo": "https://aistudio.google.com/docs/structured-output",
+      "bodyHash": "b468ac9e2b13f43c37cb01ac111765e24567863593179a4f4d8783dcfc2bc805",
+      "error": null
+    }
+  }
+}
